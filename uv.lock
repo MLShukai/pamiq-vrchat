@@ -311,7 +311,7 @@ wheels = [
 
 [[package]]
 name = "pamiq-io"
-version = "0.1.2"
+version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "inputtino-python" },
@@ -320,9 +320,9 @@ dependencies = [
     { name = "python-osc" },
     { name = "soundcard" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/88/f2/db8f72f511338d74c8bf09fb74525260357aeb832acfca48c9008ecf9400/pamiq_io-0.1.2.tar.gz", hash = "sha256:648e61eb7f84731f8d65c8cf09b716b1486002907579e9cd661a741bdbbd6d2d", size = 53674, upload_time = "2025-04-17T12:33:58.498Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9b/2b/47ee26c2b329890f534c1f454c0ec16600d0188513d9dcb77b37bddc4d6a/pamiq_io-0.2.0.tar.gz", hash = "sha256:a43f8e1d8e768b594c88e24e8e6d5c4f8722f90caab096cbfc480e5e3fd41d4c", size = 54779, upload_time = "2025-04-24T23:04:36.074Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f7/65/2e9310c7fd8dfaccfd2909c0e71361a80ad1cc0b8892f8a36eb41d61fce6/pamiq_io-0.1.2-py3-none-any.whl", hash = "sha256:b0c7ae278d628a92033ac7e6f4409d8092e5f6c8a691300abe01d9c507a3ab7b", size = 19691, upload_time = "2025-04-17T12:33:56.828Z" },
+    { url = "https://files.pythonhosted.org/packages/48/7e/76fb4ad0e1d75114bd46b4a4d49dd5cc89eb7cf5e95a6db9dd56c13c0974/pamiq_io-0.2.0-py3-none-any.whl", hash = "sha256:04e86b5afbbe6070bae921848a2ac5d18284aa4649b014f897345d6bf56e8c6e", size = 19833, upload_time = "2025-04-24T23:04:34.892Z" },
 ]
 
 [[package]]
@@ -348,7 +348,7 @@ dev = [
 requires-dist = [
     { name = "inputtino-python", git = "https://github.com/games-on-whales/inputtino.git?subdirectory=bindings%2Fpython" },
     { name = "pamiq-core", specifier = ">=0.1.1" },
-    { name = "pamiq-io", specifier = ">=0.1.2" },
+    { name = "pamiq-io", specifier = ">=0.2.0" },
 ]
 
 [package.metadata.requires-dev]
