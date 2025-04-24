@@ -12,7 +12,9 @@
     "mounts": [
       "source=uv-cache,target=/root/.cache/uv,type=volume",
       "source=pip-cache,target=/root/.cache/pip,type=volume",
-      "source=pre-commit-cache,target=/root/.cache/pre-commit,type=volume"
+      "source=pre-commit-cache,target=/root/.cache/pre-commit,type=volume",
+      "source=${localEnv:XDG_RUNTIME_DIR}/pulse/native,target=${localEnv:XDG_RUNTIME_DIR}/pulse/native,type=bind",
+      "source=${localEnv:HOME}/.config/pulse/cookie,target=/root/.config/pulse/cookie,type=bind"
     ],
     "customizations": {
       "vscode": {
@@ -25,7 +27,10 @@
       }
     },
     "containerEnv": {
-      "PYRIGHT_PYTHON_FORCE_VERSION": "latest"
+      "PYRIGHT_PYTHON_FORCE_VERSION": "latest",
+      "PULSE_SERVER": "unix:${localEnv:XDG_RUNTIME_DIR}/pulse/native",
+      "PULSE_COOKIE": "/root/.config/pulse/cookie"
     },
-    "shutdownAction": "stopContainer"
+    "shutdownAction": "stopContainer",
+    "privileged": true
 }
