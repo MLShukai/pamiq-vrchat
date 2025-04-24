@@ -1,0 +1,129 @@
+[project]
+name = "python-uv-template"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = []
+requires-python = ">=3.12"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.2.0",
+    "pyright>=1.1.398",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+    "pytest-mock>=3.14.0",
+]
+
+
+[tool.pytest.ini_options]
+addopts = [
+  "--color=yes",
+  "--durations=0",
+  "--strict-markers",
+  "--doctest-modules",
+]
+filterwarnings = [
+  "ignore::DeprecationWarning",
+  "ignore::UserWarning",
+]
+log_cli = true
+log_level = "INFO"
+
+minversion = "6.0"
+testpaths = "tests/"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.pyright]
+pythonVersion = "3.12"
+exclude = [
+  "**/node_modules",
+  "**/__pycache__",
+  "**/.venv",
+  "tests/"
+]
+strict = ["./src/"]
+reportMissingTypeStubs = false
+reportImplicitOverride = true
+reportPrivateUsage = "warning"
+
+[tool.ruff]
+
+# Same as Black.
+line-length = 88
+indent-width = 4
+
+# Assume Python 3.12
+target-version = "py312"
+
+include = ["*.py"]
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".git",
+    ".ipynb_checkpoints",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    ".vscode",
+    "build",
+    "dist",
+    "node_modules",
+    ".venv",
+]
+
+# Linter ignore codes
+[tool.ruff.lint]
+
+select = [
+  "E",
+  "F",
+  "W",
+  "I",
+]
+
+ignore = [
+  "E203", # Whitespace before ':' (E203)
+  "E402", # Module level import not at top of file.
+  "E501", # Line too long (82 &gt; 79 characters) (E501)
+  "F811", # Redefinition of unused name from line n (F811)
+  "E741", # Do not define classes named 'I', 'O', or 'l' (E742)
+  "E266", # too many leading '#' for block comment (E266)
+  "F401", # Module imported but unused,
+]
+
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == __main__:",
+    "pass",
+    "raise ImportError",
+    "..."
+]
