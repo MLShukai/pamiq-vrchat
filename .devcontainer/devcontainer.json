@@ -1,11 +1,11 @@
 {
-    "name": "python-uv-template",
+    "name": "pamiq-vrchat",
     "build": {
       "context": "../",
       "dockerfile": "./Dockerfile"
     },
     // Default is volume mount (isolated environment from host and high disk performance.)
-    "workspaceMount": "source=python-uv-template,target=/workspace,type=volume",
+    "workspaceMount": "source=pamiq-vrchat,target=/workspace,type=volume",
     // You can also bind host directory.
     // "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
     "workspaceFolder": "/workspace",
