@@ -5,7 +5,11 @@ description = "Add your description here"
 readme = "README.md"
 authors = []
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "inputtino-python",
+    "pamiq-core>=0.1.1",
+    "pamiq-io>=0.1.2",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -127,3 +131,6 @@ exclude_lines = [
     "raise ImportError",
     "..."
 ]
+
+[tool.uv.sources]
+inputtino-python = { git = "https://github.com/games-on-whales/inputtino.git", subdirectory = "bindings/python" }
