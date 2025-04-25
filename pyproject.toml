@@ -8,7 +8,7 @@ requires-python = ">=3.12"
 dependencies = [
     "inputtino-python",
     "pamiq-core>=0.1.1",
-    "pamiq-io>=0.2.0",
+    "pamiq-io>=0.3.0",
 ]
 
 [build-system]
