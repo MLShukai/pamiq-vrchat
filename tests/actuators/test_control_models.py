@@ -11,19 +11,20 @@ class ControlModelImpl(ControlModel):
     def set_target_value(self, value: float) -> None:
         pass
 
+    @property
     @override
-    def step(self) -> float:
-        return 0.0
+    def current_value(self) -> float:
+        return 0.5  # Return a fixed value for testing
 
 
 class TestControlModel:
     """Tests for the ControlModel abstract base class."""
 
-    @pytest.mark.parametrize("method", ["set_target_value", "step"])
-    def test_abstractmethods(self, method: str):
+    @pytest.mark.parametrize("method_name", ["set_target_value", "current_value"])
+    def test_abstract_methods(self, method_name: str):
         """Test that ControlModel correctly defines expected abstract
         methods."""
-        assert method in ControlModel.__abstractmethods__
+        assert method_name in ControlModel.__abstractmethods__
 
     def test_init(self):
         """Test initialization with valid and invalid delta_time values."""
@@ -31,6 +32,7 @@ class TestControlModel:
         # Test with valid delta_time
         model = ControlModelImpl(0.1)
         assert model.delta_time == 0.1
+        assert model.elapsed_time == 0.0  # Initial elapsed_time should be 0.0
 
         # Test with invalid delta_time
         with pytest.raises(ValueError, match="delta_time must be larger than 0.0"):
@@ -59,6 +61,61 @@ class TestControlModel:
 
         # Ensure original value is preserved after failed attempt
         assert model.delta_time == 0.2
+
+    def test_elapsed_time_property(self):
+        """Test the elapsed_time property."""
+        model = ControlModelImpl(0.1)
+        assert model.elapsed_time == 0.0
+
+        # elapsed_time is a property and cannot be modified directly
+        # use update() to modify it
+        model.update()
+        assert model.elapsed_time == 0.1
+
+    def test_reset(self):
+        """Test the reset method."""
+        model = ControlModelImpl(0.1)
+
+        # Increase elapsed_time
+        model.update()
+        model.update()
+        assert model.elapsed_time == 0.2
+
+        # reset() should set elapsed_time back to 0.0
+        model.reset()
+        assert model.elapsed_time == 0.0
+
+    def test_update(self):
+        """Test the update method."""
+        model = ControlModelImpl(0.1)
+
+        # Initial elapsed_time should be 0.0
+        assert model.elapsed_time == 0.0
+
+        # After update, elapsed_time should increase by delta_time
+        elapsed_time = model.update()
+        assert model.elapsed_time == 0.1
+        assert elapsed_time == 0.1
+
+        # Change delta_time and update again
+        model.delta_time = 0.2
+        elapsed_time = model.update()
+        assert model.elapsed_time == pytest.approx(0.3)  # 0.1 + 0.2
+        assert elapsed_time == model.elapsed_time
+
+    def test_step(self):
+        """Test the step method."""
+        model = ControlModelImpl(0.1)
+
+        # Step should update elapsed_time and return current_value
+        result = model.step()
+        assert model.elapsed_time == 0.1
+        assert result == 0.5  # Fixed value from our ControlModelImpl
+
+        # Second step
+        result = model.step()
+        assert model.elapsed_time == 0.2
+        assert result == 0.5  # Same fixed value
 
 
 class TestSimpleMotor:

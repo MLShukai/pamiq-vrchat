@@ -16,6 +16,7 @@ class ControlModel(ABC):
 
     Attributes:
         delta_time: Time step for state updates in seconds.
+        elapsed_time: Total simulation time elapsed since the last reset in seconds.
     """
 
     def __init__(self, delta_time: float) -> None:
@@ -29,6 +30,7 @@ class ControlModel(ABC):
             ValueError: If delta_time is not positive.
         """
         self.delta_time = delta_time
+        self._elapsed_time = 0.0
 
     @property
     def delta_time(self) -> float:
@@ -53,6 +55,23 @@ class ControlModel(ABC):
             raise ValueError("delta_time must be larger than 0.0")
         self._delta_time = v
 
+    @property
+    def elapsed_time(self) -> float:
+        """Get the elapsed simulation time since the last reset.
+
+        Returns:
+            The elapsed time in seconds.
+        """
+        return self._elapsed_time
+
+    def reset(self) -> None:
+        """Reset the elapsed time counter to zero.
+
+        This method is typically called when the target value changes to
+        restart the timing for the new response curve.
+        """
+        self._elapsed_time = 0.0
+
     @abstractmethod
     def set_target_value(self, value: float) -> None:
         """Set a new target value for the control system.
@@ -66,17 +85,45 @@ class ControlModel(ABC):
         """
         ...
 
+    @property
     @abstractmethod
+    def current_value(self) -> float:
+        """Get the current output value of the control system.
+
+        This method should calculate and return the current output value
+        of the control system based on its internal state and elapsed time.
+
+        Returns:
+            Current output value of the system.
+        """
+        ...
+
+    def update(self) -> float:
+        """Update the internal state of the control system.
+
+        This method advances the simulation by one time step by updating
+        the elapsed time counter. Subclasses may override this method to
+        add additional state updates.
+
+        Returns:
+            The updated elapsed time.
+        """
+        self._elapsed_time += self.delta_time
+        return self.elapsed_time
+
     def step(self) -> float:
         """Step the simulation forward by one time step.
 
-        This method should update the internal state of the control
-        system according to its dynamics and the current time step.
+        This method updates the internal state of the control
+        system by calling update() and then returns the current value.
+        Subclasses typically don't need to override this method unless
+        they require special stepping behavior.
 
         Returns:
             Current output value of the system after the time step.
         """
-        ...
+        self.update()
+        return self.current_value
 
 
 class SimpleMotor(ControlModel):
@@ -120,7 +167,6 @@ class SimpleMotor(ControlModel):
         self._time_constant = time_constant
         self._target_value = initial_value
         self._start_value = initial_value
-        self._current_elapsed_time = 0.0
 
     @property
     def time_constant(self) -> float:
@@ -146,15 +192,8 @@ class SimpleMotor(ControlModel):
         self._time_constant = value
 
     @property
+    @override
     def current_value(self) -> float:
-        """Get the current output value of the motor.
-
-        Returns:
-            Current output value of the motor.
-        """
-        return self._calculate_current_value()
-
-    def _calculate_current_value(self) -> float:
         """Calculate the current output value using the analytical solution.
 
         Calculates the current value using the analytical solution
@@ -165,7 +204,7 @@ class SimpleMotor(ControlModel):
             Current output value of the motor.
         """
         return self._start_value + (self._target_value - self._start_value) * (
-            1 - math.exp(-self._current_elapsed_time / self._time_constant)
+            1 - math.exp(-self.elapsed_time / self._time_constant)
         )
 
     @override
@@ -182,20 +221,6 @@ class SimpleMotor(ControlModel):
         """
         if self._target_value != value:
             self._start_value = self.current_value
-            self._current_elapsed_time = 0.0
+            self.reset()
 
         self._target_value = value
-
-    @override
-    def step(self) -> float:
-        """Step the motor simulation forward by one time step.
-
-        Updates the elapsed time and calculates the new output value
-        using the analytical solution for the first-order system.
-
-        Returns:
-            Current output value of the motor after the time step.
-        """
-        self._current_elapsed_time += self.delta_time
-
-        return self.current_value
