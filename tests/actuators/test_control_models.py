@@ -3,7 +3,11 @@ from typing import override
 
 import pytest
 
-from pamiq_vrchat.actuators.control_models import ControlModel, SimpleMotor
+from pamiq_vrchat.actuators.control_models import (
+    ControlModel,
+    SimpleButton,
+    SimpleMotor,
+)
 
 
 class ControlModelImpl(ControlModel):
@@ -232,3 +236,136 @@ class TestSimpleMotor:
             motor.step()
 
         assert motor.current_value < -0.9  # Should be close to -1.0
+
+
+class TestSimpleButton:
+    """Tests for the SimpleButton class."""
+
+    def test_init(self):
+        """Test initialization with valid and invalid parameters."""
+        # Test with valid parameters
+        button = SimpleButton(
+            delta_time=0.1, initial_state=False, push_delay=0.2, release_delay=0.3
+        )
+        assert button.delta_time == 0.1
+        assert button.push_delay == 0.2
+        assert button.release_delay == 0.3
+        assert button.is_pressed is False
+        assert button.current_value == 0.0
+
+        # Test with initial_state=True
+        button = SimpleButton(delta_time=0.1, initial_state=True)
+        assert button.is_pressed is True
+        assert button.current_value == 1.0
+
+        # Test with invalid push_delay
+        with pytest.raises(ValueError, match="push_delay must be non-negative"):
+            SimpleButton(delta_time=0.1, push_delay=-0.1)
+
+        # Test with invalid release_delay
+        with pytest.raises(ValueError, match="release_delay must be non-negative"):
+            SimpleButton(delta_time=0.1, release_delay=-0.1)
+
+    def test_delay_property_setters(self):
+        """Test the push_delay and release_delay property setters."""
+        button = SimpleButton(delta_time=0.1)
+
+        # Test push_delay setter
+        assert button.push_delay == 0.0
+        button.push_delay = 0.5
+        assert button.push_delay == 0.5
+
+        # Test invalid push_delay
+        with pytest.raises(ValueError, match="push_delay must be non-negative"):
+            button.push_delay = -0.1
+
+        # Test release_delay setter
+        assert button.release_delay == 0.0
+        button.release_delay = 0.5
+        assert button.release_delay == 0.5
+
+        # Test invalid release_delay
+        with pytest.raises(ValueError, match="release_delay must be non-negative"):
+            button.release_delay = -0.1
+
+    def test_immediate_state_change(self):
+        """Test button state change with no delays."""
+        button = SimpleButton(delta_time=0.1, push_delay=0.0, release_delay=0.0)
+
+        # Button should start released
+        assert button.is_pressed is False
+        assert button.current_value == 0.0
+
+        # Set target to pressed, should change immediately
+        button.set_target_value(1.0)
+        assert button.current_value == 1.0
+        assert button.is_pressed is True
+
+        # Set target to released, should change immediately
+        button.set_target_value(0.0)
+        assert button.current_value == 0.0
+        assert button.is_pressed is False
+
+    def test_delayed_press(self):
+        """Test delayed button press."""
+        push_delay = 0.3
+        button = SimpleButton(delta_time=0.1, push_delay=push_delay, release_delay=0.0)
+
+        # Set target to pressed
+        button.set_target_value(1.0)
+
+        # Button should still be released initially
+        assert button.is_pressed is False
+        assert button.current_value == 0.0
+
+        # Take steps not reaching the push_delay
+        button.step()  # elapsed_time = 0.1
+        button.step()  # elapsed_time = 0.2
+        assert button.is_pressed is False
+        assert button.current_value == 0.0
+
+        # Take step that reaches the push_delay
+        button.step()  # elapsed_time = 0.3
+        assert button.is_pressed is True
+        assert button.current_value == 1.0
+
+    def test_delayed_release(self):
+        """Test delayed button release."""
+        release_delay = 0.3
+        button = SimpleButton(
+            delta_time=0.1,
+            initial_state=True,
+            push_delay=0.0,
+            release_delay=release_delay,
+        )
+
+        # Set target to released
+        button.set_target_value(0.0)
+
+        # Button should still be pressed initially
+        assert button.is_pressed is True
+        assert button.current_value == 1.0
+
+        # Take steps not reaching the release_delay
+        button.step()  # elapsed_time = 0.1
+        button.step()  # elapsed_time = 0.2
+        assert button.is_pressed is True
+        assert button.current_value == 1.0
+
+        # Take step that reaches the release_delay
+        button.step()  # elapsed_time = 0.3
+        assert button.is_pressed is False
+        assert button.current_value == 0.0
+
+    def test_value_conversion(self):
+        """Test that non-zero values are treated as True for button press."""
+        button = SimpleButton(delta_time=0.1)
+
+        # Try different non-zero values
+        for value in [0.5, 1, 42, -1.5]:
+            button.set_target_value(value)
+            assert button._target_pressed is True
+
+        # Try zero value
+        button.set_target_value(0.0)
+        assert button._target_pressed is False

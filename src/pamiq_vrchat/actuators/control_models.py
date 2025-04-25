@@ -224,3 +224,144 @@ class SimpleMotor(ControlModel):
             self.reset()
 
         self._target_value = value
+
+
+class SimpleButton(ControlModel):
+    """A simple button model that simulates pressing and releasing actions with
+    configurable delays.
+
+    This class simulates a button that can be in either pressed (1.0) or released (0.0) state,
+    with configurable delays for transitioning between states.
+
+    Attributes:
+        delta_time: Time step for state updates in seconds.
+        push_delay: Delay before the button is considered pressed after being instructed to press.
+        release_delay: Delay before the button is considered released after being instructed to release.
+    """
+
+    def __init__(
+        self,
+        delta_time: float,
+        initial_state: bool = False,
+        push_delay: float = 0.0,
+        release_delay: float = 0.0,
+    ) -> None:
+        """Initialize the simple button model.
+
+        Args:
+            delta_time: Time step for state updates in seconds.
+                Must be positive.
+            initial_state: Initial state of the button (True for pressed, False for released).
+                Defaults to False (released).
+            push_delay: Delay in seconds before the button actually gets pressed after
+                receiving the command to press. Must be non-negative.
+            release_delay: Delay in seconds before the button actually gets released after
+                receiving the command to release. Must be non-negative.
+
+        Raises:
+            ValueError: If delta_time is not positive, or if push_delay or release_delay is negative.
+        """
+        super().__init__(delta_time)
+
+        self._is_pressed = bool(initial_state)
+        self._target_pressed = bool(initial_state)
+        self.push_delay = push_delay
+        self.release_delay = release_delay
+
+    @property
+    def push_delay(self) -> float:
+        """Get the current push delay value.
+
+        Returns:
+            The push delay in seconds.
+        """
+        return self._push_delay
+
+    @push_delay.setter
+    def push_delay(self, value: float) -> None:
+        """Set the push delay value.
+
+        Args:
+            value: New push delay value in seconds.
+
+        Raises:
+            ValueError: If the value is negative.
+        """
+        if value < 0.0:
+            raise ValueError("push_delay must be non-negative")
+        self._push_delay = value
+
+    @property
+    def release_delay(self) -> float:
+        """Get the current release delay value.
+
+        Returns:
+            The release delay in seconds.
+        """
+        return self._release_delay
+
+    @release_delay.setter
+    def release_delay(self, value: float) -> None:
+        """Set the release delay value.
+
+        Args:
+            value: New release delay value in seconds.
+
+        Raises:
+            ValueError: If the value is negative.
+        """
+        if value < 0.0:
+            raise ValueError("release_delay must be non-negative")
+        self._release_delay = value
+
+    @property
+    def is_pressed(self) -> bool:
+        """Get the current pressed state of the button.
+
+        Returns:
+            True if the button is currently pressed, False otherwise.
+        """
+        return self._is_pressed
+
+    @override
+    def set_target_value(self, value: float) -> None:
+        """Set a new target state for the button.
+
+        The button will transition to the new state after the appropriate delay
+        (push_delay or release_delay).
+
+        Args:
+            value: New target value for the button. Non-zero values are interpreted
+                as "pressed" (True), zero as "released" (False).
+        """
+        new_target = bool(value)
+        if self._target_pressed != new_target:
+            self._target_pressed = new_target
+            self.reset()
+
+    @property
+    @override
+    def current_value(self) -> float:
+        """Calculate the current value of the button.
+
+        Checks if the button should change state based on the elapsed time
+        and configured delays. Returns 1.0 for pressed state, 0.0 for released state.
+
+        Returns:
+            1.0 if the button is currently pressed, 0.0 if released.
+        """
+        # If target and current state are already the same, no need to check delays
+        if self._target_pressed == self._is_pressed:
+            return float(self.is_pressed)
+
+        # If target is pressed but button is not pressed yet
+        if self._target_pressed and not self._is_pressed:
+            if self.elapsed_time >= self._push_delay:
+                self._is_pressed = True
+
+        # If target is released but button is still pressed
+        elif not self._target_pressed and self._is_pressed:
+            if self.elapsed_time >= self._release_delay:
+                self._is_pressed = False
+
+        return float(self.is_pressed)
