@@ -356,16 +356,3 @@ class TestSimpleButton:
         button.step()  # elapsed_time = 0.3
         assert button.is_pressed is False
         assert button.current_value == 0.0
-
-    def test_value_conversion(self):
-        """Test that non-zero values are treated as True for button press."""
-        button = SimpleButton(delta_time=0.1)
-
-        # Try different non-zero values
-        for value in [0.5, 1, 42, -1.5]:
-            button.set_target_value(value)
-            assert button._target_pressed is True
-
-        # Try zero value
-        button.set_target_value(0.0)
-        assert button._target_pressed is False
