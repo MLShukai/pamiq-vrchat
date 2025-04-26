@@ -24,10 +24,10 @@ import numpy.typing as npt
 from pamiq_core.interaction.modular_env import Sensor
 from pamiq_io.video import OpenCVVideoInput
 
-type Frame = npt.NDArray[np.uint8]
+type ImageFrame = npt.NDArray[np.uint8]
 
 
-class ImageSensor(Sensor[Frame]):
+class ImageSensor(Sensor[ImageFrame]):
     """Image sensor for capturing frames from a camera device.
 
     This class implements the Sensor interface for video input, allowing
@@ -52,7 +52,7 @@ class ImageSensor(Sensor[Frame]):
         self._input = OpenCVVideoInput(camera_index)
 
     @override
-    def read(self) -> Frame:
+    def read(self) -> ImageFrame:
         """Reads a frame from the camera.
 
         Returns:
