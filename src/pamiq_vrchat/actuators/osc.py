@@ -73,7 +73,7 @@ class OscActuator(Actuator[OscAction]):
         ... })
     """
 
-    JUMP_DELAY: ClassVar[float] = 0.01 / 3
+    JUMP_DELAY: ClassVar[float] = 0.1 / 3
 
     def __init__(
         self,
