@@ -43,26 +43,29 @@ class TestOscActuator:
         mock_osc_output_cls.assert_called_once_with("127.0.0.1", 9000)
 
         # Verify default attribute values
-        assert actuator.jump_on_action_start is True
+        assert (
+            actuator._command_for_close_menu
+            == OscActuator.DEFAULT_COMMAND_FOR_CLOSE_MENU
+        )
         assert actuator.current_action == {"axes": {}, "buttons": {}}
 
     def test_init_custom_parameters(self, mock_osc_output_cls):
         """Test initialization with custom parameters."""
         custom_host = "192.168.1.100"
         custom_port = 8000
-        jump_on_start = False
+        custom_close_menu_command = {str(Axes.Horizontal): 0.5}
 
         actuator = OscActuator(
             host=custom_host,
             port=custom_port,
-            jump_on_action_start=jump_on_start,
+            command_for_close_menu=custom_close_menu_command,
         )
 
         # Check that OscOutput was created with custom parameters
         mock_osc_output_cls.assert_called_once_with(custom_host, custom_port)
 
         # Verify custom attribute values
-        assert actuator.jump_on_action_start is jump_on_start
+        assert actuator._command_for_close_menu == custom_close_menu_command
 
     def test_current_action_property(self, actuator):
         """Test the current_action property."""
@@ -213,25 +216,26 @@ class TestOscActuator:
         with pytest.raises(ValueError):
             actuator.validate_axes(invalid_axes)
 
-    def test_setup_with_jump(self, actuator, mock_osc_output, mock_time_sleep):
-        """Test setup with jump_on_action_start=True."""
+    def test_setup_with_close_menu(self, actuator, mock_osc_output, mock_time_sleep):
+        """Test setup with default close menu command."""
         # Call setup
         actuator.setup()
 
         # Verify reset commands sent first
-        mock_osc_output.send_messages.assert_called_once_with(RESET_COMMANDS)
+        mock_osc_output.send_messages.assert_any_call(RESET_COMMANDS)
 
-        # Verify the jump sequence was sent (check the order and values of the calls)
-        mock_osc_output.send.assert_any_call(Buttons.Jump, 1)
-        mock_osc_output.send.assert_any_call(Buttons.Jump, 0)
+        # Verify the close menu command was sent
+        mock_osc_output.send_messages.assert_any_call(
+            OscActuator.DEFAULT_COMMAND_FOR_CLOSE_MENU
+        )
 
         # Verify time.sleep was called appropriate times
         assert mock_time_sleep.call_count == 3
 
-    def test_setup_without_jump(self, mock_osc_output, mock_time_sleep):
-        """Test setup with jump_on_action_start=False."""
-        # Create actuator with jump_on_action_start=False
-        actuator = OscActuator(jump_on_action_start=False)
+    def test_setup_without_close_menu(self, mock_osc_output, mock_time_sleep):
+        """Test setup with empty close menu command."""
+        # Create actuator with empty command_for_close_menu
+        actuator = OscActuator(command_for_close_menu={})
 
         # Call setup
         actuator.setup()
@@ -239,8 +243,8 @@ class TestOscActuator:
         # Verify reset commands sent
         mock_osc_output.send_messages.assert_called_once_with(RESET_COMMANDS)
 
-        # Verify jump commands were not sent and no sleep was performed
-        mock_osc_output.send.assert_not_called()
+        # Verify no additional commands were sent and no sleep was performed
+        assert mock_osc_output.send_messages.call_count == 1
         mock_time_sleep.assert_not_called()
 
     def test_teardown(self, actuator, mock_osc_output):
@@ -259,10 +263,10 @@ class TestOscActuator:
         # Verify reset commands sent
         mock_osc_output.send_messages.assert_called_once_with(RESET_COMMANDS)
 
-    def test_on_resumed_with_jump(
+    def test_on_resumed_with_close_menu(
         self, actuator, mock_osc_output, mock_time_sleep, mocker: MockerFixture
     ):
-        """Test on_resumed with jump_on_action_start=True."""
+        """Test on_resumed with default close menu command."""
         # Set current action state
         test_action = OscAction(axes={Axes.Vertical: 0.5}, buttons={Buttons.Run: True})
         mock_operate = mocker.spy(actuator, "operate")
@@ -273,22 +277,24 @@ class TestOscActuator:
         # Call on_resumed
         actuator.on_resumed()
 
-        # Verify the jump sequence was sent
-        mock_osc_output.send.assert_any_call(Buttons.Jump, 1)
-        mock_osc_output.send.assert_any_call(Buttons.Jump, 0)
+        # Verify the close menu command sequence was sent
+        mock_osc_output.send_messages.assert_any_call(
+            OscActuator.DEFAULT_COMMAND_FOR_CLOSE_MENU
+        )
+        mock_osc_output.send_messages.assert_any_call(RESET_COMMANDS)
 
         # Verify time.sleep was called appropriate times
         assert mock_time_sleep.call_count == 3
 
-        # Verify previous state was restored (should be sent after jump sequence)
+        # Verify previous state was restored
         mock_operate.assert_called_with(test_action)
 
-    def test_on_resumed_without_jump(
+    def test_on_resumed_without_close_menu(
         self, mock_osc_output, mock_time_sleep, mocker: MockerFixture
     ):
-        """Test on_resumed with jump_on_action_start=False."""
-        # Create actuator with jump_on_action_start=False
-        actuator = OscActuator(jump_on_action_start=False)
+        """Test on_resumed with empty close menu command."""
+        # Create actuator with empty command_for_close_menu
+        actuator = OscActuator(command_for_close_menu={})
         mock_operate = mocker.spy(actuator, "operate")
 
         # Set current action state
@@ -299,8 +305,8 @@ class TestOscActuator:
         # Call on_resumed
         actuator.on_resumed()
 
-        # Verify no jump commands were sent and no sleep was performed
-        mock_osc_output.send.assert_not_called()
+        # Verify no close menu commands were sent and no sleep was performed
         mock_time_sleep.assert_not_called()
 
+        # Verify previous state was restored
         mock_operate.assert_called_with(test_action)

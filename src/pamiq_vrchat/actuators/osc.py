@@ -73,27 +73,28 @@ class OscActuator(Actuator[OscAction]):
         ... })
     """
 
-    JUMP_DELAY: ClassVar[float] = 0.1 / 3
+    CLOSE_MENU_COMMAND_DELAY: ClassVar[float] = 0.1 / 3
+    DEFAULT_COMMAND_FOR_CLOSE_MENU = {str(Axes.Vertical): 1.0}
 
     def __init__(
         self,
         host: str = "127.0.0.1",
         port: int = 9000,
-        jump_on_action_start: bool = True,
+        command_for_close_menu: dict[str, float | int] = DEFAULT_COMMAND_FOR_CLOSE_MENU,
     ) -> None:
         """Initialize the OscActuator.
 
         Args:
             host: The IP address or hostname where VRChat is running.
             port: The port number VRChat is listening on for OSC messages.
-            jump_on_action_start: Whether to automatically send a jump command when
-                the actuator starts or resumes.  This helps close VRChat menus and
-                return to world interaction.
+            command_for_close_menu: OSC commands to send when closing VRChat menus.
+                These commands help return to world interaction from menu states.
+                Set to empty dict to disable this feature.
         """
         super().__init__()
 
         self._osc = OscOutput(host, port)
-        self.jump_on_action_start = jump_on_action_start  # これはVRChatのメニューを自動的に閉じるためにあるオプション。OSCコマンドで何か操作をすると勝手にメニューが閉じ、ワールド操作に移れる。
+        self._command_for_close_menu = command_for_close_menu.copy()
 
         self._current_axes: AxesAction = {}
         self._current_buttons: ButtonsAction = {}
@@ -127,7 +128,7 @@ class OscActuator(Actuator[OscAction]):
             for key, value in axes.items():
                 if self._current_axes.get(key) != value:
                     self._current_axes[key] = value
-                    sending_commands[key] = value
+                    sending_commands[key] = float(value)
 
         if buttons := action.get("buttons"):
             for key, value in buttons.items():
@@ -152,16 +153,20 @@ class OscActuator(Actuator[OscAction]):
                     f"Axes key must be in range [-1, 1], input: '{key}: {value}'"
                 )
 
-    def _send_jump(self) -> None:
-        """Send a jump command sequence with appropriate timing.
+    def _close_menu(self) -> None:
+        """Send a command for closing menu.
 
-        This helps close VRChat menus and return to world interaction.
+        This helps return to world interaction.
         """
-        time.sleep(self.JUMP_DELAY)
-        self._osc.send(Buttons.Jump, 1)
-        time.sleep(self.JUMP_DELAY)
-        self._osc.send(Buttons.Jump, 0)
-        time.sleep(self.JUMP_DELAY)
+
+        if self._command_for_close_menu == {}:
+            return
+
+        time.sleep(self.CLOSE_MENU_COMMAND_DELAY)
+        self._osc.send_messages(self._command_for_close_menu)
+        time.sleep(self.CLOSE_MENU_COMMAND_DELAY)
+        self._osc.send_messages(RESET_COMMANDS)
+        time.sleep(self.CLOSE_MENU_COMMAND_DELAY)
 
     @override
     def setup(self):
@@ -172,9 +177,7 @@ class OscActuator(Actuator[OscAction]):
         """
         super().setup()
         self._osc.send_messages(RESET_COMMANDS)
-
-        if self.jump_on_action_start:
-            self._send_jump()
+        self._close_menu()
 
     @override
     def teardown(self):
@@ -204,7 +207,5 @@ class OscActuator(Actuator[OscAction]):
         restores the previous action state.
         """
         super().on_resumed()
-        if self.jump_on_action_start:
-            self._send_jump()
-
+        self._close_menu()
         self.operate(self.current_action)
