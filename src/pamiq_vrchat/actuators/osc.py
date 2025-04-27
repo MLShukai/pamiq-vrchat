@@ -127,7 +127,7 @@ class OscActuator(Actuator[OscAction]):
             for key, value in axes.items():
                 if self._current_axes.get(key) != value:
                     self._current_axes[key] = value
-                    sending_commands[key] = value
+                    sending_commands[key] = float(value)
 
         if buttons := action.get("buttons"):
             for key, value in buttons.items():
