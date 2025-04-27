@@ -31,6 +31,7 @@
       "PULSE_SERVER": "unix:${localEnv:XDG_RUNTIME_DIR}/pulse/native",
       "PULSE_COOKIE": "/root/.config/pulse/cookie"
     },
+    "runArgs": ["--net", "host"],
     "shutdownAction": "stopContainer",
     "privileged": true
 }

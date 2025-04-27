@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     make \
     cmake \
+    clang \
     build-essential \
     pkg-config \
     libevdev-dev \
