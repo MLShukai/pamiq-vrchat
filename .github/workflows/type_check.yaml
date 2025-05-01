@@ -1,0 +1,50 @@
+name: Type Check
+
+on:
+  push:
+    branches: [main, stable]
+    paths:
+      - "**/*.py"
+      - "**/*.pyi"
+      - ".github/workflows/type_check.yaml"
+  pull_request:
+    branches: [main, stable]
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.5.10"
+
+jobs:
+  run_type-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends git cmake build-essential pkg-config libevdev-dev
+          uv sync --all-extras
+
+      - name: Check installed packages
+        run: |
+          echo "Python version:"
+          uv run python -V
+          echo "All installed packages:"
+          uv pip list
+
+      - name: Run pyright
+        run: uv run pyright
