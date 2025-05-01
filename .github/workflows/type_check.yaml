@@ -7,8 +7,16 @@ on:
       - "**/*.py"
       - "**/*.pyi"
       - ".github/workflows/type_check.yaml"
+      - "pyproject.toml"
+      - "uv.lock"
   pull_request:
     branches: [main, stable]
+    paths:
+      - "**/*.py"
+      - "**/*.pyi"
+      - ".github/workflows/type_check.yaml"
+      - "pyproject.toml"
+      - "uv.lock"
 
 env:
   PYTHON_VERSION: "3.12"
