@@ -1,0 +1,27 @@
+services:
+  dev:
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    volumes:
+      - pamiq-vrchat:/workspace
+      - uv_cache:/root/.cache/uv
+      - pip_cache:/root/.cache/pip
+      - pre-commit_cache:/root/.cache/pre-commit
+    environment:
+      - PYRIGHT_PYTHON_FORCE_VERSION=latest
+    tty: true
+    stdin_open: true
+    privileged: true
+    network_mode: host
+    working_dir: /workspace
+    command: /bin/bash
+    stop_grace_period: 0s
+
+volumes:
+  pamiq-vrchat:
+    name: pamiq-vrchat
+    external: true
+  uv_cache:
+  pip_cache:
+  pre-commit_cache:
