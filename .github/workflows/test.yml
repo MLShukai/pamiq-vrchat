@@ -1,0 +1,70 @@
+name: Test
+
+on:
+  push:
+    branches: [main, stable]
+    paths:
+      - "**/*.py"
+      - "**/*.pyi"
+      - ".github/workflows/type_check.yaml"
+      - "pyproject.toml"
+      - "uv.lock"
+  pull_request:
+    branches: [main, stable]
+    paths:
+      - "**/*.py"
+      - "**/*.pyi"
+      - ".github/workflows/type_check.yaml"
+      - "pyproject.toml"
+      - "uv.lock"
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.5.10"
+
+jobs:
+
+  run_tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-22.04", "ubuntu-24.04"]
+        python-version: ["3.12", "3.13"]
+
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends git cmake build-essential pkg-config libevdev-dev pulseaudio
+          pulseaudio -k
+          pulseaudio --start
+          uv sync --all-extras
+
+      - name: Check installed packages
+        run: |
+          echo "Python version:"
+          uv run python -V
+          echo "All installed packages:"
+          uv pip list
+
+      - name: Run pytest with coverage
+        run: |
+          uv run pytest -v --log-level=INFO --cov
