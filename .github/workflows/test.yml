@@ -6,7 +6,7 @@ on:
     paths:
       - "**/*.py"
       - "**/*.pyi"
-      - ".github/workflows/test.yaml"
+      - ".github/workflows/test.yml"
       - "pyproject.toml"
       - "uv.lock"
   pull_request:
@@ -14,7 +14,7 @@ on:
     paths:
       - "**/*.py"
       - "**/*.pyi"
-      - ".github/workflows/test.yaml"
+      - ".github/workflows/test.yml"
       - "pyproject.toml"
       - "uv.lock"
 
