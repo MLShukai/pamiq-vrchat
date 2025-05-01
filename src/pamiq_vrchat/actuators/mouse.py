@@ -1,7 +1,7 @@
 from typing import TypedDict, override
 
 from pamiq_core.interaction.modular_env import Actuator
-from pamiq_io.mouse import Button, ButtonLiteral, InputtinoMouseOutput
+from pamiq_io.mouse import InputtinoMouseOutput, MouseButton
 
 
 class MouseAction(TypedDict, total=False):
@@ -13,11 +13,7 @@ class MouseAction(TypedDict, total=False):
     """
 
     move_velocity: tuple[float, float]
-    button_press: dict[Button, bool]
-
-
-# Define constants for button names
-MOUSE_BUTTONS: list[ButtonLiteral] = ["left", "right", "middle", "side", "extra"]
+    button_press: dict[MouseButton, bool]
 
 
 class MouseActuator(Actuator[MouseAction]):
@@ -69,7 +65,7 @@ class MouseActuator(Actuator[MouseAction]):
         self._mouse.move(0, 0)  # Stop mouse movement.
 
         # Release all buttons
-        for button in MOUSE_BUTTONS:
+        for button in MouseButton:
             self._mouse.release(button)
 
     @override
@@ -91,5 +87,5 @@ class MouseActuator(Actuator[MouseAction]):
         """
         if hasattr(self, "_mouse"):
             self._mouse.move(0, 0)
-            for button in MOUSE_BUTTONS:
+            for button in MouseButton:
                 self._mouse.release(button)
