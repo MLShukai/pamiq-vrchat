@@ -34,7 +34,10 @@ jobs:
           key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}
 
       - name: Install dependencies
-        run: uv sync
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends git cmake build-essential pkg-config libevdev-dev
+          uv sync --all-extras
 
       - name: Check installed packages
         run: |
