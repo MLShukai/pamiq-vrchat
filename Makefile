@@ -23,3 +23,40 @@ type: ## Run pyright
 	uv run pyright
 
 run: format test type ## Run all workflow
+
+# -----------------
+#  Docker Settings
+# -----------------
+
+ENABLE_GPU   ?= true
+ENABLE_AUDIO ?= true
+
+# Compose files
+BASE_COMPOSE  := -f docker/base.yml
+GPU_COMPOSE   := -f docker/gpu.yml
+AUDIO_COMPOSE := -f docker/audio.yml
+
+# -f options
+COMPOSE_FILES := $(BASE_COMPOSE)
+ifeq ($(ENABLE_GPU),true)
+  COMPOSE_FILES += $(GPU_COMPOSE)
+endif
+ifeq ($(ENABLE_AUDIO),true)
+  COMPOSE_FILES += $(AUDIO_COMPOSE)
+endif
+
+docker-build: ## Build docker images
+	docker compose -f docker/base.yml build --no-cache
+
+docker-up: ## Start docker containers (ENABLE_GPU=false for no gpu env, ENABLE_AUDIO=false for no audio server env)
+	@echo "→ Starting dev container (GPU=$(ENABLE_GPU), AUDIO=$(ENABLE_AUDIO))"
+	docker compose $(COMPOSE_FILES) up -d
+
+docker-down: ## Stop docker containers
+	docker compose -f docker/base.yml down
+
+docker-down-volume:  ## Stop docker containers with removing volumes.
+	docker compose -f docker/base.yml down -v
+
+docker-attach: ## Attach to development container
+	docker compose -f docker/base.yml exec dev bash
