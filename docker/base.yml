@@ -1,5 +1,6 @@
 services:
   dev:
+    container_name: pamiq-vrchat-dev
     build:
       context: ../
       dockerfile: ./docker/Dockerfile
@@ -21,7 +22,6 @@ services:
 volumes:
   pamiq-vrchat:
     name: pamiq-vrchat
-    external: true
   uv_cache:
   pip_cache:
   pre-commit_cache:
