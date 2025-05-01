@@ -5,6 +5,8 @@ from typing import ClassVar, TypedDict, override
 from pamiq_core.interaction.modular_env import Actuator
 from pamiq_io.osc import OscOutput
 
+from .control_models import SimpleButton, SimpleMotor
+
 
 class Axes(StrEnum):
     """Enumerates Axis control addresses.
@@ -209,3 +211,95 @@ class OscActuator(Actuator[OscAction]):
         super().on_resumed()
         self._close_menu()
         self.operate(self.current_action)
+
+
+class SmoothOscActuator(OscActuator):
+    """OSC actuator that provides smooth transitions for VRChat controls.
+
+    This actuator extends the standard OscActuator by adding gradual transitions
+    to axis movements and button actions, creating more natural-looking avatar
+    movement and interactions. It uses control models (SimpleMotor and SimpleButton)
+    to implement value ramping and delayed button responses.
+
+    Examples:
+        >>> actuator = SmoothOscActuator(
+        ...     delta_time=0.05,           # 50ms update interval
+        ...     time_constant=0.2,         # 200ms axis value smoothing
+        ...     press_delay=0.05,          # 50ms delay before button press takes effect
+        ...     release_delay=0.1          # 100ms delay before button release takes effect
+        ... )
+        >>> # Movement will gradually accelerate to target value
+        >>> actuator.operate({"axes": {Axes.Vertical: 0.5}})
+        >>> # Buttons will have realistic press/release delays
+        >>> actuator.operate({"buttons": {Buttons.Jump: True}})
+    """
+
+    @override
+    def __init__(
+        self,
+        host: str = "127.0.0.1",
+        port: int = 9000,
+        command_for_close_menu: dict[
+            str, float | int
+        ] = OscActuator.DEFAULT_COMMAND_FOR_CLOSE_MENU,
+        delta_time: float = 0.1,
+        time_constant: float = 0.2,
+        press_delay: float = 0.04,
+        release_delay: float = 0.16,
+    ) -> None:
+        """Initialize the smooth OSC actuator.
+
+        Args:
+            host: The IP address or hostname where VRChat is running.
+            port: The port number VRChat is listening on for OSC messages.
+            command_for_close_menu: OSC commands to send when closing VRChat menus.
+                These commands help return to world interaction from menu states.
+                Set to empty dict to disable this feature.
+            delta_time: The time step for control model updates in seconds.
+            time_constant: Time constant for axis value smoothing in seconds.
+            press_delay: Delay before button press takes effect in seconds.
+            release_delay: Delay before button release takes effect in seconds.
+        """
+        super().__init__(host, port, command_for_close_menu)
+
+        # Create control models for each axis
+        self._axis_motors = {
+            axis: SimpleMotor(delta_time, time_constant) for axis in Axes
+        }
+
+        # Create control models for each button
+        self._button_models = {
+            button: SimpleButton(delta_time, False, press_delay, release_delay)
+            for button in Buttons
+        }
+
+    @override
+    def operate(self, action: OscAction) -> None:
+        """Execute the specified OSC action with smooth transitions.
+
+        Args:
+            action: The OSC action to execute, containing axes and/or button values.
+
+        Raises:
+            ValueError: If any axis value is outside the valid range [-1.0, 1.0].
+        """
+        # Process axes with smooth transitions
+        if axes := action.get("axes"):
+            self.validate_axes(axes)
+            for axis, value in axes.items():
+                self._axis_motors[axis].set_target_value(value)
+
+        # Process buttons with delayed responses
+        if buttons := action.get("buttons"):
+            for button, pressed in buttons.items():
+                self._button_models[button].set_target_value(pressed)
+
+        # Construct smooth action
+        smooth_action: OscAction = {
+            "axes": {ax: motor.step() for ax, motor in self._axis_motors.items()},
+            "buttons": {
+                btn: bool(model.step()) for btn, model in self._button_models.items()
+            },
+        }
+
+        super().operate(smooth_action)

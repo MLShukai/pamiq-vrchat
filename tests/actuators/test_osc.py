@@ -9,6 +9,7 @@ from pamiq_vrchat.actuators.osc import (
     Buttons,
     OscAction,
     OscActuator,
+    SmoothOscActuator,
 )
 
 
@@ -310,3 +311,212 @@ class TestOscActuator:
 
         # Verify previous state was restored
         mock_operate.assert_called_with(test_action)
+
+
+class TestSmoothOscActuator:
+    """Tests for the SmoothOscActuator class."""
+
+    def test_subclass(self):
+        """Test that SmoothOscActuator is a subclass of OscActuator."""
+        assert issubclass(SmoothOscActuator, OscActuator)
+
+    @pytest.fixture
+    def mock_osc_output_cls(self, mocker: MockerFixture):
+        """Create a mock for the OscOutput class."""
+        return mocker.patch("pamiq_vrchat.actuators.osc.OscOutput", autospec=True)
+
+    @pytest.fixture
+    def mock_osc_output(self, mock_osc_output_cls):
+        """Create a mock for the OscOutput instance."""
+        return mock_osc_output_cls.return_value
+
+    @pytest.fixture
+    def actuator(self, mock_osc_output):
+        """Create a SmoothOscActuator instance for testing."""
+        return SmoothOscActuator(delta_time=0.01, time_constant=0.1)
+
+    def test_init(self, mock_osc_output_cls):
+        """Test initialization with default and custom parameters."""
+        # Test with default parameters
+        SmoothOscActuator()
+        mock_osc_output_cls.assert_called_with("127.0.0.1", 9000)
+
+        # Reset mock
+        mock_osc_output_cls.reset_mock()
+
+        # Test with custom parameters
+        custom_host = "192.168.1.100"
+        custom_port = 8000
+        custom_delta_time = 0.05
+        custom_time_constant = 0.3
+        custom_press_delay = 0.1
+        custom_release_delay = 0.2
+
+        SmoothOscActuator(
+            host=custom_host,
+            port=custom_port,
+            delta_time=custom_delta_time,
+            time_constant=custom_time_constant,
+            press_delay=custom_press_delay,
+            release_delay=custom_release_delay,
+        )
+
+        # Verify OscOutput was created with custom parameters
+        mock_osc_output_cls.assert_called_with(custom_host, custom_port)
+
+    def test_smooth_axis_movement(self, actuator, mock_osc_output):
+        """Test that axis values are smoothly transitioned."""
+        target_value = 1.0
+
+        # First call should start with small value due to smoothing
+        actuator.operate({"axes": {Axes.Vertical: target_value}})
+
+        # Get the first call arguments
+        first_call_args = mock_osc_output.send_messages.call_args[0][0]
+
+        # Verify the Vertical axis value is smaller than target due to smoothing
+        vertical_value = first_call_args.get(Axes.Vertical)
+        assert 0 < vertical_value < target_value
+
+        # Reset mock to track only new calls
+        mock_osc_output.send_messages.reset_mock()
+
+        # Multiple operate calls should gradually approach the target
+        prev_value = vertical_value
+
+        # Call operate several times without changing target
+        for _ in range(50):
+            actuator.operate({})
+
+            # Get the latest call arguments
+            call_args = mock_osc_output.send_messages.call_args[0][0]
+            current_value = call_args[Axes.Vertical]
+
+            # Verify movement is approaching target
+            assert current_value > prev_value
+
+            prev_value = current_value
+
+            # Reset mock to isolate next call
+            mock_osc_output.send_messages.reset_mock()
+
+            # Break if we're very close to target
+            if abs(current_value - target_value) < 0.01:
+                break
+
+        # After several iterations, we should be close to target
+        assert abs(prev_value - target_value) < 0.1
+
+    def test_smooth_button_transitions(self, actuator, mock_osc_output):
+        """Test that button presses/releases have smooth transitions."""
+        # Initially, button should not be pressed (value is 0)
+        actuator.operate({"buttons": {Buttons.Jump: True}})
+
+        # Extract button state from first call
+        first_call_args = mock_osc_output.send_messages.call_args[0][0]
+        first_button_state = first_call_args[Buttons.Jump]
+
+        # First state should be 0 due to button delay
+        assert first_button_state == 0
+
+        # Reset mock to track only new calls
+        mock_osc_output.send_messages.reset_mock()
+
+        # Keep calling operate until button is pressed
+        button_pressed = False
+        for _ in range(20):
+            actuator.operate({})
+
+            # Get the latest call arguments
+            call_args = mock_osc_output.send_messages.call_args[0][0]
+
+            if Buttons.Jump in call_args and call_args[Buttons.Jump] == 1:
+                button_pressed = True
+                break
+
+            mock_osc_output.send_messages.reset_mock()
+
+        # Verify button was eventually pressed
+        assert button_pressed, "Button was never pressed after multiple operate calls"
+
+        # Now test button release - should also have delay
+        mock_osc_output.send_messages.reset_mock()
+
+        # Set button to release
+        actuator.operate({"buttons": {Buttons.Jump: False}})
+
+        # First state should still be pressed (not called)
+        first_call_args = mock_osc_output.send_messages.call_args[0][0]
+        assert Buttons.Jump not in first_call_args
+
+        mock_osc_output.send_messages.reset_mock()
+
+        # Keep calling operate until button is released
+        button_released = False
+        for _ in range(20):
+            actuator.operate({})
+
+            # Get the latest call arguments
+            call_args = mock_osc_output.send_messages.call_args[0][0]
+            if Buttons.Jump in call_args and call_args[Buttons.Jump] == 0:
+                button_released = True
+                break
+
+            mock_osc_output.send_messages.reset_mock()
+
+        # Verify button was eventually released
+        assert button_released, "Button was never released after multiple operate calls"
+
+    def test_combined_axis_and_button(self, actuator, mock_osc_output):
+        """Test simultaneous axis and button operations."""
+        # Set both axis and button state
+        mock_osc_output.send_messages.reset_mock()
+        actuator.operate({"axes": {Axes.Vertical: 0.5}, "buttons": {Buttons.Run: True}})
+
+        # Get the first call arguments
+        first_call_args = mock_osc_output.send_messages.call_args[0][0]
+
+        # Axis should start changing immediately, but with smoothing
+        first_axis_value = first_call_args[Axes.Vertical]
+        assert 0 < first_axis_value < 0.5
+
+        # Button should not be pressed initially due to delay
+        assert first_call_args[Buttons.Run] == 0
+
+        # Reset mock to track only new calls
+        mock_osc_output.send_messages.reset_mock()
+
+        # Both axis and button should change in subsequent calls
+        button_activated = False
+        axis_increased = False
+        prev_axis_value = first_axis_value
+
+        for _ in range(20):
+            actuator.operate({})
+
+            # Get the latest call arguments
+            call_args = mock_osc_output.send_messages.call_args[0][0]
+
+            # Check axis value is increasing
+            current_axis_value = call_args[Axes.Vertical]
+            if current_axis_value > prev_axis_value:
+                axis_increased = True
+            prev_axis_value = current_axis_value
+
+            # Check if button is activated
+            if Buttons.Run in call_args and call_args[Buttons.Run] == 1:
+                button_activated = True
+
+            # If both conditions are met, we can break early
+            if axis_increased and button_activated:
+                break
+
+            mock_osc_output.send_messages.reset_mock()
+
+        # Verify both axis increased and button was activated
+        assert (
+            axis_increased
+        ), "Axis value did not increase after multiple operate calls"
+        assert (
+            button_activated
+        ), "Button was never activated after multiple operate calls"
