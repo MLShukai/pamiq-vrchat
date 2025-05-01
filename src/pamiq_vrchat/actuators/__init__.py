@@ -1,9 +1,9 @@
 from .mouse import MouseAction, MouseActuator, MouseButton, SmoothMouseActuator
 from .osc import (
-    Axes,
-    AxesAction,
-    Buttons,
-    ButtonsAction,
+    Axes as OscAxes,
+    AxesAction as OscAxesAction,
+    Buttons as OscButtons,
+    ButtonsAction as OscButtonsAction,
     OscAction,
     OscActuator,
     SmoothOscActuator,
@@ -17,8 +17,8 @@ __all__ = [
     "OscAction",
     "OscActuator",
     "SmoothOscActuator",
-    "Axes",
-    "Buttons",
-    "AxesAction",
-    "ButtonsAction",
+    "OscAxes",
+    "OscButtons",
+    "OscAxesAction",
+    "OscButtonsAction",
 ]
