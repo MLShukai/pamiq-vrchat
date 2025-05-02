@@ -52,6 +52,8 @@ After installation, select `GE-Proton` as the compatibility tool in Steam → Se
 
 Add **VRChat** to your library from the [Steam store](https://store.steampowered.com/app/438100/VRChat/) and install it.
 
+After install, launch VRChat and login.
+
 ### Setup OBS
 
 For OBS installation and virtual camera setup, refer to [pamiq-io documentation](https://github.com/MLShukai/pamiq-io?tab=readme-ov-file#obs-virtual-camera).
@@ -66,6 +68,16 @@ For OBS installation and virtual camera setup, refer to [pamiq-io documentation]
 Capture the VRChat window in OBS and enable the virtual camera.
 
 You can also use our pre-configured [Scene Collection](./obs_settings/VRChatSceneCollection.json). Import it from the OBS `Scene Collection` tab → `Import`, and ensure the checkbox is checked.
+
+### Enable OSC
+
+1. Open the "Launch Pad" (press the `Esc` key)
+2. Go to the main menu
+3. Open settings (click the ⚙️ icon)
+4. Click `Search all settings` and type "OSC", then press Enter
+5. Enable the `OSC` button
+
+![enable_osc](./docs/images/osc_enable.png)
 
 ## 🚀 Quick Examples
 
