@@ -33,8 +33,8 @@ ENABLE_AUDIO ?= true
 
 # Compose files
 BASE_COMPOSE  := -f docker/base.yml
-NVIDIA_COMPOSE   := -f docker/gpu.yml
-PULSEAUDIO_COMPOSE := -f docker/audio.yml
+NVIDIA_COMPOSE   := -f docker/nvidia.yml
+PULSEAUDIO_COMPOSE := -f docker/pulseaudio.yml
 
 # Auto-detection capabilities.
 HAS_NVIDIA := $(shell which nvidia-smi > /dev/null 2>&1 && echo true || echo false)
