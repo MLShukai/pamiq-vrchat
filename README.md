@@ -98,6 +98,9 @@ frame = sensor.read()
 
 ### Mouse Control
 
+> \[!NOTE\]
+> When using mouse control, remember to keep the VRChat game window focused (selected) on your desktop.
+
 ```python
 from pamiq_vrchat.actuators import MouseActuator, MouseButton, SmoothMouseActuator
 
