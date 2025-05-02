@@ -68,7 +68,7 @@ Please install the following tools in advance:
    The Docker setup supports different configurations based on your machine:
 
    ```sh
-   # Start with all features (GPU and audio)
+   # Start with all features (GPU and audio if available)
    make docker-up
 
    # Start without GPU support (for machines without NVIDIA GPUs)

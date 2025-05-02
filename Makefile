@@ -36,20 +36,30 @@ BASE_COMPOSE  := -f docker/base.yml
 GPU_COMPOSE   := -f docker/gpu.yml
 AUDIO_COMPOSE := -f docker/audio.yml
 
+# Auto-detection capabilities.
+HAS_NVIDIA := $(shell which nvidia-smi > /dev/null 2>&1 && echo true || echo false)
+HAS_PULSEAUDIO := $(shell pactl info > /dev/null 2>&1 && echo true || echo false)
+
 # -f options
 COMPOSE_FILES := $(BASE_COMPOSE)
 ifeq ($(ENABLE_GPU),true)
-  COMPOSE_FILES += $(GPU_COMPOSE)
+  ifeq ($(HAS_NVIDIA),true)
+    COMPOSE_FILES += $(GPU_COMPOSE)
+  endif
 endif
 ifeq ($(ENABLE_AUDIO),true)
-  COMPOSE_FILES += $(AUDIO_COMPOSE)
+  ifeq ($(HAS_PULSEAUDIO),true)
+    COMPOSE_FILES += $(AUDIO_COMPOSE)
+  endif
 endif
 
 docker-build: ## Build docker images
 	docker compose -f docker/base.yml build --no-cache
 
-docker-up: ## Start docker containers (ENABLE_GPU=false for no gpu env, ENABLE_AUDIO=false for no audio server env)
-	@echo "→ Starting dev container (GPU=$(ENABLE_GPU), AUDIO=$(ENABLE_AUDIO))"
+docker-up: ## Start docker containers (ENABLE_GPU=false to disable GPU, ENABLE_AUDIO=false to disable audio)
+	@echo "→ Starting dev container"
+	@echo "  GPU: $(ENABLE_GPU) (detected: $(HAS_NVIDIA))"
+	@echo "  Audio: $(ENABLE_AUDIO) (detected: $(HAS_PULSEAUDIO))"
 	docker compose $(COMPOSE_FILES) up -d
 
 docker-down: ## Stop docker containers
