@@ -36,8 +36,15 @@ class PatchEmbedding(nn.Module):
         )
         init_weights(self.proj, init_std)
 
-    # (batch, channels, height, width) -> (batch, n_patches, embed_dim)
     @override
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Embed image to patch.
+
+        Args:
+            x: Input images(shape: [batch, channels, height, width]).
+
+        Returns:
+            patch embeddings (shape: [batch, n_patches, embed_dim]).
+        """
         x = self.proj(x).flatten(-2).transpose(-2, -1)
         return x
