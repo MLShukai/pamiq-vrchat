@@ -10,6 +10,7 @@ dependencies = [
     "inputtino-python",
     "pamiq-core>=0.2.0",
     "pamiq-io[inputtino,opencv,osc,soundcard]>=0.4.1",
+    "pulsectl>=24.12.0",
 ]
 keywords = [
   "PAMIQ",

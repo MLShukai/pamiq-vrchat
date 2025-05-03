@@ -556,6 +556,7 @@ dependencies = [
     { name = "inputtino-python" },
     { name = "pamiq-core" },
     { name = "pamiq-io", extra = ["inputtino", "opencv", "osc", "soundcard"] },
+    { name = "pulsectl" },
 ]
 
 [package.optional-dependencies]
@@ -578,6 +579,7 @@ requires-dist = [
     { name = "pamiq-core", specifier = ">=0.2.0" },
     { name = "pamiq-core", extras = ["torch"], marker = "extra == 'sample'", specifier = ">=0.2.0" },
     { name = "pamiq-io", extras = ["inputtino", "opencv", "osc", "soundcard"], specifier = ">=0.4.1" },
+    { name = "pulsectl", specifier = ">=24.12.0" },
 ]
 provides-extras = ["sample"]
 
@@ -634,6 +636,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/bb/6e/9d084c929dfe9e3bfe0c6a47e31f78a25c54627d64a66e884a8bf5474f1c/prompt_toolkit-3.0.51.tar.gz", hash = "sha256:931a162e3b27fc90c86f1b48bb1fb2c528c2761475e57c9c06de13311c7b54ed", size = 428940, upload-time = "2025-04-15T09:18:47.731Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ce/4f/5249960887b1fbe561d9ff265496d170b55a735b76724f10ef19f9e40716/prompt_toolkit-3.0.51-py3-none-any.whl", hash = "sha256:52742911fde84e2d423e2f9a4cf1de7d7ac4e51958f648d9540e0fb8db077b07", size = 387810, upload-time = "2025-04-15T09:18:44.753Z" },
+]
+
+[[package]]
+name = "pulsectl"
+version = "24.12.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f5/c5/f070a8c5f0a5742f7aebb5d90869ee1805174c03928dfafd3833de58bd57/pulsectl-24.12.0.tar.gz", hash = "sha256:288d6715232ac6f3dcdb123fbecaa2c0b9a50ea4087e6e87c3f841ab0a8a07fc", size = 41200, upload-time = "2024-12-26T13:22:57.389Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/62/a9/5b119f86dd1a053c55da7d0355fca2ad215bae6f7f4777d46b307a8cc3e9/pulsectl-24.12.0-py2.py3-none-any.whl", hash = "sha256:13a60be940594f03ead3245b3dfe3aff4a3f9a792af347674bde5e716d4f76d2", size = 35133, upload-time = "2024-12-26T13:22:53.395Z" },
 ]
 
 [[package]]
