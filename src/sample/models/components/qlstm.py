@@ -10,7 +10,16 @@ from .stacked_hidden_state import StackedHiddenState
 
 
 class RMSNorm(nn.Module):
+    """Root Mean Square Layer Normalization."""
+
     def __init__(self, dim: int, eps: float = 1e-6, elementwise_affine: bool = True):
+        """Initialize the RMSNorm layer.
+
+        Args:
+            dim: The number of features in the input.
+            eps: A small value to avoid division by zero.
+            elementwise_affine: If True, use learnable parameters for scaling.
+        """
         super().__init__()
         self.normalized_shape = dim
         self.eps = eps
@@ -21,6 +30,13 @@ class RMSNorm(nn.Module):
 
     @override
     def forward(self, x: Tensor) -> Tensor:
+        """Apply the RMSNorm layer.
+
+        Args:
+            x: The input tensor of shape (*, dim).
+        Returns:
+            The output tensor of shape (*, dim).
+        """
         output = x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps)
         if self.weight is not None:
             output = output * self.weight
@@ -28,7 +44,15 @@ class RMSNorm(nn.Module):
 
 
 class FFNSwiGLU(nn.Module):
+    """Feed Forward Network with SwiGLU activation."""
+
     def __init__(self, dim: int, dim_ff_hidden: int):
+        """Initialize the FFNSwiGLU layer.
+
+        Args:
+            dim: The number of features in the input.
+            dim_ff_hidden: The number of features in the hidden layer.
+        """
         super().__init__()
         self.fc = nn.Linear(dim, dim_ff_hidden)
         self.fc_act = nn.Linear(dim, dim_ff_hidden)
@@ -37,13 +61,28 @@ class FFNSwiGLU(nn.Module):
 
     @override
     def forward(self, x: Tensor) -> Tensor:
+        """Apply the feed forward network with SwiGLU activation.
+
+        Args:
+            x: The input tensor of shape (*, dim).
+        Returns:
+            The output tensor of shape (*, dim).
+        """
         x = self.fc(x) * self.act(self.fc_act(x))
         x = self.fc_out(x)
         return x
 
 
-# [a0, a1, a2, ...], [b0, b1, b2, ...] -> [b0, a1 * b0 + b1, a2 * a1 * b0 + a2 * b1, b2, ...]
 def scan(a, b):
+    """Calculate a sequence [b0, a1 * b0 + b1, a2 * a1 * b0 + a2 * b1, b2, ...]
+    from [a0, a1, a2, ...] and [b0, b1, b2, ...]
+
+    Args:
+        a: (batch, len)
+        b: (batch, len)
+    Returns:
+        a sequence defined above, of shape (batch, len)
+    """
     _, length = a.shape
     if length == 1:
         return b
@@ -84,7 +123,18 @@ def scan(a, b):
 
 
 class QLSTMLayer(nn.Module):
+    """QLSTM Layer, which is a variant of LSTM without h recursion.
+
+    It uses a parallel scan to compute the hidden state. The QLSTM layer
+    is designed to be used in a QLSTM block.
+    """
+
     def __init__(self, dim: int):
+        """Initialize the QLSTM layer.
+
+        Args:
+            dim: The number of features in the input.
+        """
         super().__init__()
         self.dim = dim
         self.fc_forget = nn.Linear(dim, dim)
@@ -97,9 +147,16 @@ class QLSTMLayer(nn.Module):
         self.last_hidden_init = nn.Parameter(torch.randn(dim))
         self.is_refresh = True
 
-    # (batch, len, dim), (batch, dim) -> (batch, len, dim), (batch, len, dim)
     @override
     def forward(self, x: Tensor, hidden: Tensor) -> tuple[Tensor, Tensor]:
+        """Apply the QLSTM layer.
+
+        Args:
+            x: The input tensor of shape (batch, len, dim).
+            hidden: The hidden state tensor of shape (batch, dim).
+        Returns:
+            The output tensor of shape (batch, len, dim) and the new hidden state tensor of shape (batch, len, dim).
+        """
         batch, len, dim = x.shape
 
         forget = F.sigmoid(self.fc_forget(x))  # (batch, len, dim)
@@ -121,7 +178,17 @@ class QLSTMLayer(nn.Module):
 
 
 class QLSTMBlock(nn.Module):
+    """QLSTM Block, which consists of a QLSTM layer and a feed forward
+    network."""
+
     def __init__(self, dim: int, dim_ff_hidden: int, dropout: float):
+        """Initialize the QLSTM block.
+
+        Args:
+            dim: The number of features in the input.
+            dim_ff_hidden: The number of features in the hidden layer.
+            dropout: The dropout rate.
+        """
         super().__init__()
         self.qlstm = QLSTMLayer(dim)
         self.ffn = FFNSwiGLU(dim, dim_ff_hidden)
@@ -131,6 +198,14 @@ class QLSTMBlock(nn.Module):
 
     @override
     def forward(self, x: Tensor, hidden: Tensor) -> tuple[Tensor, Tensor]:
+        """Apply the QLSTM block.
+
+        Args:
+            x: The input tensor of shape (batch, len, dim).
+            hidden: The hidden state tensor of shape (batch, len, dim).
+        Returns:
+            The output tensor of shape (batch, len, dim) and the new hidden state tensor of shape (batch, len, dim).
+        """
         x_ = x
         x = self.norm_sioconv(x)
         x, hidden = self.qlstm(x, hidden)
@@ -147,7 +222,17 @@ class QLSTMBlock(nn.Module):
 
 
 class QLSTM(StackedHiddenState):
+    """QLSTM, which is a stack of QLSTM blocks."""
+
     def __init__(self, depth: int, dim: int, dim_ff_hidden: int, dropout: float):
+        """Initialize the QLSTM.
+
+        Args:
+            depth: The number of QLSTM blocks.
+            dim: The number of features in the input.
+            dim_ff_hidden: The number of features in the hidden layer.
+            dropout: The dropout rate.
+        """
         super().__init__(
             nn.ModuleList(
                 [QLSTMBlock(dim, dim_ff_hidden, dropout) for _ in range(depth)]

@@ -6,16 +6,34 @@ from torch import Tensor
 
 
 class StackedHiddenState(nn.Module):
+    """Stacked hidden state for a sequence of modules.
+
+    This module takes a sequence of modules and applies them to the
+    input tensor and the hidden state tensor. It stacks the hidden
+    states from each module and returns the output tensor and the
+    stacked hidden state tensor.
+    """
+
     def __init__(self, module_list: nn.ModuleList):
+        """Initialize the StackedHiddenState module.
+
+        Args:
+            module_list: A list of modules to apply to the input tensor and the hidden state tensor.
+        """
         super().__init__()
         self.module_list = module_list
 
-    # (*batch, len, dim), (*batch, depth, dim) -> (*batch, len, dim), (*batch, depth, len, dim) or
-    # (len, dim), (depth, dim) -> (len, dim), (depth, len, dim) or
-    # (*batch, dim), (*batch, depth, dim) -> (*batch, dim), (*batch, depth, dim) or
-    # (dim), (depth, dim) -> (dim), (depth, dim)
     @override
     def forward(self, x: Tensor, hidden_stack: Tensor) -> tuple[Tensor, Tensor]:
+        """Apply the stacked hidden state module.
+
+        Args:
+            x: The input tensor of shape (*batch, len, dim) or (len, dim) or (*batch, dim) or (dim).
+            hidden_stack: The hidden state tensor of shape (*batch, depth, len, dim) or (depth, len, dim) or (*batch, depth, dim) or (depth, dim).
+        Returns:
+            The output tensor of shape (*batch, len, dim) or (len, dim) or (*batch, dim) or (dim).
+            The stacked hidden state tensor of shape (*batch, depth, len, dim) or (depth, len, dim) or (*batch, depth, dim) or (depth, dim).
+        """
         no_batch = len(hidden_stack.shape) < 3
         if no_batch:
             x = x.unsqueeze(0)
