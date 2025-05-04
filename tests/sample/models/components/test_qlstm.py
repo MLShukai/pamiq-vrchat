@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from src.sample.models.components.qlstm import QLSTM
+from src.sample.models.components.qlstm import QLSTM, scan
 
 BATCH = 4
 DEPTH = 8
@@ -9,6 +9,15 @@ DIM = 16
 DIM_FF_HIDDEN = 32
 LEN = 64
 DROPOUT = 0.1
+
+
+class TestScan:
+    def test_scan(self):
+        a = torch.tensor([[1, 2, 3, 4, 5, 6, 7, 8]])
+        b = torch.tensor([[1, 2, 3, 4, 5, 6, 7, 8]])
+        expected = torch.tensor([[1, 4, 15, 64, 325, 1956, 13699, 109600]])
+        for i in range(1, 9):
+            torch.allclose(scan(a[:, :i], b[:, :i]), expected[:, :i])
 
 
 class TestQLSTM:
