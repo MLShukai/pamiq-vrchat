@@ -29,5 +29,9 @@ RUN echo 'eval "$(uv generate-shell-completion bash)"' >> ~/.bashrc \
 && make venv \
 && uv run pre-commit install
 
-# Console setup
+# Setup pulseaudio
+RUN adduser root pulse-access
+RUN echo 'pulseaudio --verbose --exit-idle-time=-1 --system --disallow-exit -D > /dev/null 2>&1' >> ~/.bashrc
+
+# Setup console
 CMD [ "bash" ]
