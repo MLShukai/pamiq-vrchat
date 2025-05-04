@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from src.sample.models.components.sioconvps import SioConvPS
+from src.sample.models.components.qlstm import QLSTM
 
 BATCH = 4
 DEPTH = 8
@@ -13,56 +13,56 @@ DROPOUT = 0.1
 
 class TestStackedHiddenState:
     @pytest.fixture
-    def sioconv(self):
-        sioconv = SioConvPS(DEPTH, DIM, DIM_FF_HIDDEN, DROPOUT)
-        return sioconv
+    def qlstm(self):
+        qlstm = QLSTM(DEPTH, DIM, DIM_FF_HIDDEN, DROPOUT)
+        return qlstm
 
-    def test_batch_len(self, sioconv):
+    def test_batch_len(self, qlstm):
         x_shape = (BATCH, LEN, DIM)
         x = torch.randn(*x_shape)
         hidden_shape = (BATCH, DEPTH, LEN, DIM)
         hidden = torch.randn(*hidden_shape)
 
-        x, hidden = sioconv(x, hidden[:, :, -1, :])
+        x, hidden = qlstm(x, hidden[:, :, -1, :])
         assert x.shape == x_shape
         assert hidden.shape == hidden_shape
 
-    def test_no_batch_len(self, sioconv):
+    def test_no_batch_len(self, qlstm):
         x_shape = (LEN, DIM)
         x = torch.randn(*x_shape)
         hidden_shape = (DEPTH, LEN, DIM)
         hidden = torch.randn(*hidden_shape)
 
-        x, hidden = sioconv(x, hidden[:, -1, :])
+        x, hidden = qlstm(x, hidden[:, -1, :])
         assert x.shape == x_shape
         assert hidden.shape == hidden_shape
 
-    def test_batch_no_len(self, sioconv):
+    def test_batch_no_len(self, qlstm):
         x_shape = (BATCH, DIM)
         x = torch.randn(*x_shape)
         hidden_shape = (BATCH, DEPTH, DIM)
         hidden = torch.randn(*hidden_shape)
 
-        x, hidden = sioconv(x, hidden)
+        x, hidden = qlstm(x, hidden)
         assert x.shape == x_shape
         assert hidden.shape == hidden_shape
 
-    def test_no_batch_no_len(self, sioconv):
+    def test_no_batch_no_len(self, qlstm):
         x_shape = (DIM,)
         x = torch.randn(*x_shape)
         hidden_shape = (DEPTH, DIM)
         hidden = torch.randn(*hidden_shape)
 
-        x, hidden = sioconv(x, hidden)
+        x, hidden = qlstm(x, hidden)
         assert x.shape == x_shape
         assert hidden.shape == hidden_shape
 
-    def test_many_batch_shape(self, sioconv):
+    def test_many_batch_shape(self, qlstm):
         x_shape = (1, 2, 3, BATCH, LEN, DIM)
         x = torch.randn(*x_shape)
         hidden_shape = (1, 2, 3, BATCH, DEPTH, LEN, DIM)
         hidden = torch.randn(*hidden_shape)
 
-        x, hidden = sioconv(x, hidden[:, :, :, :, -1])
+        x, hidden = qlstm(x, hidden[:, :, :, :, -1])
         assert x.shape == x_shape
         assert hidden.shape == hidden_shape
