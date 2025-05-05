@@ -36,12 +36,15 @@ class TestAudioSensor:
         """Test initialization with explicit camera index."""
         audio_input_device_index = 1
         AudioSensor(
+            sample_rate=16000,
             frame_size=FRAME_SIZE,
+            channels=2,
             device_id=audio_input_device_index,
+            block_size=None,
         )
         # Verify SoundcardAudioInput was called with the correct camera index
         mock_soundcard_audio_input.assert_called_once_with(
-            device_id=audio_input_device_index
+            16000, audio_input_device_index, None, 2
         )
 
     def test_init_without_audio_input_device_index(
@@ -49,11 +52,17 @@ class TestAudioSensor:
     ):
         """Test initialization without camera index (should use OBS virtual
         camera)."""
-        AudioSensor()
+        AudioSensor(
+            sample_rate=16000,
+            frame_size=FRAME_SIZE,
+            channels=2,
+            device_id=None,
+            block_size=None,
+        )
         # Verify get_vrchat_audio_input_device_index was called
         mock_get_vrchat_audio_input_device_index.assert_called_once()
         # Verify SoundcardAudioInput was called with the index from get_vrchat_audio_input_device_index
-        mock_soundcard_audio_input.assert_called_once_with(2)
+        mock_soundcard_audio_input.assert_called_once_with(16000, 2, None, 2)
 
     def test_read(self, mock_soundcard_audio_input):
         """Test the read method returns a frame."""
