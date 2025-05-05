@@ -22,7 +22,7 @@ class AudioSensor(Sensor[AudioFrame]):
         super().__init__()
         self._frame_size = frame_size
         if device_id is None:
-            device_id = get_vrchat_audio_output_device_index()
+            device_id = get_vrchat_audio_input_device_index()
         self._input = SoundcardAudioInput(sample_rate, device_id, block_size, channels)
 
     @override
@@ -30,7 +30,7 @@ class AudioSensor(Sensor[AudioFrame]):
         return self._input.read(self._frame_size)
 
 
-def get_vrchat_audio_output_device_index() -> int:
+def get_vrchat_audio_input_device_index() -> int:
     """Find the device index for OBS virtual camera.
 
     This function uses v4l2-ctl to list all video devices and find
