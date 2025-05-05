@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from pamiq_vrchat.sensors.Audio import AudioSensor, get_vrchat_audio_output_device_index
+from pamiq_vrchat.sensors.audio import AudioSensor, get_vrchat_audio_output_device_index
 
 
 class TestAudioSensor:
@@ -15,8 +15,8 @@ class TestAudioSensor:
 
     @pytest.fixture
     def mock_soundcard_audio_input(self, mocker):
-        """Create a mock for SoundcardAudioSensor."""
-        mock = mocker.patch("pamiq_vrchat.sensors.Audio.SoundcardAudioSensor")
+        """Create a mock for SoundcardAudioInput."""
+        mock = mocker.patch("pamiq_vrchat.sensors.audio.SoundcardAudioInput")
         mock_instance = mock.return_value
         # Mock read method to return a simple audio
         mock_instance.read.return_value = np.zeros((2, 512), dtype=np.uint8)
@@ -26,7 +26,7 @@ class TestAudioSensor:
     def mock_get_vrchat_audio_output_device_index(self, mocker):
         """Mock the get_vrchat_audio_output_device_index function."""
         return mocker.patch(
-            "pamiq_vrchat.sensors.Audio.get_vrchat_audio_output_device_index",
+            "pamiq_vrchat.sensors.audio.get_vrchat_audio_output_device_index",
             return_value=2,
         )
 
@@ -35,7 +35,7 @@ class TestAudioSensor:
         audio_output_device_index = 1
         AudioSensor(camera_index=audio_output_device_index)
 
-        # Verify SoundcardAudioSensor was called with the correct camera index
+        # Verify SoundcardAudioInput was called with the correct camera index
         mock_soundcard_audio_input.assert_called_once_with(audio_output_device_index)
 
     def test_init_without_camera_index(
@@ -48,7 +48,7 @@ class TestAudioSensor:
         # Verify get_vrchat_audio_output_device_index was called
         mock_get_vrchat_audio_output_device_index.assert_called_once()
 
-        # Verify SoundcardAudioSensor was called with the index from get_vrchat_audio_output_device_index
+        # Verify SoundcardAudioInput was called with the index from get_vrchat_audio_output_device_index
         mock_soundcard_audio_input.assert_called_once_with(2)
 
     def test_read(self, mock_soundcard_audio_input):
@@ -71,12 +71,12 @@ class TestAudioSensor:
 #     @pytest.fixture
 #     def mock_shutil_which(self, mocker):
 #         """Mock shutil.which function."""
-#         return mocker.patch("pamiq_vrchat.sensors.Audio.shutil.which")
+#         return mocker.patch("pamiq_vrchat.sensors.audio.shutil.which")
 
 #     @pytest.fixture
 #     def mock_subprocess_run(self, mocker):
 #         """Mock subprocess.run function."""
-#         mock = mocker.patch("pamiq_vrchat.sensors.Audio.subprocess.run")
+#         mock = mocker.patch("pamiq_vrchat.sensors.audio.subprocess.run")
 #         mock_result = MagicMock()
 #         mock.return_value = mock_result
 #         return mock, mock_result
