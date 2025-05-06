@@ -1,4 +1,3 @@
-# SioConv with Parallel Scan  (PS)
 from typing import override
 
 import torch
