@@ -56,16 +56,10 @@ class AudioSensor(Sensor[AudioFrame]):
 
 
 def get_vrchat_audio_input_device_index() -> int:
-    """Find the device index for OBS virtual camera.
-
-    This function uses v4l2-ctl to list all video devices and find
-    the OBS virtual camera among them.
+    """Find the device index VRChat.exe is using.
 
     Returns:
-        The device index of the OBS virtual camera.
-
-    Raises:
-        RuntimeError: If v4l2-ctl is not installed or if OBS virtual camera is not found.
+        The device index VRChat.exe is using.
     """
     with pulsectl.Pulse("pamiq-vrchat") as p:
         vrchat_source = None
