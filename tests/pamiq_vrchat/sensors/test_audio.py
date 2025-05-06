@@ -2,10 +2,10 @@
 
 import re
 import subprocess
-from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
+from pytest_mock import mocker
 
 from pamiq_vrchat.sensors.audio import (
     AudioSensor,
@@ -87,11 +87,11 @@ class TestGetDeviceIndexVrcIsOutputtingTo:
         mock_pulse = mocker.patch("pulsectl.Pulse", autospec=True)
         mock_pulse_instance = mock_pulse.return_value.__enter__.return_value
         # Mock VRChat.exe's speaker device
-        mock_source_output1 = mocker.MagicMock()
+        mock_source_output1 = mocker.Mock()
         mock_source_output1.proplist = {"application.name": "VRChat.exe"}
         mock_source_output1.source = "5"
         # Mock other application's speaker device
-        mock_source_output2 = mocker.MagicMock()
+        mock_source_output2 = mocker.Mock()
         mock_source_output2.proplist = {"application.name": "firefox.exe"}
         mock_source_output2.source = "2"
         # Set return values from source_output_list
@@ -111,7 +111,7 @@ class TestGetDeviceIndexVrcIsOutputtingTo:
         mock_pulse = mocker.patch("pulsectl.Pulse", autospec=True)
         mock_pulse_instance = mock_pulse.return_value.__enter__.return_value
         # Mock other application without VRChat.exe
-        mock_source_output = mocker.MagicMock()
+        mock_source_output = mocker.Mock()
         mock_source_output.proplist = {"application.name": "firefox.exe"}
         mock_source_output.source = "2"
         # Set return values from source_output_list
@@ -128,10 +128,10 @@ class TestGetDeviceIndexVrcIsOutputtingTo:
         mock_pulse = mocker.patch("pulsectl.Pulse", autospec=True)
         mock_pulse_instance = mock_pulse.return_value.__enter__.return_value
         # Mock multiple VRChat.exe's speaker devices
-        mock_source_output1 = mocker.MagicMock()
+        mock_source_output1 = mocker.Mock()
         mock_source_output1.proplist = {"application.name": "VRChat.exe"}
         mock_source_output1.source = "6"
-        mock_source_output2 = mocker.MagicMock()
+        mock_source_output2 = mocker.Mock()
         mock_source_output2.proplist = {"application.name": "VRChat.exe"}
         mock_source_output2.source = "4"
         # Set return values from source_output_list
