@@ -11,6 +11,12 @@ type AudioFrame = npt.NDArrray[np.float32]
 
 
 class AudioSensor(Sensor[AudioFrame]):
+    """Capturing audio from a input device.
+
+    The default input device is the one VRChat.exe is using, but can be
+    configured by the argument.
+    """
+
     def __init__(
         self,
         frame_size: int,
@@ -19,6 +25,20 @@ class AudioSensor(Sensor[AudioFrame]):
         device_id: str | None = None,
         block_size: int | None = None,
     ):
+        """Initializes an AudioSensor instance.
+
+        Args:
+            frame_size:
+                Number of samples the user needs.
+            sample_rate:
+                Sample rate.
+            channels:
+                Audio channels.
+            device_id:
+                Index of an audio device input to a model. If None, automatically tries to find the device used by VRChat.exe.
+            block_size:
+                 Number of samples SoundCard reads.
+        """
         super().__init__()
         self._frame_size = frame_size
         if device_id is None:
@@ -27,6 +47,11 @@ class AudioSensor(Sensor[AudioFrame]):
 
     @override
     def read(self) -> AudioFrame:
+        """Reads a frame from the Soundcard.
+
+        Returns:
+            A numpy array containing the image frame with shape (self._frame_size, channels).
+        """
         return self._input.read(self._frame_size)
 
 

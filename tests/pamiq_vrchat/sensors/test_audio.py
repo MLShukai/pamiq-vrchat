@@ -21,7 +21,7 @@ class TestAudioSensor:
         mock = mocker.patch("pamiq_vrchat.sensors.audio.SoundcardAudioInput")
         mock_instance = mock.return_value
         # Mock read method to return a simple audio
-        mock_instance.read.return_value = np.zeros((2, FRAME_SIZE), dtype=np.uint8)
+        mock_instance.read.return_value = np.zeros((FRAME_SIZE, 2), dtype=np.float32)
         return mock
 
     @pytest.fixture
@@ -72,8 +72,8 @@ class TestAudioSensor:
         mock_soundcard_audio_input.return_value.read.assert_called_once()
         # Verify frame has the expected shape and type
         assert isinstance(frame, np.ndarray)
-        assert frame.shape == (2, FRAME_SIZE)
-        assert frame.dtype == np.uint8
+        assert frame.shape == (FRAME_SIZE, 2)
+        assert frame.dtype == np.float32
 
 
 # class TestGetObsVirtualCameraIndex:
