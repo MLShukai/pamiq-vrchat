@@ -8,6 +8,11 @@ from pamiq_vrchat.sensors.audio import (
     AudioSensor,
 )
 
+try:
+    from pamiq_io.audio import SoundcardAudioInput
+except Exception:
+    pytest.skip("Can not import SoundcardAudioInput module.", allow_module_level=True)
+
 FRAME_SIZE = 1024
 
 
@@ -17,7 +22,7 @@ class TestAudioSensor:
     @pytest.fixture
     def mock_soundcard_audio_input(self, mocker: MockerFixture):
         """Create a mock for SoundcardAudioInput."""
-        mock = mocker.patch("pamiq_vrchat.sensors.audio.SoundcardAudioInput")
+        mock = mocker.patch("pamiq_io.audio.SoundcardAudioInput")
         mock_instance = mock.return_value
         # Mock read method to return a simple audio
         mock_instance.read.return_value = np.zeros((FRAME_SIZE, 2), dtype=np.float32)

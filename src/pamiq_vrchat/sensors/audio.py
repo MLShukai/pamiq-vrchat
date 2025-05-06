@@ -5,7 +5,6 @@ from typing import override
 import numpy as np
 import numpy.typing as npt
 from pamiq_core.interaction.modular_env import Sensor
-from pamiq_io.audio import SoundcardAudioInput
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +40,8 @@ class AudioSensor(Sensor[AudioFrame]):
             block_size:
                  Number of samples SoundCard reads.
         """
+        from pamiq_io.audio import SoundcardAudioInput
+
         super().__init__()
         self._frame_size = frame_size
         if device_id is None:
