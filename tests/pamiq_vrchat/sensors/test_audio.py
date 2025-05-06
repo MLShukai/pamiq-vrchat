@@ -1,6 +1,7 @@
 """Tests for the Audio_sensor module."""
 
 import numpy as np
+import psutil
 import pytest
 from pytest_mock import MockerFixture
 
@@ -12,6 +13,7 @@ except Exception:
 
 from pamiq_vrchat.sensors.audio import (
     AudioSensor,
+    get_device_id_vrchat_is_outputting_to,
 )
 
 FRAME_SIZE = 1024
@@ -75,3 +77,131 @@ class TestAudioSensor:
         # Verify frame has the expected shape and type
         assert frame.shape == (FRAME_SIZE, 2)
         assert frame.dtype == np.float32
+
+
+class TestGetDeviceIdVRChatIsOutputtingTo:
+    """Tests for get_device_id_vrchat_is_outputting_to function."""
+
+    def test_work_normally(self):
+        get_device_id_vrchat_is_outputting_to()
+
+    def test_practical(self):
+        processes = {proc.name() for proc in psutil.process_iter(["name"])}
+
+        if "VRChat.exe" not in processes:
+            pytest.skip("VRChat process is not found in practical test.")
+
+        assert get_device_id_vrchat_is_outputting_to()
+
+    def test_normal_case(self, mocker: MockerFixture):
+        """Test when VRChat output device is found."""
+        mocker.patch("shutil.which", return_value="/usr/bin/pactl")
+
+        mock_check_output = mocker.patch("subprocess.check_output")
+        mock_check_output.side_effect = [
+            PACTL_SOURCE_OUTPUTS_LIST_CONTENT,
+            PACTL_SOURCES_LIST_SHORT_CONTENT,
+        ]
+
+        result = get_device_id_vrchat_is_outputting_to()
+
+        assert result == "alsa_output.pci-0000_00_1f.3.analog-stereo.monitor"
+        assert mock_check_output.call_count == 2
+
+    def test_pactl_not_found(self, mocker: MockerFixture, caplog):
+        """Test when pactl command is not found."""
+        mocker.patch("shutil.which", return_value=None)
+
+        result = get_device_id_vrchat_is_outputting_to()
+
+        assert result is None
+        assert "pactl command is not found" in caplog.text
+
+    def test_vrchat_not_found(self, mocker: MockerFixture):
+        """Test when VRChat process is not found."""
+        mocker.patch("shutil.which", return_value="/usr/bin/pactl")
+
+        source_outputs = (
+            "Source Output #100\n"
+            "    Driver: protocol-native.c\n"
+            '    application.name = "Discord.exe"\n'
+            "    Source: 42\n"
+        )
+
+        mock_check_output = mocker.patch(
+            "subprocess.check_output", return_value=source_outputs
+        )
+
+        result = get_device_id_vrchat_is_outputting_to()
+
+        assert result is None
+        mock_check_output.assert_called_once()
+
+
+PACTL_SOURCE_OUTPUTS_LIST_CONTENT = """\
+Source Output #43
+        Driver: protocol-native.c
+        Owner Module: 10
+        Client: 277
+        Source: 1
+        Sample Specification: s16le 2ch 44100Hz
+        Channel Map: front-left,front-right
+        Format: pcm, format.sample_format = "\"s16le\""  format.rate = "44100"  format.channels = "2"  format.channel_map = "\"front-left,front-right\""
+        Corked: no
+        Mute: no
+        Volume: front-left: 65536 / 100% / 0.00 dB,   front-right: 65536 / 100% / 0.00 dB
+                balance 0.00
+        Buffer Latency: 3806 usec
+        Source Latency: 0 usec
+        Resample method: speex-float-1
+        Properties:
+                application.name = "OBS"
+                application.icon_name = "obs"
+                media.role = "production"
+                media.name = "音声出力キャプチャ (PulseAudio)"
+                native-protocol.peer = "UNIX socket client"
+                native-protocol.version = "35"
+                application.process.id = "2703144"
+                application.process.user = "gop-geson"
+                application.process.host = "gop-geson-01"
+                application.process.binary = "obs"
+                application.language = "en_US.UTF-8"
+                window.x11.display = ":0"
+                application.process.machine_id = "14c61fb10f5340cb9c39948358e3bab0"
+                module-stream-restore.id = "source-output-by-media-role:production"
+
+Source Output #120
+        Driver: protocol-native.c
+        Owner Module: 10
+        Client: 941
+        Source: 1
+        Sample Specification: s16le 1ch 48000Hz
+        Channel Map: mono
+        Format: pcm, format.sample_format = "\"s16le\""  format.rate = "48000"  format.channels = "1"  format.channel_map = "\"mono\""
+        Corked: no
+        Mute: no
+        Volume: mono: 65536 / 100% / 0.00 dB
+                balance 0.00
+        Buffer Latency: 3562 usec
+        Source Latency: 0 usec
+        Resample method: copy
+        Properties:
+                media.name = "audio stream #3"
+                application.name = "VRChat.exe"
+                native-protocol.peer = "UNIX socket client"
+                native-protocol.version = "34"
+                application.process.id = "2348530"
+                application.process.user = "gop-geson"
+                application.process.host = "gop-geson-01"
+                application.process.binary = "wine64-preloader"
+                application.language = "en_US.UTF-8"
+                window.x11.display = ":0"
+                application.process.machine_id = "14c61fb10f5340cb9c39948358e3bab0"
+                module-stream-restore.id = "source-output-by-application-name:VRChat.exe"
+"""
+
+
+PACTL_SOURCES_LIST_SHORT_CONTENT = (
+    "1\talsa_output.pci-0000_00_1f.3.analog-stereo.monitor\n"
+    "43\talsa_input.pci-0000_00_1f.3.analog-stereo\n"
+)

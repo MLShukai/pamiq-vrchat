@@ -1,5 +1,7 @@
 import logging
 import re
+import shutil
+import subprocess
 from typing import override
 
 import numpy as np
@@ -67,20 +69,37 @@ def get_device_id_vrchat_is_outputting_to() -> str | None:
     Raises:
         RuntimeError: Speaker device VRChat.exe is outputting to is not found.
     """
-    import pulsectl
-
-    vrc_source = None
-    with pulsectl.Pulse("pamiq-vrchat") as p:
-        for src_out in p.source_output_list():
-            if re.match("VRChat.exe", src_out.proplist["application.name"]):
-                vrc_source = int(src_out.source)
-
-    if vrc_source is None:
+    if shutil.which("pactl") is None:
+        logger.warning("pactl command is not found.")
         return
 
-    for src in p.source_list():
-        if src.index == vrc_source:
-            return src.name
+    pactl_output = subprocess.check_output(
+        ["pactl", "list", "source-outputs"], text=True
+    )
+
+    vrchat_section = re.search(
+        r'Source Output #\d+.*?application\.name = "VRChat\.exe".*?',
+        pactl_output,
+        re.DOTALL,
+    )
+
+    if not vrchat_section:
+        return None
+
+    source_match = re.search(r"Source: (\d+)", vrchat_section.group(0))
+    if not source_match:
+        return None
+
+    source_id = source_match.group(1)
+
+    sources_output = subprocess.check_output(
+        ["pactl", "list", "sources", "short"], text=True
+    )
+
+    for line in sources_output.splitlines():
+        parts = line.split()
+        if parts and parts[0] == source_id:
+            return parts[1]
 
     logger.warning("Can not find speaker device VRChat.exe is outputting to.")
-    return
+    return None

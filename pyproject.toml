@@ -10,7 +10,6 @@ dependencies = [
     "inputtino-python",
     "pamiq-core>=0.2.0",
     "pamiq-io[inputtino,opencv,osc,soundcard]>=0.4.1",
-    "pulsectl>=24.12.0",
 ]
 keywords = [
   "PAMIQ",
@@ -56,6 +55,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "pre-commit>=4.2.0",
+    "psutil>=7.0.0",
     "pyright>=1.1.398",
     "pytest>=8.3.5",
     "pytest-cov>=6.1.1",
