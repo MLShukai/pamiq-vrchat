@@ -72,7 +72,7 @@ class FFNSwiGLU(nn.Module):
         return x
 
 
-def scan(a, b):
+def scan(a: Tensor, b: Tensor) -> Tensor:
     """Calculate a sequence [b0, a1 * b0 + b1, a2 * a1 * b0 + a2 * b1, b2, ...]
     from [a0, a1, a2, ...] and [b0, b1, b2, ...]
 
