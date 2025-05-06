@@ -1,6 +1,7 @@
 services:
   dev:
-    container_name: pamiq-vrchat-dev
+    container_name: pamiq-vrchat-dev-${USER}
+    image: pamiq-vrchat:${USER}
     build:
       context: ../
       dockerfile: ./docker/Dockerfile
