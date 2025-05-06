@@ -4,14 +4,15 @@ import numpy as np
 import pytest
 from pytest_mock import MockerFixture
 
-from pamiq_vrchat.sensors.audio import (
-    AudioSensor,
-)
-
 try:
     from pamiq_io.audio import SoundcardAudioInput
 except Exception:
     pytest.skip("Can not import SoundcardAudioInput module.", allow_module_level=True)
+
+
+from pamiq_vrchat.sensors.audio import (
+    AudioSensor,
+)
 
 FRAME_SIZE = 1024
 
