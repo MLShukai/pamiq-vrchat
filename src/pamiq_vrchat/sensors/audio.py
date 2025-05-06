@@ -42,7 +42,7 @@ class AudioSensor(Sensor[AudioFrame]):
         super().__init__()
         self._frame_size = frame_size
         if device_id is None:
-            device_id = get_vrchat_audio_input_device_index()
+            device_id = get_device_index_vrc_is_outputting_to()
         self._input = SoundcardAudioInput(sample_rate, device_id, block_size, channels)
 
     @override
@@ -55,23 +55,17 @@ class AudioSensor(Sensor[AudioFrame]):
         return self._input.read(self._frame_size)
 
 
-def get_vrchat_audio_input_device_index() -> int:
-    """Find the device index VRChat.exe is using.
+def get_device_index_vrc_is_outputting_to() -> int:
+    """Find the speaker device VRChat.exe is outputting to.
 
     Returns:
         The device index VRChat.exe is using.
+
+    Raises:
+        RuntimeError: Speaker device VRChat.exe is outputting to is not found.
     """
     with pulsectl.Pulse("pamiq-vrchat") as p:
-        vrchat_source = None
         for src_out in p.source_output_list():
             if re.match("VRChat.exe", src_out.proplist["application.name"]):
-                vrchat_source = src_out.source
-                break
-
-        if vrchat_source is None:
-            return
-
-        for src in p.source_list():
-            if src.index == vrchat_source:
-                return src.name
-        return None
+                return int(src_out.source)
+    raise RuntimeError("Can not find speaker device VRChat.exe is outputting to.")
