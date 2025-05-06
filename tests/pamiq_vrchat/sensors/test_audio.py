@@ -7,7 +7,10 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from pamiq_vrchat.sensors.audio import AudioSensor, get_vrchat_audio_input_device_index
+from pamiq_vrchat.sensors.audio import (
+    AudioSensor,
+    get_device_index_vrc_is_outputting_to,
+)
 
 FRAME_SIZE = 1024
 
@@ -25,10 +28,10 @@ class TestAudioSensor:
         return mock
 
     @pytest.fixture
-    def mock_get_vrchat_audio_input_device_index(self, mocker):
-        """Mock the get_vrchat_audio_input_device_index function."""
+    def mock_get_device_index_vrc_is_outputting_to(self, mocker):
+        """Mock the get_device_index_vrc_is_outputting_to function."""
         return mocker.patch(
-            "pamiq_vrchat.sensors.audio.get_vrchat_audio_input_device_index",
+            "pamiq_vrchat.sensors.audio.get_device_index_vrc_is_outputting_to",
             return_value=2,
         )
 
@@ -48,7 +51,7 @@ class TestAudioSensor:
         )
 
     def test_init_without_audio_input_device_index(
-        self, mock_soundcard_audio_input, mock_get_vrchat_audio_input_device_index
+        self, mock_soundcard_audio_input, mock_get_device_index_vrc_is_outputting_to
     ):
         """Test initialization without camera index (should use OBS virtual
         camera)."""
@@ -59,9 +62,9 @@ class TestAudioSensor:
             device_id=None,
             block_size=None,
         )
-        # Verify get_vrchat_audio_input_device_index was called
-        mock_get_vrchat_audio_input_device_index.assert_called_once()
-        # Verify SoundcardAudioInput was called with the index from get_vrchat_audio_input_device_index
+        # Verify get_device_index_vrc_is_outputting_to was called
+        mock_get_device_index_vrc_is_outputting_to.assert_called_once()
+        # Verify SoundcardAudioInput was called with the index from get_device_index_vrc_is_outputting_to
         mock_soundcard_audio_input.assert_called_once_with(16000, 2, None, 2)
 
     def test_read(self, mock_soundcard_audio_input):
@@ -76,61 +79,80 @@ class TestAudioSensor:
         assert frame.dtype == np.float32
 
 
-# class TestGetObsVirtualCameraIndex:
-#     """Tests for the get_vrchat_audio_input_device_index function."""
+class TestGetDeviceIndexVrcIsOutputtingTo:
+    """Tests for the get_device_index_vrc_is_outputting_to."""
 
-#     @pytest.fixture
-#     def mock_shutil_which(self, mocker):
-#         """Mock shutil.which function."""
-#         return mocker.patch("pamiq_vrchat.sensors.audio.shutil.which")
+    def test_successful_device_found(self, mocker):
+        # Mock pulsectl.Pulse
+        mock_pulse = mocker.patch("pulsectl.Pulse", autospec=True)
+        mock_pulse_instance = mock_pulse.return_value.__enter__.return_value
+        # Mock VRChat.exe's speaker device
+        mock_source_output1 = mocker.MagicMock()
+        mock_source_output1.proplist = {"application.name": "VRChat.exe"}
+        mock_source_output1.source = "5"
+        # Mock other application's speaker device
+        mock_source_output2 = mocker.MagicMock()
+        mock_source_output2.proplist = {"application.name": "firefox.exe"}
+        mock_source_output2.source = "2"
+        # Set return values from source_output_list
+        mock_pulse_instance.source_output_list.return_value = [
+            mock_source_output2,
+            mock_source_output1,
+        ]
+        # Get devices
+        result = get_device_index_vrc_is_outputting_to()
+        # check the results
+        assert result == 5
+        mock_pulse.assert_called_once_with("pamiq-vrchat")
+        mock_pulse_instance.source_output_list.assert_called_once()
 
-#     @pytest.fixture
-#     def mock_subprocess_run(self, mocker):
-#         """Mock subprocess.run function."""
-#         mock = mocker.patch("pamiq_vrchat.sensors.audio.subprocess.run")
-#         mock_result = MagicMock()
-#         mock.return_value = mock_result
-#         return mock, mock_result
+    def test_no_vrchat_found(self, mocker):
+        # Mock pulsectl.Pulse
+        mock_pulse = mocker.patch("pulsectl.Pulse", autospec=True)
+        mock_pulse_instance = mock_pulse.return_value.__enter__.return_value
+        # Mock other application without VRChat.exe
+        mock_source_output = mocker.MagicMock()
+        mock_source_output.proplist = {"application.name": "firefox.exe"}
+        mock_source_output.source = "2"
+        # Set return values from source_output_list
+        mock_pulse_instance.source_output_list.return_value = [mock_source_output]
+        # Check if RuntimeError raises
+        with pytest.raises(
+            RuntimeError,
+            match="Can not find speaker device VRChat.exe is outputting to.",
+        ):
+            get_device_index_vrc_is_outputting_to()
 
-#     def test_v4l2_ctl_not_found(self, mock_shutil_which):
-#         """Test error when v4l2-ctl is not found."""
-#         mock_shutil_which.return_value = None
+    def test_multiple_vrchat_instances(self, mocker):
+        # Mock pulsectl.Pulse
+        mock_pulse = mocker.patch("pulsectl.Pulse", autospec=True)
+        mock_pulse_instance = mock_pulse.return_value.__enter__.return_value
+        # Mock multiple VRChat.exe's speaker devices
+        mock_source_output1 = mocker.MagicMock()
+        mock_source_output1.proplist = {"application.name": "VRChat.exe"}
+        mock_source_output1.source = "6"
+        mock_source_output2 = mocker.MagicMock()
+        mock_source_output2.proplist = {"application.name": "VRChat.exe"}
+        mock_source_output2.source = "4"
+        # Set return values from source_output_list
+        mock_pulse_instance.source_output_list.return_value = [
+            mock_source_output1,
+            mock_source_output2,
+        ]
+        # Get devices
+        result = get_device_index_vrc_is_outputting_to()
+        # Check if the device index of the first VRChat found is returned
+        assert result == 6
 
-#         with pytest.raises(RuntimeError, match="v4l2-ctl not found"):
-#             get_vrchat_audio_input_device_index()
-
-#     def test_obs_virtual_camera_not_found(self, mock_shutil_which, mock_subprocess_run):
-#         """Test error when OBS virtual camera is not found."""
-#         mock_shutil_which.return_value = "/usr/bin/v4l2-ctl"  # v4l2-ctl exists
-#         mock_run, mock_result = mock_subprocess_run
-
-#         # Set up mock output without OBS Virtual Camera
-#         mock_result.stdout = "Some Device\n/dev/video0\n\nAnother Device\n/dev/video1\n"
-
-#         with pytest.raises(
-#             RuntimeError, match="Can not find OBS virtual camera device"
-#         ):
-#             get_vrchat_audio_input_device_index()
-
-#     def test_obs_virtual_camera_found(self, mock_shutil_which, mock_subprocess_run):
-#         """Test successful finding of OBS virtual camera."""
-#         mock_shutil_which.return_value = "/usr/bin/v4l2-ctl"  # v4l2-ctl exists
-#         mock_run, mock_result = mock_subprocess_run
-
-#         # Set up mock output with OBS Virtual Camera
-#         mock_result.stdout = (
-#             "Some Device\n/dev/video0\n\nOBS Virtual Camera\n/dev/video2\n"
-#         )
-
-#         index = get_vrchat_audio_input_device_index()
-
-#         # Verify subprocess.run was called with the correct arguments
-#         mock_run.assert_called_once_with(
-#             ["v4l2-ctl", "--list-devices"],
-#             capture_output=True,
-#             text=True,
-#             check=True,
-#         )
-
-#         # Verify the correct index was extracted
-#         assert index == 2
+    def test_empty_source_list(self, mocker):
+        # Mock pulsectl.Pulse
+        mock_pulse = mocker.patch("pulsectl.Pulse", autospec=True)
+        mock_pulse_instance = mock_pulse.return_value.__enter__.return_value
+        # Set return values as no devices
+        mock_pulse_instance.source_output_list.return_value = []
+        # Check if RuntimeError raises
+        with pytest.raises(
+            RuntimeError,
+            match="Can not find speaker device VRChat.exe is outputting to.",
+        ):
+            get_device_index_vrc_is_outputting_to()
