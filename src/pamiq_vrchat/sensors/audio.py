@@ -31,16 +31,11 @@ class AudioSensor(Sensor[AudioFrame]):
         """Initializes an AudioSensor instance.
 
         Args:
-            frame_size:
-                Number of samples the user needs.
-            sample_rate:
-                Sample rate.
-            channels:
-                Audio channels.
-            device_name:
-                Audio device name for model's input. If None, automatically tries to find the device used by VRChat.exe.
-            block_size:
-                Number of samples SoundCard reads.
+            frame_size: Number of samples the user needs.
+            sample_rate: Sample rate.
+            channels: Audio channels.
+            device_name: Audio device name for model's input. If None, automatically tries to find the device used by VRChat.exe.
+            block_size: Number of samples SoundCard reads.
         """
         from pamiq_io.audio import SoundcardAudioInput
 
