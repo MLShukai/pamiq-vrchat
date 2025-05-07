@@ -3,7 +3,6 @@ from typing import override
 
 import numpy as np
 import numpy.typing as npt
-import pulsectl
 from pamiq_core.interaction.modular_env import Sensor
 from pamiq_io.audio import SoundcardAudioInput
 
@@ -64,6 +63,7 @@ def get_device_index_vrc_is_outputting_to() -> int:
     Raises:
         RuntimeError: Speaker device VRChat.exe is outputting to is not found.
     """
+    import pulsectl
     with pulsectl.Pulse("pamiq-vrchat") as p:
         for src_out in p.source_output_list():
             if re.match("VRChat.exe", src_out.proplist["application.name"]):
