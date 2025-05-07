@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from sample.models.image_jepa import Encoder, Predictor
+from sample.models.image_jepa import AveragePoolInfer, Encoder, Predictor
 from sample.utils import size_2d_to_int_tuple
 
 
@@ -287,3 +287,95 @@ class TestJEPAIntegration:
         # Check shapes
         assert encoded.shape == (batch_size, n_patches, embed_dim)
         assert predictions.shape == (batch_size, n_patches, embed_dim)
+
+
+class TestAveragePoolInfer:
+    @pytest.fixture
+    def encoder(self):
+        """Create a minimal working Encoder for testing."""
+        return Encoder(
+            img_size=32,
+            patch_size=8,
+            in_channels=3,
+            hidden_dim=64,
+            embed_dim=32,
+            depth=1,
+            num_heads=2,
+        )
+
+    def test_basic_functionality(self, encoder):
+        """Test basic pooling functionality."""
+        # Setup
+        pooler = AveragePoolInfer(n_patches=(4, 4), kernel_size=2)
+        image = torch.randn(1, 3, 32, 32)
+
+        # Encode and pool
+        result = pooler(encoder, image)
+
+        # With 4x4 patches and kernel_size=2, we should get 2x2=4 patches
+        assert result.shape == (1, 4, 32)
+
+    def test_different_batch_sizes(self, encoder):
+        """Test with different batch sizes."""
+        pooler = AveragePoolInfer(n_patches=(4, 4), kernel_size=2)
+
+        # Test with batch size 2
+        image_batch2 = torch.randn(2, 3, 32, 32)
+        result_batch2 = pooler(encoder, image_batch2)
+        assert result_batch2.shape == (2, 4, 32)
+
+        # Test with batch size 4
+        image_batch4 = torch.randn(4, 3, 32, 32)
+        result_batch4 = pooler(encoder, image_batch4)
+        assert result_batch4.shape == (4, 4, 32)
+
+    def test_no_batch_dimension(self, encoder):
+        """Test with input tensor that has no batch dimension."""
+        pooler = AveragePoolInfer(n_patches=(4, 4), kernel_size=2)
+
+        # Create an image without batch dimension
+        image = torch.randn(3, 32, 32)
+
+        # Execute
+        result = pooler(encoder, image)
+
+        # Verify the result has no batch dimension
+        assert result.shape == (4, 32)
+
+    def test_multi_dimensional_batch(self, encoder):
+        """Test with multi-dimensional batch."""
+        pooler = AveragePoolInfer(n_patches=(4, 4), kernel_size=2)
+
+        # Create a batch with multiple dimensions [2, 3, 3, 32, 32]
+        image = torch.randn(2, 3, 3, 32, 32)
+
+        # Execute
+        result = pooler(encoder, image)
+
+        # Verify the result maintains the batch dimensions
+        assert result.shape == (2, 3, 4, 32)
+
+    def test_different_kernel_sizes(self, encoder):
+        """Test with different kernel sizes."""
+        # Original number of patches is 4x4=16
+
+        # Test with kernel size 1 (no reduction)
+        pooler1 = AveragePoolInfer(n_patches=(4, 4), kernel_size=1)
+        image = torch.randn(1, 3, 32, 32)
+        result1 = pooler1(encoder, image)
+        assert result1.shape == (1, 16, 32)  # No reduction
+
+        # Test with kernel size (2, 1) (reduction only in height)
+        pooler2 = AveragePoolInfer(n_patches=(4, 4), kernel_size=(2, 1))
+        result2 = pooler2(encoder, image)
+        assert result2.shape == (1, 8, 32)  # 4x4 -> 2x4 = 8 patches
+
+    def test_custom_stride(self, encoder):
+        """Test with custom stride value."""
+        # Test with stride different from kernel size
+        pooler = AveragePoolInfer(n_patches=(4, 4), kernel_size=2, stride=1)
+        image = torch.randn(1, 3, 32, 32)
+        result = pooler(encoder, image)
+
+        # With stride 1, we should get (4-2+1) x (4-2+1) = 3x3 = 9 patches
+        assert result.shape == (1, 9, 32)
