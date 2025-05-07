@@ -1,15 +1,19 @@
 """Tests for the Audio_sensor module."""
 
-import re
-import subprocess
-
 import numpy as np
+import psutil
 import pytest
-from pytest_mock import mocker
+from pytest_mock import MockerFixture
+
+try:
+    from pamiq_io.audio import SoundcardAudioInput
+except Exception:
+    pytest.skip("Can not import SoundcardAudioInput module.", allow_module_level=True)
+
 
 from pamiq_vrchat.sensors.audio import (
     AudioSensor,
-    get_device_index_vrc_is_outputting_to,
+    get_device_id_vrchat_is_outputting_to,
 )
 
 FRAME_SIZE = 1024
@@ -19,39 +23,36 @@ class TestAudioSensor:
     """Tests for the AudioSensor class."""
 
     @pytest.fixture
-    def mock_soundcard_audio_input(self, mocker):
+    def mock_soundcard_audio_input(self, mocker: MockerFixture):
         """Create a mock for SoundcardAudioInput."""
-        mock = mocker.patch("pamiq_vrchat.sensors.audio.SoundcardAudioInput")
+        mock = mocker.patch("pamiq_io.audio.SoundcardAudioInput")
         mock_instance = mock.return_value
         # Mock read method to return a simple audio
         mock_instance.read.return_value = np.zeros((FRAME_SIZE, 2), dtype=np.float32)
         return mock
 
     @pytest.fixture
-    def mock_get_device_index_vrc_is_outputting_to(self, mocker):
-        """Mock the get_device_index_vrc_is_outputting_to function."""
+    def mock_get_device_id_vrchat_is_outputting_to(self, mocker: MockerFixture):
+        """Mock the get_device_id_vrchat_is_outputting_to function."""
         return mocker.patch(
-            "pamiq_vrchat.sensors.audio.get_device_index_vrc_is_outputting_to",
-            return_value=2,
+            "pamiq_vrchat.sensors.audio.get_device_id_vrchat_is_outputting_to",
+            return_value="vrchat_device",
         )
 
     def test_init_with_audio_input_device_index(self, mock_soundcard_audio_input):
         """Test initialization with explicit camera index."""
-        audio_input_device_index = 1
         AudioSensor(
             sample_rate=16000,
             frame_size=FRAME_SIZE,
             channels=2,
-            device_id=audio_input_device_index,
+            device_id="default",
             block_size=None,
         )
         # Verify SoundcardAudioInput was called with the correct camera index
-        mock_soundcard_audio_input.assert_called_once_with(
-            16000, audio_input_device_index, None, 2
-        )
+        mock_soundcard_audio_input.assert_called_once_with(16000, "default", None, 2)
 
     def test_init_without_audio_input_device_index(
-        self, mock_soundcard_audio_input, mock_get_device_index_vrc_is_outputting_to
+        self, mock_soundcard_audio_input, mock_get_device_id_vrchat_is_outputting_to
     ):
         """Test initialization without camera index (should use OBS virtual
         camera)."""
@@ -62,97 +63,145 @@ class TestAudioSensor:
             device_id=None,
             block_size=None,
         )
-        # Verify get_device_index_vrc_is_outputting_to was called
-        mock_get_device_index_vrc_is_outputting_to.assert_called_once()
-        # Verify SoundcardAudioInput was called with the index from get_device_index_vrc_is_outputting_to
-        mock_soundcard_audio_input.assert_called_once_with(16000, 2, None, 2)
+        # Verify get_device_id_vrchat_is_outputting_to was called
+        mock_get_device_id_vrchat_is_outputting_to.assert_called_once()
+        # Verify SoundcardAudioInput was called with the index from get_device_id_vrchat_is_outputting_to
+        mock_soundcard_audio_input.assert_called_once_with(
+            16000, "vrchat_device", None, 2
+        )
 
     def test_read(self, mock_soundcard_audio_input):
         """Test the read method returns a frame."""
         sensor = AudioSensor(frame_size=FRAME_SIZE)
         frame = sensor.read()
-        # Verify read was called
-        mock_soundcard_audio_input.return_value.read.assert_called_once()
         # Verify frame has the expected shape and type
-        assert isinstance(frame, np.ndarray)
         assert frame.shape == (FRAME_SIZE, 2)
         assert frame.dtype == np.float32
 
 
-class TestGetDeviceIndexVrcIsOutputtingTo:
-    """Tests for the get_device_index_vrc_is_outputting_to."""
+class TestGetDeviceIdVRChatIsOutputtingTo:
+    """Tests for get_device_id_vrchat_is_outputting_to function."""
 
-    def test_successful_device_found(self, mocker):
-        # Mock pulsectl.Pulse
-        mock_pulse = mocker.patch("pulsectl.Pulse", autospec=True)
-        mock_pulse_instance = mock_pulse.return_value.__enter__.return_value
-        # Mock VRChat.exe's speaker device
-        mock_source_output1 = mocker.Mock()
-        mock_source_output1.proplist = {"application.name": "VRChat.exe"}
-        mock_source_output1.source = "5"
-        # Mock other application's speaker device
-        mock_source_output2 = mocker.Mock()
-        mock_source_output2.proplist = {"application.name": "firefox.exe"}
-        mock_source_output2.source = "2"
-        # Set return values from source_output_list
-        mock_pulse_instance.source_output_list.return_value = [
-            mock_source_output2,
-            mock_source_output1,
+    def test_work_normally(self):
+        get_device_id_vrchat_is_outputting_to()
+
+    def test_practical(self):
+        processes = {proc.name() for proc in psutil.process_iter(["name"])}
+
+        if "VRChat.exe" not in processes:
+            pytest.skip("VRChat process is not found in practical test.")
+
+        assert get_device_id_vrchat_is_outputting_to()
+
+    def test_normal_case(self, mocker: MockerFixture):
+        """Test when VRChat output device is found."""
+        mocker.patch("shutil.which", return_value="/usr/bin/pactl")
+
+        mock_check_output = mocker.patch("subprocess.check_output")
+        mock_check_output.side_effect = [
+            PACTL_SOURCE_OUTPUTS_LIST_CONTENT,
+            PACTL_SOURCES_LIST_SHORT_CONTENT,
         ]
-        # Get devices
-        result = get_device_index_vrc_is_outputting_to()
-        # check the results
-        assert result == 5
-        mock_pulse.assert_called_once_with("pamiq-vrchat")
-        mock_pulse_instance.source_output_list.assert_called_once()
 
-    def test_no_vrchat_found(self, mocker):
-        # Mock pulsectl.Pulse
-        mock_pulse = mocker.patch("pulsectl.Pulse", autospec=True)
-        mock_pulse_instance = mock_pulse.return_value.__enter__.return_value
-        # Mock other application without VRChat.exe
-        mock_source_output = mocker.Mock()
-        mock_source_output.proplist = {"application.name": "firefox.exe"}
-        mock_source_output.source = "2"
-        # Set return values from source_output_list
-        mock_pulse_instance.source_output_list.return_value = [mock_source_output]
-        # Check if RuntimeError raises
-        with pytest.raises(
-            RuntimeError,
-            match="Can not find speaker device VRChat.exe is outputting to.",
-        ):
-            get_device_index_vrc_is_outputting_to()
+        result = get_device_id_vrchat_is_outputting_to()
 
-    def test_multiple_vrchat_instances(self, mocker):
-        # Mock pulsectl.Pulse
-        mock_pulse = mocker.patch("pulsectl.Pulse", autospec=True)
-        mock_pulse_instance = mock_pulse.return_value.__enter__.return_value
-        # Mock multiple VRChat.exe's speaker devices
-        mock_source_output1 = mocker.Mock()
-        mock_source_output1.proplist = {"application.name": "VRChat.exe"}
-        mock_source_output1.source = "6"
-        mock_source_output2 = mocker.Mock()
-        mock_source_output2.proplist = {"application.name": "VRChat.exe"}
-        mock_source_output2.source = "4"
-        # Set return values from source_output_list
-        mock_pulse_instance.source_output_list.return_value = [
-            mock_source_output1,
-            mock_source_output2,
-        ]
-        # Get devices
-        result = get_device_index_vrc_is_outputting_to()
-        # Check if the device index of the first VRChat found is returned
-        assert result == 6
+        assert result == "alsa_output.pci-0000_00_1f.3.analog-stereo.monitor"
+        assert mock_check_output.call_count == 2
 
-    def test_empty_source_list(self, mocker):
-        # Mock pulsectl.Pulse
-        mock_pulse = mocker.patch("pulsectl.Pulse", autospec=True)
-        mock_pulse_instance = mock_pulse.return_value.__enter__.return_value
-        # Set return values as no devices
-        mock_pulse_instance.source_output_list.return_value = []
-        # Check if RuntimeError raises
-        with pytest.raises(
-            RuntimeError,
-            match="Can not find speaker device VRChat.exe is outputting to.",
-        ):
-            get_device_index_vrc_is_outputting_to()
+    def test_pactl_not_found(self, mocker: MockerFixture, caplog):
+        """Test when pactl command is not found."""
+        mocker.patch("shutil.which", return_value=None)
+
+        result = get_device_id_vrchat_is_outputting_to()
+
+        assert result is None
+        assert "pactl command is not found" in caplog.text
+
+    def test_vrchat_not_found(self, mocker: MockerFixture):
+        """Test when VRChat process is not found."""
+        mocker.patch("shutil.which", return_value="/usr/bin/pactl")
+
+        source_outputs = (
+            "Source Output #100\n"
+            "    Driver: protocol-native.c\n"
+            '    application.name = "Discord.exe"\n'
+            "    Source: 42\n"
+        )
+
+        mock_check_output = mocker.patch(
+            "subprocess.check_output", return_value=source_outputs
+        )
+
+        result = get_device_id_vrchat_is_outputting_to()
+
+        assert result is None
+        mock_check_output.assert_called_once()
+
+
+PACTL_SOURCE_OUTPUTS_LIST_CONTENT = """\
+Source Output #43
+        Driver: protocol-native.c
+        Owner Module: 10
+        Client: 277
+        Source: 1
+        Sample Specification: s16le 2ch 44100Hz
+        Channel Map: front-left,front-right
+        Format: pcm, format.sample_format = "\"s16le\""  format.rate = "44100"  format.channels = "2"  format.channel_map = "\"front-left,front-right\""
+        Corked: no
+        Mute: no
+        Volume: front-left: 65536 / 100% / 0.00 dB,   front-right: 65536 / 100% / 0.00 dB
+                balance 0.00
+        Buffer Latency: 3806 usec
+        Source Latency: 0 usec
+        Resample method: speex-float-1
+        Properties:
+                application.name = "OBS"
+                application.icon_name = "obs"
+                media.role = "production"
+                media.name = "音声出力キャプチャ (PulseAudio)"
+                native-protocol.peer = "UNIX socket client"
+                native-protocol.version = "35"
+                application.process.id = "2703144"
+                application.process.user = "gop-geson"
+                application.process.host = "gop-geson-01"
+                application.process.binary = "obs"
+                application.language = "en_US.UTF-8"
+                window.x11.display = ":0"
+                application.process.machine_id = "14c61fb10f5340cb9c39948358e3bab0"
+                module-stream-restore.id = "source-output-by-media-role:production"
+
+Source Output #120
+        Driver: protocol-native.c
+        Owner Module: 10
+        Client: 941
+        Source: 1
+        Sample Specification: s16le 1ch 48000Hz
+        Channel Map: mono
+        Format: pcm, format.sample_format = "\"s16le\""  format.rate = "48000"  format.channels = "1"  format.channel_map = "\"mono\""
+        Corked: no
+        Mute: no
+        Volume: mono: 65536 / 100% / 0.00 dB
+                balance 0.00
+        Buffer Latency: 3562 usec
+        Source Latency: 0 usec
+        Resample method: copy
+        Properties:
+                media.name = "audio stream #3"
+                application.name = "VRChat.exe"
+                native-protocol.peer = "UNIX socket client"
+                native-protocol.version = "34"
+                application.process.id = "2348530"
+                application.process.user = "gop-geson"
+                application.process.host = "gop-geson-01"
+                application.process.binary = "wine64-preloader"
+                application.language = "en_US.UTF-8"
+                window.x11.display = ":0"
+                application.process.machine_id = "14c61fb10f5340cb9c39948358e3bab0"
+                module-stream-restore.id = "source-output-by-application-name:VRChat.exe"
+"""
+
+
+PACTL_SOURCES_LIST_SHORT_CONTENT = (
+    "1\talsa_output.pci-0000_00_1f.3.analog-stereo.monitor\n"
+    "43\talsa_input.pci-0000_00_1f.3.analog-stereo\n"
+)
