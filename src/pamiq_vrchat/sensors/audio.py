@@ -25,7 +25,7 @@ class AudioSensor(Sensor[AudioFrame]):
         frame_size: int,
         sample_rate: int = 16000,
         channels: int = 2,
-        device_id: str | None = None,
+        device_name: str | None = None,
         block_size: int | None = None,
     ):
         """Initializes an AudioSensor instance.
@@ -37,37 +37,36 @@ class AudioSensor(Sensor[AudioFrame]):
                 Sample rate.
             channels:
                 Audio channels.
-            device_id:
-                Index of an audio device input to a model. If None, automatically tries to find the device used by VRChat.exe.
+            device_name:
+                Audio device name for model's input. If None, automatically tries to find the device used by VRChat.exe.
             block_size:
-                 Number of samples SoundCard reads.
+                Number of samples SoundCard reads.
         """
         from pamiq_io.audio import SoundcardAudioInput
 
         super().__init__()
         self._frame_size = frame_size
-        if device_id is None:
-            device_id = get_device_id_vrchat_is_outputting_to()
-        self._input = SoundcardAudioInput(sample_rate, device_id, block_size, channels)
+        if device_name is None:
+            device_name = get_device_name_vrchat_is_outputting_to()
+        self._input = SoundcardAudioInput(
+            sample_rate, device_name, block_size, channels
+        )
 
     @override
     def read(self) -> AudioFrame:
         """Reads a frame from the Soundcard.
 
         Returns:
-            A numpy array containing the image frame with shape (self._frame_size, channels).
+            A numpy array containing the audio with shape (self._frame_size, channels).
         """
         return self._input.read(self._frame_size)
 
 
-def get_device_id_vrchat_is_outputting_to() -> str | None:
+def get_device_name_vrchat_is_outputting_to() -> str | None:
     """Find the speaker device VRChat.exe is outputting to.
 
     Returns:
-        The device index VRChat.exe is using.
-
-    Raises:
-        RuntimeError: Speaker device VRChat.exe is outputting to is not found.
+        The device name VRChat.exe is using.
     """
     if shutil.which("pactl") is None:
         logger.warning("pactl command is not found.")

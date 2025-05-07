@@ -13,7 +13,7 @@ except Exception:
 
 from pamiq_vrchat.sensors.audio import (
     AudioSensor,
-    get_device_id_vrchat_is_outputting_to,
+    get_device_name_vrchat_is_outputting_to,
 )
 
 FRAME_SIZE = 1024
@@ -32,46 +32,46 @@ class TestAudioSensor:
         return mock
 
     @pytest.fixture
-    def mock_get_device_id_vrchat_is_outputting_to(self, mocker: MockerFixture):
-        """Mock the get_device_id_vrchat_is_outputting_to function."""
+    def mock_get_device_name_vrchat_is_outputting_to(self, mocker: MockerFixture):
+        """Mock the get_device_name_vrchat_is_outputting_to function."""
         return mocker.patch(
-            "pamiq_vrchat.sensors.audio.get_device_id_vrchat_is_outputting_to",
+            "pamiq_vrchat.sensors.audio.get_device_name_vrchat_is_outputting_to",
             return_value="vrchat_device",
         )
 
     def test_init_with_audio_input_device_index(self, mock_soundcard_audio_input):
-        """Test initialization with explicit camera index."""
+        """Test initialization with explicit audio device name."""
         AudioSensor(
             sample_rate=16000,
             frame_size=FRAME_SIZE,
             channels=2,
-            device_id="default",
+            device_name="default",
             block_size=None,
         )
-        # Verify SoundcardAudioInput was called with the correct camera index
+        # Verify SoundcardAudioInput was called with the correct device name
         mock_soundcard_audio_input.assert_called_once_with(16000, "default", None, 2)
 
     def test_init_without_audio_input_device_index(
-        self, mock_soundcard_audio_input, mock_get_device_id_vrchat_is_outputting_to
+        self, mock_soundcard_audio_input, mock_get_device_name_vrchat_is_outputting_to
     ):
-        """Test initialization without camera index (should use OBS virtual
-        camera)."""
+        """Test initialization without audio device name (should use the device
+        being used by VRChat.exe)."""
         AudioSensor(
             sample_rate=16000,
             frame_size=FRAME_SIZE,
             channels=2,
-            device_id=None,
+            device_name=None,
             block_size=None,
         )
-        # Verify get_device_id_vrchat_is_outputting_to was called
-        mock_get_device_id_vrchat_is_outputting_to.assert_called_once()
-        # Verify SoundcardAudioInput was called with the index from get_device_id_vrchat_is_outputting_to
+        # Verify get_device_name_vrchat_is_outputting_to was called
+        mock_get_device_name_vrchat_is_outputting_to.assert_called_once()
+        # Verify SoundcardAudioInput was called with the index from get_device_name_vrchat_is_outputting_to
         mock_soundcard_audio_input.assert_called_once_with(
             16000, "vrchat_device", None, 2
         )
 
     def test_read(self, mock_soundcard_audio_input):
-        """Test the read method returns a frame."""
+        """Test the read method returns a expected frame."""
         sensor = AudioSensor(frame_size=FRAME_SIZE)
         frame = sensor.read()
         # Verify frame has the expected shape and type
@@ -80,10 +80,10 @@ class TestAudioSensor:
 
 
 class TestGetDeviceIdVRChatIsOutputtingTo:
-    """Tests for get_device_id_vrchat_is_outputting_to function."""
+    """Tests for get_device_name_vrchat_is_outputting_to function."""
 
     def test_work_normally(self):
-        get_device_id_vrchat_is_outputting_to()
+        get_device_name_vrchat_is_outputting_to()
 
     def test_practical(self):
         processes = {proc.name() for proc in psutil.process_iter(["name"])}
@@ -91,7 +91,7 @@ class TestGetDeviceIdVRChatIsOutputtingTo:
         if "VRChat.exe" not in processes:
             pytest.skip("VRChat process is not found in practical test.")
 
-        assert get_device_id_vrchat_is_outputting_to()
+        assert get_device_name_vrchat_is_outputting_to()
 
     def test_normal_case(self, mocker: MockerFixture):
         """Test when VRChat output device is found."""
@@ -103,7 +103,7 @@ class TestGetDeviceIdVRChatIsOutputtingTo:
             PACTL_SOURCES_LIST_SHORT_CONTENT,
         ]
 
-        result = get_device_id_vrchat_is_outputting_to()
+        result = get_device_name_vrchat_is_outputting_to()
 
         assert result == "alsa_output.pci-0000_00_1f.3.analog-stereo.monitor"
         assert mock_check_output.call_count == 2
@@ -112,7 +112,7 @@ class TestGetDeviceIdVRChatIsOutputtingTo:
         """Test when pactl command is not found."""
         mocker.patch("shutil.which", return_value=None)
 
-        result = get_device_id_vrchat_is_outputting_to()
+        result = get_device_name_vrchat_is_outputting_to()
 
         assert result is None
         assert "pactl command is not found" in caplog.text
@@ -132,7 +132,7 @@ class TestGetDeviceIdVRChatIsOutputtingTo:
             "subprocess.check_output", return_value=source_outputs
         )
 
-        result = get_device_id_vrchat_is_outputting_to()
+        result = get_device_name_vrchat_is_outputting_to()
 
         assert result is None
         mock_check_output.assert_called_once()
