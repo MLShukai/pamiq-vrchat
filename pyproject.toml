@@ -45,6 +45,7 @@ Issues = "https://github.com/MLShukai/pamiq-vrchat/issues"
 
 [project.optional-dependencies]
 sample = [
+    "mlflow>=2.22.0",
     "pamiq-core[torch]>=0.2.0",
 ]
 
