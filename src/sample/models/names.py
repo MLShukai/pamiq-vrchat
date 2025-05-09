@@ -7,3 +7,5 @@ class ModelName(StrEnum):
     JEPA_CONTEXT_ENCODER = "jepa_context_encoder"
     JEPA_TARGET_ENCODER = "jepa_target_encoder"
     JEPA_PREDICTOR = "jepa_predictor"
+
+    FORWARD_DYNAMICS = "forward_dynamics"
