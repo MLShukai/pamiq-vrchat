@@ -9,6 +9,7 @@ from typing import Self, override
 
 import torch
 import torch.nn as nn
+from pamiq_core.torch import get_device
 
 from sample.utils import size_2d, size_2d_to_int_tuple
 
@@ -288,3 +289,62 @@ class Predictor(nn.Module):
     @override
     def __call__(self, latents: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
         return super().__call__(latents, targets)
+
+
+class AveragePoolInfer:
+    """Applies average pooling to encoded image patches from a JEPA encoder."""
+
+    def __init__(
+        self, n_patches: size_2d, kernel_size: size_2d, stride: size_2d | None = None
+    ) -> None:
+        """Initialize the average pooling inference wrapper.
+
+        Args:
+            n_patches: Number of patches in the original encoded representation,
+                either as a single integer for square arrangements or a tuple (height, width).
+            kernel_size: Size of the pooling kernel, either as a single integer
+                for square kernels or a tuple (height, width).
+            stride: Stride of the pooling operation, either as a single integer
+                or a tuple (height, width). If None, defaults to kernel_size.
+        """
+        self.n_patches = size_2d_to_int_tuple(n_patches)
+        self.pool = nn.AvgPool2d(kernel_size, stride)
+
+    def __call__(self, encoder: Encoder, images: torch.Tensor) -> torch.Tensor:
+        """Process image through the encoder and apply average pooling to the
+        result.
+
+        Args:
+            encoder: Image JEPA Encoder instance.
+            images: Image tensor with shape [*batch, channels, height, width].
+
+        Returns:
+            Tensor with shape [*batch, patch', dim] where patch' is the reduced number
+            of patches after pooling.
+        """
+        device = get_device(encoder)
+        images = images.to(device)
+
+        if no_batch := images.ndim < 4:
+            images = images.unsqueeze(0)
+
+        batch_shape = images.shape[:-3]
+        images = images.reshape(
+            -1, *images.shape[-3:]
+        )  # [batch', channels, height, width]
+
+        x = encoder(images)  # [batch', patch, dim]
+        x = torch.nn.functional.layer_norm(x, (x.size(-1),))
+
+        x = x.transpose(-1, -2)  # [batch', dim, patch]
+
+        x = x.reshape(
+            -1, x.size(-2), *self.n_patches
+        )  # [batch', dim, patch_v, patch_h]
+        x: torch.Tensor = self.pool(x)  # [batch', dim, patch_v', patch_h']
+        x = x.flatten(-2).transpose(-1, -2)  # [batch', patch', dim]
+
+        x = x.reshape(*batch_shape, *x.shape[-2:])  # [*batch, patch', dim]
+        if no_batch:
+            x = x.squeeze(0)
+        return x
