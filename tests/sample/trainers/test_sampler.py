@@ -2,7 +2,7 @@ import pytest
 import torch
 from torch.utils.data import TensorDataset
 
-from sample.trainers.components.random_time_series_sampler import (  # Assume the class is in 'your_module'
+from sample.trainers.sampler import (  # Assume the class is in 'your_module'
     RandomTimeSeriesSampler,
 )
 
