@@ -55,6 +55,14 @@ class ForwardDynamicsTrainer(TorchTrainer):
 
     @override
     def on_training_models_attached(self) -> None:
+        """Set up model references when they are attached to the trainer.
+
+        This method is called automatically by the PAMIQ framework when
+        training models are attached to the trainer. It retrieves and
+        stores references to the ForwardDynamics model for convenient
+        access during training.
+        """
+
         super().on_training_models_attached()
         self.forward_dynamics = self.get_torch_training_model(
             ModelName.FORWARD_DYNAMICS, ForwardDynamics
@@ -62,6 +70,14 @@ class ForwardDynamicsTrainer(TorchTrainer):
 
     @override
     def create_optimizers(self) -> OptimizersSetup:
+        """Create optimizers for the ForwardDynamics model. This method is
+        called automatically by the PAMIQ framework to set up optimizers for
+        the training process. It uses the `partial_optimizer` function to
+        create an optimizer for the ForwardDynamics model's parameters.
+
+        Returns:
+            Dictionary mapping optimizer name to configured optimizer instance.
+        """
         return {
             OPTIMIZER_NAME: self.partial_optimizer(
                 self.forward_dynamics.model.parameters()
@@ -70,6 +86,21 @@ class ForwardDynamicsTrainer(TorchTrainer):
 
     @override
     def train(self) -> None:
+        """Execute ForwardDynamics training process.
+
+        This method implements the core ForwardDynamics training loop:
+        1. Creates a dataset and dataloader
+        2. For each batch:
+            - Moves data to the appropriate device
+            - Splits observations, actions, and hidden states
+            - Computes the next observation distribution
+            - Calculates the loss
+            - Backpropagates the loss
+            - Updates the model parameters
+        3. Logs the loss to MLflow
+        4. Increments the global step counter
+        """
+
         data = self.forward_dynamics_data_user.get_data()
         dataset = TensorDataset(
             torch.stack(list(data[DataKey.OBSERVATION])),
