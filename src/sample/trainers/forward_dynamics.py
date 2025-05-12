@@ -20,6 +20,14 @@ OPTIMIZER_NAME = "optimizer"
 
 
 class ForwardDynamicsTrainer(TorchTrainer):
+    """Trainer for the ForwardDynamics model.
+
+    This trainer implements the training loop for the ForwardDynamics
+    model, which predicts the next observation distribution given the
+    current observation and action. It uses a recurrent core model to
+    maintain hidden state across sequential predictions.
+    """
+
     def __init__(
         self,
         partial_dataloader: partial[DataLoader[Tensor]],
