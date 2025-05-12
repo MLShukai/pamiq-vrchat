@@ -8,4 +8,8 @@ class ModelName(StrEnum):
     JEPA_TARGET_ENCODER = "jepa_target_encoder"
     JEPA_PREDICTOR = "jepa_predictor"
 
+    TEMPORAL_ENCODER = "temporal_encoder"
+
     FORWARD_DYNAMICS = "forward_dynamics"
+
+    POLICY_VALUE = "policy_value"
