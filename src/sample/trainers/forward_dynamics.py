@@ -89,10 +89,10 @@ class ForwardDynamicsTrainer(TorchTrainer):
                 hiddens = hiddens.to(device)
 
                 observations, hidden, actions, observation_next = (
-                    observations[:-1],
-                    hiddens[0],
-                    actions[:-1],
-                    observations[1:],
+                    observations[:, :-1],
+                    hiddens[:, 0],
+                    actions[:, :-1],
+                    observations[:, 1:],
                 )
 
                 self.optimizers[OPTIMIZER_NAME].zero_grad()
