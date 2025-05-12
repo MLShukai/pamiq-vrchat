@@ -1,5 +1,7 @@
+from pathlib import Path
 from typing import override
 
+import torch
 from pamiq_core import Agent
 from tensordict import TensorDict
 from torch import Tensor
@@ -62,3 +64,27 @@ class TemporalEncodingAgent(Agent[dict[str, Tensor], Tensor]):
         )
         out, self.encoder_hidden_state = self.encoder(obs, self.encoder_hidden_state)
         return out
+
+    @override
+    def save_state(self, path: Path) -> None:
+        """Save agent state including the hidden state tensor.
+
+        Args:
+            path: Directory path where to save the state
+        """
+        super().save_state(path)
+        path.mkdir(exist_ok=True)
+        torch.save(self.encoder_hidden_state, path / "encoder_hidden_state.pt")
+
+    @override
+    def load_state(self, path: Path) -> None:
+        """Load agent state including the hidden state tensor.
+
+        Args:
+            path: Directory path from where to load the state
+        """
+        super().load_state(path)
+        self.encoder_hidden_state = torch.load(
+            path / "encoder_hidden_state.pt",
+            map_location=self.encoder_hidden_state.device,
+        )

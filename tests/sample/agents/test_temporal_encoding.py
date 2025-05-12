@@ -89,3 +89,27 @@ class TestTemporalEncodingAgent:
         assert DataKey.HIDDEN in collected_data
         assert isinstance(collected_data[DataKey.OBSERVATION], TensorDict)
         assert torch.equal(collected_data[DataKey.HIDDEN], initial_hidden)
+
+    def test_save_and_load_state(self, tmp_path):
+        """Test saving and loading the agent state."""
+        hidden_state = torch.randn(2, 4, 256)
+        agent = TemporalEncodingAgent(hidden_state)
+
+        # Save state
+        save_path = tmp_path / "agent_state"
+        agent.save_state(save_path)
+
+        # Verify file exists
+        assert (save_path / "encoder_hidden_state.pt").is_file()
+
+        # Create new agent with different initial hidden state
+        new_agent = TemporalEncodingAgent(torch.zeros_like(hidden_state))
+
+        # Verify hidden state is difference
+        assert not torch.equal(new_agent.encoder_hidden_state, hidden_state)
+
+        # Load state
+        new_agent.load_state(save_path)
+
+        # Verify hidden state was loaded correctly
+        assert torch.equal(new_agent.encoder_hidden_state, hidden_state)
