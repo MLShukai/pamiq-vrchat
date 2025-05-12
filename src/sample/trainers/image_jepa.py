@@ -141,7 +141,7 @@ class ImageJEPATrainer(TorchTrainer):
         stable targets for the context encoder and predictor to learn from.
         """
         dataset = TensorDataset(
-            torch.stack(list(self.image_data_user.get_data()[DataKey.IMAGE]))
+            torch.stack(list(self.image_data_user.get_data()[DataKey.OBSERVATION]))
         )
         dataloader = self.partial_dataloader(dataset=dataset)
         device = get_device(self.context_encoder.model)

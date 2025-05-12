@@ -10,4 +10,4 @@ class BufferName(StrEnum):
 class DataKey(StrEnum):
     """Enumerates all data key names in the experiments."""
 
-    IMAGE = auto()
+    OBSERVATION = auto()
