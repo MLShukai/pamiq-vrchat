@@ -207,8 +207,10 @@ class ImaginingForwardDynamicsTrainer(TorchTrainer):
             partial_optimizer: Partial function for creating an optimizer.
             max_epochs: Maximum number of epochs to train per training session.
             data_user_name: Name of the data user providing training data.
+            imagination_length: Length of the imagination sequence.
             min_buffer_size: Minimum buffer size required before training starts.
             min_new_data_count: Minimum number of new data points required for training.
+            imagenation_average_method: Method to average the loss over the imagination sequence.
         """
         super().__init__(data_user_name, min_buffer_size, min_new_data_count)
 
