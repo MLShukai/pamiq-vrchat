@@ -142,7 +142,7 @@ class ForwardDynamicsTrainer(TorchTrainer):
                 loss.backward()
                 self.optimizers[OPTIMIZER_NAME].step()
                 mlflow.log_metric(
-                    "forward_dynamics/loss", loss.item(), step=self.global_step
+                    "forward-dynamics/loss", loss.item(), step=self.global_step
                 )
                 self.global_step += 1
 
