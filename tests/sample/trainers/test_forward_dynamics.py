@@ -237,8 +237,9 @@ class TestImaginingForwardDynamicsTrainer:
             partial_dataloader,
             partial_sampler,
             partial_optimizer,
-            min_buffer_size=4,
-            min_new_data_count=2,
+            imagination_length=4,
+            min_buffer_size=8,
+            min_new_data_count=4,
         )
         return trainer
 
