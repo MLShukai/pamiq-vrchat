@@ -37,8 +37,7 @@ class TestForwardDynamicsTrainer:
 
     @pytest.fixture
     def core_model(self):
-        qlstm = QLSTM(self.DEPTH, self.DIM, self.DIM_FF_HIDDEN, self.DROPOUT)
-        return qlstm
+        return QLSTM(self.DEPTH, self.DIM, self.DIM_FF_HIDDEN, self.DROPOUT)
 
     @pytest.fixture
     def observation_flatten(self):
@@ -165,8 +164,7 @@ class TestImaginingForwardDynamicsTrainer:
 
     @pytest.fixture
     def core_model(self):
-        qlstm = QLSTM(self.DEPTH, self.DIM, self.DIM_FF_HIDDEN, self.DROPOUT)
-        return qlstm
+        return QLSTM(self.DEPTH, self.DIM, self.DIM_FF_HIDDEN, self.DROPOUT)
 
     @pytest.fixture
     def observation_flatten(self):
