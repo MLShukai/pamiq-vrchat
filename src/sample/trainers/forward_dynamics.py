@@ -38,6 +38,20 @@ class ForwardDynamicsTrainer(TorchTrainer):
         min_buffer_size: int = 0,
         min_new_data_count: int = 0,
     ) -> None:
+        """Initialize the ForwardDynamicsTrainer.
+
+        Args:
+            partial_dataloader: Partially configured DataLoader to be used with
+                dynamically created datasets during training.
+            partial_optimizer: Partially configured optimizer to be used with
+                the model parameters.
+            partial_sampler: Partially configured sampler to be used with the dataset.
+            partial_optimizer: Partial function for creating an optimizer.
+            max_epochs: Maximum number of epochs to train per training session.
+            data_user_name: Name of the data user providing training data.
+            min_buffer_size: Minimum buffer size required before training starts.
+            min_new_data_count: Minimum number of new data points required for training.
+        """
         super().__init__(data_user_name, min_buffer_size, min_new_data_count)
 
         self.partial_dataloader = partial_dataloader
