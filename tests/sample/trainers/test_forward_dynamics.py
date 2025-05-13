@@ -116,7 +116,7 @@ class TestForwardDynamicsTrainer:
     @parametrize_device
     def test_run(self, device, data_buffers, forward_dynamics, trainer):
         models = {
-            ModelName.FORWARD_DYNAMICS: TorchTrainingModel(
+            str(ModelName.FORWARD_DYNAMICS): TorchTrainingModel(
                 forward_dynamics, has_inference_model=False, device=device
             ),
         }
@@ -244,7 +244,7 @@ class TestImaginingForwardDynamicsTrainer:
     @parametrize_device
     def test_run(self, device, data_buffers, forward_dynamics, trainer):
         models = {
-            ModelName.FORWARD_DYNAMICS: TorchTrainingModel(
+            str(ModelName.FORWARD_DYNAMICS): TorchTrainingModel(
                 forward_dynamics, has_inference_model=False, device=device
             ),
         }
