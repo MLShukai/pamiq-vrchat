@@ -125,11 +125,10 @@ class ForwardDynamicsTrainer(TorchTrainer):
                 observations, actions, hiddens = batch
                 observations = observations.to(device)
                 actions = actions.to(device)
-                hiddens = hiddens.to(device)
 
                 observations, hidden, actions, observation_next = (
                     observations[:, :-1],
-                    hiddens[:, 0],
+                    hiddens[:, 0].to(device),
                     actions[:, :-1],
                     observations[:, 1:],
                 )
