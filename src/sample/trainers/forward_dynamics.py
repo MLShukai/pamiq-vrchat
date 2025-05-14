@@ -7,7 +7,6 @@ import mlflow
 import torch
 from pamiq_core import DataUser
 from pamiq_core.torch import OptimizersSetup, TorchTrainer, get_device
-from pamiq_core.torch.trainer import TorchTrainer
 from torch import Tensor
 from torch.distributions import Distribution
 from torch.optim import Optimizer
@@ -16,7 +15,8 @@ from torch.utils.data import DataLoader, TensorDataset
 from sample.data import BufferName, DataKey
 from sample.models import ModelName
 from sample.models.forward_dynamics import ForwardDynamics
-from sample.trainers.sampler import RandomTimeSeriesSampler
+
+from .sampler import RandomTimeSeriesSampler
 
 OPTIMIZER_NAME = "optimizer"
 
