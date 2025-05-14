@@ -208,7 +208,8 @@ class ImaginingForwardDynamicsTrainer(TorchTrainer):
                     .item()
                 )
                 mlflow.log_metrics(
-                    {f"forward-dynamics/{k}": v for k, v in metrics.items()}
+                    {f"forward-dynamics/{k}": v for k, v in metrics.items()},
+                    self.global_step,
                 )
                 self.optimizers[OPTIMIZER_NAME].step()
                 self.global_step += 1
