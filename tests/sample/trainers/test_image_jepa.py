@@ -53,9 +53,9 @@ class TestImageJEPATrainer:
     @pytest.fixture
     def models(self, context_encoder, target_encoder, predictor):
         return {
-            ModelName.JEPA_CONTEXT_ENCODER: context_encoder,
-            ModelName.JEPA_TARGET_ENCODER: target_encoder,
-            ModelName.JEPA_PREDICTOR: predictor,
+            ModelName.IMAGE_JEPA_CONTEXT_ENCODER: context_encoder,
+            ModelName.IMAGE_JEPA_TARGET_ENCODER: target_encoder,
+            ModelName.IMAGE_JEPA_PREDICTOR: predictor,
         }
 
     @pytest.fixture

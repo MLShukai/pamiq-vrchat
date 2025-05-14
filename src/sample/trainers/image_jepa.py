@@ -94,13 +94,13 @@ class ImageJEPATrainer(TorchTrainer):
         """
         super().on_training_models_attached()
         self.context_encoder = self.get_torch_training_model(
-            ModelName.JEPA_CONTEXT_ENCODER, Encoder
+            ModelName.IMAGE_JEPA_CONTEXT_ENCODER, Encoder
         )
         self.target_encoder = self.get_torch_training_model(
-            ModelName.JEPA_TARGET_ENCODER, Encoder
+            ModelName.IMAGE_JEPA_TARGET_ENCODER, Encoder
         )
         self.predictor = self.get_torch_training_model(
-            ModelName.JEPA_PREDICTOR, Predictor
+            ModelName.IMAGE_JEPA_PREDICTOR, Predictor
         )
 
     @override

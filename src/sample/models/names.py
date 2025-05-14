@@ -4,9 +4,9 @@ from enum import StrEnum
 class ModelName(StrEnum):
     """Enumerates all model names in experiments."""
 
-    JEPA_CONTEXT_ENCODER = "jepa_context_encoder"
-    JEPA_TARGET_ENCODER = "jepa_target_encoder"
-    JEPA_PREDICTOR = "jepa_predictor"
+    IMAGE_JEPA_CONTEXT_ENCODER = "image_jepa_context_encoder"
+    IMAGE_JEPA_TARGET_ENCODER = "image_jepa_target_encoder"
+    IMAGE_JEPA_PREDICTOR = "jepa_predictor"
 
     TEMPORAL_ENCODER = "temporal_encoder"
 
