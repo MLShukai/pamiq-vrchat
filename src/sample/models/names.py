@@ -6,7 +6,7 @@ class ModelName(StrEnum):
 
     IMAGE_JEPA_CONTEXT_ENCODER = "image_jepa_context_encoder"
     IMAGE_JEPA_TARGET_ENCODER = "image_jepa_target_encoder"
-    IMAGE_JEPA_PREDICTOR = "jepa_predictor"
+    IMAGE_JEPA_PREDICTOR = "image_jepa_predictor"
 
     TEMPORAL_ENCODER = "temporal_encoder"
 
