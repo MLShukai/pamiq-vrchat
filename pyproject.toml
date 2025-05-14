@@ -47,6 +47,7 @@ Issues = "https://github.com/MLShukai/pamiq-vrchat/issues"
 sample = [
     "mlflow>=2.22.0",
     "pamiq-core[torch]>=0.2.0",
+    "tensordict>=0.8.2",
 ]
 
 [build-system]
