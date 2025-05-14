@@ -192,21 +192,24 @@ class ImaginingForwardDynamicsTrainer(TorchTrainer):
                 loss = self.imagination_average_method(torch.stack(loss_imaginations))
                 loss.backward()
 
-                prefix = "forward-dynamics/"
-                metrics_imagination = {
-                    f"{prefix}/loss/imagination_{i}": loss_item.item()
-                    for i, loss_item in enumerate(loss_imaginations)
-                }
-                grad_norm = torch.cat(
-                    [
-                        p.grad.flatten()
-                        for p in self.forward_dynamics.model.parameters()
-                        if p.grad is not None
-                    ]
-                ).norm()
-                metrics_grad_norm = {f"{prefix}/grad_norm": grad_norm.item()}
-                mlflow.log_metrics(metrics_imagination, step=self.global_step)
-                mlflow.log_metrics(metrics_grad_norm, step=self.global_step)
+                metrics = {"loss/average": loss.item()}
+                for i, loss_item in enumerate(loss_imaginations, start=1):
+                    metrics[f"loss/imagination_{i}"] = loss_item.item()
+
+                metrics["grad norm"] = (
+                    torch.cat(
+                        [
+                            p.grad.flatten()
+                            for p in self.forward_dynamics.model.parameters()
+                            if p.grad is not None
+                        ]
+                    )
+                    .norm()
+                    .item()
+                )
+                mlflow.log_metrics(
+                    {f"forward-dynamics/{k}": v for k, v in metrics.items()}
+                )
                 self.optimizers[OPTIMIZER_NAME].step()
                 self.global_step += 1
 
