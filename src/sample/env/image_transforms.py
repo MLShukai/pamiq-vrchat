@@ -8,7 +8,7 @@ import torchvision.transforms.v2.functional as F
 from torch import Tensor
 from torchvision.transforms.v2 import (
     Compose,
-    ConvertImageDtype,
+    ToDtype,
     ToImage,
     ToPureTensor,
 )
@@ -118,8 +118,8 @@ def create_vrchat_transform(
     transform = Compose(
         [
             ToImage(),
+            ToDtype(dtype, scale=True),
             ResizeAndCenterCrop(size),
-            ConvertImageDtype(dtype),
             Standardize(),
             ToPureTensor(),
         ]
