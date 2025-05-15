@@ -4,7 +4,7 @@ import random
 from functools import partial
 from multiprocessing import Value
 from pathlib import Path
-from typing import Literal, override
+from typing import TypedDict, override
 
 import mlflow
 import torch
@@ -21,6 +21,41 @@ from sample.models.jepa import Encoder, Predictor
 from sample.utils import size_2d, size_2d_to_int_tuple
 
 OPTIMIZER_NAME = "optimizer"
+
+
+class ModalityConfig(TypedDict):
+    """Configuration for JEPA training on a specific modality.
+
+    Attributes:
+        context_encoder_name: Name of the context encoder model
+        target_encoder_name: Name of the target encoder model
+        predictor_name: Name of the predictor model
+        data_user_name: Name of the data buffer to use
+        log_prefix: Prefix for logging metrics
+    """
+
+    context_encoder_name: str
+    target_encoder_name: str
+    predictor_name: str
+    data_user_name: str
+    log_prefix: str
+
+
+IMAGE_CONFIG = ModalityConfig(
+    context_encoder_name=ModelName.IMAGE_JEPA_CONTEXT_ENCODER,
+    target_encoder_name=ModelName.IMAGE_JEPA_TARGET_ENCODER,
+    predictor_name=ModelName.IMAGE_JEPA_PREDICTOR,
+    data_user_name=BufferName.IMAGE,
+    log_prefix="image-jepa",
+)
+
+AUDIO_CONFIG = ModalityConfig(
+    context_encoder_name=ModelName.AUDIO_JEPA_CONTEXT_ENCODER,
+    target_encoder_name=ModelName.AUDIO_JEPA_TARGET_ENCODER,
+    predictor_name=ModelName.AUDIO_JEPA_PREDICTOR,
+    data_user_name=BufferName.AUDIO,
+    log_prefix="audio-jepa",
+)
 
 
 class JEPATrainer(TorchTrainer):
@@ -41,7 +76,11 @@ class JEPATrainer(TorchTrainer):
         self,
         partial_dataloader: partial[DataLoader[Tensor]],
         partial_optimizer: partial[Optimizer],
-        modality: Literal["image", "audio"],
+        context_encoder_name: str,
+        target_encoder_name: str,
+        predictor_name: str,
+        data_user_name: str,
+        log_prefix: str = "jepa",
         target_encoder_update_moving_average: float = 0.996,  # based on the original I-JEPA initinal setting.
         max_epochs: int = 1,
         min_buffer_size: int = 0,
@@ -54,26 +93,21 @@ class JEPATrainer(TorchTrainer):
                 dynamically created datasets during training.
             partial_optimizer: Partially configured optimizer to be used with
                 the model parameters.
+            context_encoder_name: Name of the context encoder model to retrieve
+                from the model registry.
+            target_encoder_name: Name of the target encoder model to retrieve
+                from the model registry.
+            predictor_name: Name of the predictor model to retrieve from the
+                model registry.
+            data_user_name: Name of the data user providing training data.
+            log_prefix: Prefix for training metrics in MLflow logging.
             target_encoder_update_moving_average: Momentum coefficient for updating
                 the target encoder from the context encoder (higher values mean
                 slower updates, default: 0.996 based on original I-JEPA).
             max_epochs: Maximum number of epochs to train per training session.
-            data_user_name: Name of the data user providing training data.
             min_buffer_size: Minimum buffer size required before training starts.
             min_new_data_count: Minimum number of new data points required for training.
         """
-        match modality:
-            case "image":
-                context_encoder_name = ModelName.IMAGE_JEPA_CONTEXT_ENCODER
-                target_encoder_name = ModelName.IMAGE_JEPA_TARGET_ENCODER
-                predictor_name = ModelName.IMAGE_JEPA_PREDICTOR
-                data_user_name = BufferName.IMAGE
-            case "audio":
-                context_encoder_name = ModelName.AUDIO_JEPA_CONTEXT_ENCODER
-                target_encoder_name = ModelName.AUDIO_JEPA_TARGET_ENCODER
-                predictor_name = ModelName.AUDIO_JEPA_PREDICTOR
-                data_user_name = BufferName.AUDIO
-
         super().__init__(data_user_name, min_buffer_size, min_new_data_count)
 
         self.data_user_name = data_user_name
@@ -82,7 +116,7 @@ class JEPATrainer(TorchTrainer):
         self.context_encoder_name = context_encoder_name
         self.target_encoder_name = target_encoder_name
         self.predictor_name = predictor_name
-        self.log_prefix = f"{modality}-jepa"
+        self.log_prefix = log_prefix
         self.target_encoder_update_moving_average = target_encoder_update_moving_average
         self.max_epochs = max_epochs
         self.global_step = 0

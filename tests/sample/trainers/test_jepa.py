@@ -15,7 +15,12 @@ from sample.models import ModelName
 from sample.models.components.patch_embedding import PatchEmbedding
 from sample.models.components.positional_embeddings import get_2d_positional_embeddings
 from sample.models.jepa import Encoder, Predictor
-from sample.trainers.jepa import JEPATrainer, MultiBlockMaskCollator2d
+from sample.trainers.jepa import (
+    AUDIO_CONFIG,
+    IMAGE_CONFIG,
+    JEPATrainer,
+    MultiBlockMaskCollator2d,
+)
 from tests.sample.helpers import parametrize_device
 
 
@@ -109,24 +114,23 @@ class TestJEPATrainer:
         return JEPATrainer(
             partial_dataloader,
             partial_optimizer,
-            modality="image",
+            **IMAGE_CONFIG,
             min_buffer_size=4,
             min_new_data_count=2,
         )
 
-    @pytest.mark.parametrize("modality", ["image", "audio"])
+    @pytest.mark.parametrize("modality_cfg", [IMAGE_CONFIG, AUDIO_CONFIG])
     def test_initilization(
-        self, modality, partial_dataloader, partial_optimizer, mocker: MockerFixture
+        self, modality_cfg, partial_dataloader, partial_optimizer, mocker: MockerFixture
     ):
         mocker.patch("sample.trainers.jepa.mlflow")
-        trainer = JEPATrainer(
+        JEPATrainer(
             partial_dataloader,
             partial_optimizer,
-            modality=modality,
+            **modality_cfg,
             min_buffer_size=4,
             min_new_data_count=2,
         )
-        assert trainer.log_prefix == f"{modality}-jepa"
 
     @parametrize_device
     def test_run(self, device, data_buffers, models, trainer: JEPATrainer):
