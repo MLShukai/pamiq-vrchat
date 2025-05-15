@@ -4,7 +4,7 @@ import random
 from functools import partial
 from multiprocessing import Value
 from pathlib import Path
-from typing import override
+from typing import Literal, override
 
 import mlflow
 import torch
@@ -16,6 +16,7 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader, TensorDataset, default_collate
 
 from sample.data import BufferName, DataKey
+from sample.models import ModelName
 from sample.models.jepa import Encoder, Predictor
 from sample.utils import size_2d, size_2d_to_int_tuple
 
@@ -23,7 +24,7 @@ OPTIMIZER_NAME = "optimizer"
 
 
 class JEPATrainer(TorchTrainer):
-    """Trainer for Image Joint Embedding Predictive Architecture (I-JEPA).
+    """Trainer for Joint Embedding Predictive Architecture (I-JEPA).
 
     This trainer implements the JEPA training process which involves:
     1. A context encoder that encodes patches with some masked areas
@@ -40,16 +41,13 @@ class JEPATrainer(TorchTrainer):
         self,
         partial_dataloader: partial[DataLoader[Tensor]],
         partial_optimizer: partial[Optimizer],
-        context_encoder_name: str,
-        target_encoder_name: str,
-        predictor_name: str,
+        modality: Literal["image", "audio"],
         target_encoder_update_moving_average: float = 0.996,  # based on the original I-JEPA initinal setting.
         max_epochs: int = 1,
-        data_user_name: str = BufferName.IMAGE,
         min_buffer_size: int = 0,
         min_new_data_count: int = 0,
     ) -> None:
-        """Initialize the ImageJEPA trainer.
+        """Initialize the JEPA trainer.
 
         Args:
             partial_dataloader: Partially configured DataLoader to be used with
@@ -64,6 +62,18 @@ class JEPATrainer(TorchTrainer):
             min_buffer_size: Minimum buffer size required before training starts.
             min_new_data_count: Minimum number of new data points required for training.
         """
+        match modality:
+            case "image":
+                context_encoder_name = ModelName.IMAGE_JEPA_CONTEXT_ENCODER
+                target_encoder_name = ModelName.IMAGE_JEPA_TARGET_ENCODER
+                predictor_name = ModelName.IMAGE_JEPA_PREDICTOR
+                data_user_name = BufferName.IMAGE
+            case "audio":
+                context_encoder_name = ModelName.AUDIO_JEPA_CONTEXT_ENCODER
+                target_encoder_name = ModelName.AUDIO_JEPA_TARGET_ENCODER
+                predictor_name = ModelName.AUDIO_JEPA_PREDICTOR
+                data_user_name = BufferName.AUDIO
+
         super().__init__(data_user_name, min_buffer_size, min_new_data_count)
 
         self.data_user_name = data_user_name
@@ -72,6 +82,7 @@ class JEPATrainer(TorchTrainer):
         self.context_encoder_name = context_encoder_name
         self.target_encoder_name = target_encoder_name
         self.predictor_name = predictor_name
+        self.log_prefix = f"{modality}-jepa"
         self.target_encoder_update_moving_average = target_encoder_update_moving_average
         self.max_epochs = max_epochs
         self.global_step = 0
@@ -86,7 +97,7 @@ class JEPATrainer(TorchTrainer):
         during training.
         """
         super().on_data_users_attached()
-        self.image_data_user: DataUser[Tensor] = self.get_data_user(self.data_user_name)
+        self.data_user: DataUser[Tensor] = self.get_data_user(self.data_user_name)
 
     @override
     def on_training_models_attached(self) -> None:
@@ -131,10 +142,10 @@ class JEPATrainer(TorchTrainer):
         """Execute JEPA training process.
 
         This method implements the core JEPA training loop:
-        1. Creates a dataset and dataloader from the collected images
+        1. Creates a dataset and dataloader from the collected data
         2. For each batch:
-           - Encodes images with the target encoder (without gradients)
-           - Encodes masked images with the context encoder
+           - Encodes data with the target encoder (without gradients)
+           - Encodes masked data with the context encoder
            - Uses the predictor to predict target patches from context
            - Computes smooth L1 loss between predictions and target representations
            - Updates context encoder and predictor parameters via backpropagation
@@ -144,7 +155,7 @@ class JEPATrainer(TorchTrainer):
         stable targets for the context encoder and predictor to learn from.
         """
         dataset = TensorDataset(
-            torch.stack(list(self.image_data_user.get_data()[DataKey.OBSERVATION]))
+            torch.stack(list(self.data_user.get_data()[DataKey.OBSERVATION]))
         )
         dataloader = self.partial_dataloader(dataset=dataset)
         device = get_device(self.context_encoder.model)
@@ -152,8 +163,8 @@ class JEPATrainer(TorchTrainer):
         for _ in range(self.max_epochs):
             batch: tuple[Tensor, Tensor, Tensor]
             for batch in dataloader:
-                (image_batch, masks_for_context_encoder, targets_for_predictor) = batch
-                image_batch = image_batch.to(device)
+                (data, masks_for_context_encoder, targets_for_predictor) = batch
+                data = data.to(device)
                 masks_for_context_encoder = masks_for_context_encoder.to(device)
                 targets_for_predictor = targets_for_predictor.to(device)
 
@@ -161,9 +172,7 @@ class JEPATrainer(TorchTrainer):
 
                 # target encoder
                 with torch.no_grad():
-                    latent_from_target_encoder: Tensor = self.target_encoder(
-                        image_batch
-                    )
+                    latent_from_target_encoder: Tensor = self.target_encoder(data)
                     # normalize over feature-dim
                     latent_from_target_encoder = F.layer_norm(
                         latent_from_target_encoder,
@@ -172,7 +181,7 @@ class JEPATrainer(TorchTrainer):
 
                 # context encoder
                 latent_from_context_encoder = self.context_encoder(
-                    image_batch, masks_for_context_encoder
+                    data, masks_for_context_encoder
                 )
 
                 # predictor
@@ -217,7 +226,7 @@ class JEPATrainer(TorchTrainer):
                 }
                 # logging
                 mlflow.log_metrics(
-                    {f"image-jepa/{tag}": v for tag, v in metrics.items()},
+                    {f"{self.log_prefix}/{tag}": v for tag, v in metrics.items()},
                     self.global_step,
                 )
 

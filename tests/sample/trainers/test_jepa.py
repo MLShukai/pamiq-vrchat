@@ -109,12 +109,24 @@ class TestJEPATrainer:
         return JEPATrainer(
             partial_dataloader,
             partial_optimizer,
-            context_encoder_name=ModelName.IMAGE_JEPA_CONTEXT_ENCODER,
-            target_encoder_name=ModelName.IMAGE_JEPA_TARGET_ENCODER,
-            predictor_name=ModelName.IMAGE_JEPA_PREDICTOR,
+            modality="image",
             min_buffer_size=4,
             min_new_data_count=2,
         )
+
+    @pytest.mark.parametrize("modality", ["image", "audio"])
+    def test_initilization(
+        self, modality, partial_dataloader, partial_optimizer, mocker: MockerFixture
+    ):
+        mocker.patch("sample.trainers.jepa.mlflow")
+        trainer = JEPATrainer(
+            partial_dataloader,
+            partial_optimizer,
+            modality=modality,
+            min_buffer_size=4,
+            min_new_data_count=2,
+        )
+        assert trainer.log_prefix == f"{modality}-jepa"
 
     @parametrize_device
     def test_run(self, device, data_buffers, models, trainer: JEPATrainer):
