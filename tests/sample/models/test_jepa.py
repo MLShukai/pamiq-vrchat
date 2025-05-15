@@ -3,7 +3,7 @@ import torch
 
 from sample.models.components.patch_embedding import PatchEmbedding
 from sample.models.components.positional_embeddings import get_2d_positional_embeddings
-from sample.models.jepa import AveragePoolInfer, Encoder, Predictor
+from sample.models.jepa import AveragePoolInfer2d, Encoder, Predictor
 
 
 class TestEncoder:
@@ -344,7 +344,7 @@ class TestAveragePoolInfer:
     def test_basic_functionality(self, encoder):
         """Test basic pooling functionality."""
         # Setup
-        pooler = AveragePoolInfer(n_patches=(4, 4), kernel_size=2)
+        pooler = AveragePoolInfer2d(n_patches=(4, 4), kernel_size=2)
         image = torch.randn(1, 3, 32, 32)
 
         # Encode and pool
@@ -355,7 +355,7 @@ class TestAveragePoolInfer:
 
     def test_different_batch_sizes(self, encoder):
         """Test with different batch sizes."""
-        pooler = AveragePoolInfer(n_patches=(4, 4), kernel_size=2)
+        pooler = AveragePoolInfer2d(n_patches=(4, 4), kernel_size=2)
 
         # Test with batch size 2
         image_batch2 = torch.randn(2, 3, 32, 32)
@@ -369,7 +369,7 @@ class TestAveragePoolInfer:
 
     def test_no_batch_dimension(self, encoder):
         """Test with input tensor that has no batch dimension."""
-        pooler = AveragePoolInfer(n_patches=(4, 4), kernel_size=2)
+        pooler = AveragePoolInfer2d(n_patches=(4, 4), kernel_size=2)
 
         # Create an image without batch dimension
         image = torch.randn(3, 32, 32)
@@ -382,7 +382,7 @@ class TestAveragePoolInfer:
 
     def test_multi_dimensional_batch(self, encoder):
         """Test with multi-dimensional batch."""
-        pooler = AveragePoolInfer(n_patches=(4, 4), kernel_size=2)
+        pooler = AveragePoolInfer2d(n_patches=(4, 4), kernel_size=2)
 
         # Create a batch with multiple dimensions [2, 3, 3, 32, 32]
         image = torch.randn(2, 3, 3, 32, 32)
@@ -398,20 +398,20 @@ class TestAveragePoolInfer:
         # Original number of patches is 4x4=16
 
         # Test with kernel size 1 (no reduction)
-        pooler1 = AveragePoolInfer(n_patches=(4, 4), kernel_size=1)
+        pooler1 = AveragePoolInfer2d(n_patches=(4, 4), kernel_size=1)
         image = torch.randn(1, 3, 32, 32)
         result1 = pooler1(encoder, image)
         assert result1.shape == (1, 16, 32)  # No reduction
 
         # Test with kernel size (2, 1) (reduction only in height)
-        pooler2 = AveragePoolInfer(n_patches=(4, 4), kernel_size=(2, 1))
+        pooler2 = AveragePoolInfer2d(n_patches=(4, 4), kernel_size=(2, 1))
         result2 = pooler2(encoder, image)
         assert result2.shape == (1, 8, 32)  # 4x4 -> 2x4 = 8 patches
 
     def test_custom_stride(self, encoder):
         """Test with custom stride value."""
         # Test with stride different from kernel size
-        pooler = AveragePoolInfer(n_patches=(4, 4), kernel_size=2, stride=1)
+        pooler = AveragePoolInfer2d(n_patches=(4, 4), kernel_size=2, stride=1)
         image = torch.randn(1, 3, 32, 32)
         result = pooler(encoder, image)
 

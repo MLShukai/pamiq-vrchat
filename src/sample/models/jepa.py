@@ -271,7 +271,7 @@ class Predictor(nn.Module):
         return super().__call__(latents, targets)
 
 
-class AveragePoolInfer:
+class AveragePoolInfer2d:
     """Applies average pooling to encoded image patches from a JEPA encoder."""
 
     def __init__(
