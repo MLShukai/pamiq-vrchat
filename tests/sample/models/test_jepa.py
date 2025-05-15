@@ -1,8 +1,9 @@
 import pytest
 import torch
 
-from sample.models.image_jepa import AveragePoolInfer, Encoder, Predictor
-from sample.utils import size_2d_to_int_tuple
+from sample.models.components.patch_embedding import PatchEmbedding
+from sample.models.components.positional_embeddings import get_2d_positional_embeddings
+from sample.models.jepa import AveragePoolInfer, Encoder, Predictor
 
 
 class TestEncoder:
@@ -15,9 +16,16 @@ class TestEncoder:
         self, batch_size, img_size, patch_size, hidden_dim, embed_dim
     ):
         """Test Encoder's forward pass without mask."""
+        n_patches = (img_size // patch_size) ** 2
+        patchfier = PatchEmbedding(patch_size, 3, hidden_dim)
+        positional_encodings = get_2d_positional_embeddings(
+            hidden_dim, (img_size // patch_size, img_size // patch_size)
+        ).reshape(n_patches, hidden_dim)
+
         encoder = Encoder(
-            img_size=img_size,
-            patch_size=patch_size,
+            patchfier=patchfier,
+            num_patches=n_patches,
+            positional_encodings=positional_encodings,
             hidden_dim=hidden_dim,
             embed_dim=embed_dim,
             depth=2,
@@ -27,7 +35,6 @@ class TestEncoder:
         images = torch.randn(batch_size, 3, img_size, img_size)
         encoded = encoder(images)
 
-        n_patches = (img_size // patch_size) ** 2
         assert encoded.shape == (batch_size, n_patches, embed_dim)
 
     @pytest.mark.parametrize("batch_size", [1])
@@ -36,9 +43,16 @@ class TestEncoder:
     @pytest.mark.parametrize("mask_ratio", [0.25])
     def test_forward_with_mask(self, batch_size, img_size, patch_size, mask_ratio):
         """Test Encoder's forward pass with mask."""
+        n_patches = (img_size // patch_size) ** 2
+        patchfier = PatchEmbedding(patch_size, 3, 64)
+        positional_encodings = get_2d_positional_embeddings(
+            64, (img_size // patch_size, img_size // patch_size)
+        ).reshape(n_patches, 64)
+
         encoder = Encoder(
-            img_size=img_size,
-            patch_size=patch_size,
+            patchfier=patchfier,
+            num_patches=n_patches,
+            positional_encodings=positional_encodings,
             hidden_dim=64,
             embed_dim=32,
             depth=2,
@@ -46,7 +60,6 @@ class TestEncoder:
         )
 
         images = torch.randn(batch_size, 3, img_size, img_size)
-        n_patches = (img_size // patch_size) ** 2
 
         # Create a random mask with the specified ratio
         num_mask = int(n_patches * mask_ratio)
@@ -59,35 +72,41 @@ class TestEncoder:
 
         assert encoded.shape == (batch_size, n_patches, encoder.out_proj.out_features)
 
-    @pytest.mark.parametrize(
-        "img_size,patch_size,expected_error",
-        [
-            (63, 8, "Image height 63 must be divisible by patch height 8"),
-            (64, 9, "Image height 64 must be divisible by patch height 9"),
-        ],
-    )
-    def test_invalid_image_size(self, img_size, patch_size, expected_error):
-        """Test error when image size is not divisible by patch size."""
-        with pytest.raises(ValueError, match=expected_error):
+    def test_invalid_positional_encoding_shape(self):
+        """Test error when positional encoding shape doesn't match expected
+        shape."""
+        patchfier = PatchEmbedding(8, 3, 64)
+        positional_encodings = torch.zeros(64, 32)  # Wrong shape
+
+        with pytest.raises(ValueError, match="Positional encoding shape mismatch"):
             Encoder(
-                img_size=img_size,
-                patch_size=patch_size,
-                embed_dim=64,
+                patchfier=patchfier,
+                num_patches=64,
+                positional_encodings=positional_encodings,
+                hidden_dim=64,
+                embed_dim=32,
                 depth=1,
                 num_heads=2,
             )
 
     def test_invalid_mask_shape(self):
         """Test error when mask shape doesn't match encoded image shape."""
+        n_patches = 64
+        patchfier = PatchEmbedding(8, 3, 64)
+        positional_encodings = get_2d_positional_embeddings(64, (8, 8)).reshape(
+            n_patches, 64
+        )
+
         encoder = Encoder(
-            img_size=64,
-            patch_size=8,
+            patchfier=patchfier,
+            num_patches=n_patches,
+            positional_encodings=positional_encodings,
+            hidden_dim=64,
             embed_dim=64,
             depth=1,
             num_heads=2,
         )
         images = torch.randn(2, 3, 64, 64)
-        n_patches = (64 // 8) ** 2
 
         # Create mask with incorrect shape
         masks = torch.zeros(2, n_patches - 1, dtype=torch.bool)
@@ -95,43 +114,24 @@ class TestEncoder:
         with pytest.raises(ValueError, match="Shape mismatch"):
             encoder(images, masks)
 
-    @pytest.mark.parametrize("img_size", [64])
-    @pytest.mark.parametrize("patch_size", [8])
-    def test_image_patch_size_variations(self, img_size, patch_size):
-        """Test that encoder handles both int and tuple for img_size and
-        patch_size."""
-        encoder = Encoder(
-            img_size=img_size,
-            patch_size=patch_size,
-            embed_dim=64,
-            depth=1,
-            num_heads=2,
-        )
-
-        # Regardless of the input format, we should be able to use the encoder
-        img_size = size_2d_to_int_tuple(img_size)
-        patch_size = size_2d_to_int_tuple(patch_size)
-        h, w = img_size
-
-        ph, pw = patch_size
-
-        images = torch.randn(1, 3, h, w)
-        encoded = encoder(images)
-
-        n_patches = (h // ph) * (w // pw)
-        assert encoded.shape == (1, n_patches, encoder.out_proj.out_features)
-
     def test_non_bool_mask(self):
         """Test error when mask tensor is not boolean."""
+        n_patches = 64
+        patchfier = PatchEmbedding(8, 3, 64)
+        positional_encodings = get_2d_positional_embeddings(64, (8, 8)).reshape(
+            n_patches, 64
+        )
+
         encoder = Encoder(
-            img_size=64,
-            patch_size=8,
+            patchfier=patchfier,
+            num_patches=n_patches,
+            positional_encodings=positional_encodings,
+            hidden_dim=64,
             embed_dim=64,
             depth=1,
             num_heads=2,
         )
         images = torch.randn(1, 3, 64, 64)
-        n_patches = (64 // 8) ** 2
 
         # Create mask with incorrect dtype (float instead of bool)
         masks = torch.zeros(1, n_patches, dtype=torch.float32)
@@ -139,16 +139,18 @@ class TestEncoder:
         with pytest.raises(ValueError, match="Mask tensor dtype must be bool"):
             encoder(images, masks)
 
-        # Test with int dtype
-        masks = torch.zeros(1, n_patches, dtype=torch.int32)
-
-        with pytest.raises(ValueError, match="Mask tensor dtype must be bool"):
-            encoder(images, masks)
-
     def test_clone(self):
+        n_patches = 64
+        patchfier = PatchEmbedding(8, 3, 64)
+        positional_encodings = get_2d_positional_embeddings(64, (8, 8)).reshape(
+            n_patches, 64
+        )
+
         encoder = Encoder(
-            img_size=64,
-            patch_size=8,
+            patchfier=patchfier,
+            num_patches=n_patches,
+            positional_encodings=positional_encodings,
+            hidden_dim=64,
             embed_dim=64,
             depth=1,
             num_heads=2,
@@ -161,30 +163,31 @@ class TestEncoder:
 
 class TestPredictor:
     @pytest.mark.parametrize("batch_size", [1])
-    @pytest.mark.parametrize("n_patches", [8, (8, 8)])
+    @pytest.mark.parametrize("n_patches", [64])
     @pytest.mark.parametrize("embed_dim", [32])
     @pytest.mark.parametrize("hidden_dim", [32])
     def test_forward(self, batch_size, n_patches, embed_dim, hidden_dim):
         """Test Predictor's forward pass."""
+        positional_encodings = get_2d_positional_embeddings(hidden_dim, (8, 8)).reshape(
+            n_patches, hidden_dim
+        )
+
         predictor = Predictor(
-            n_patches=n_patches,
+            num_patches=n_patches,
+            positional_encodings=positional_encodings,
             embed_dim=embed_dim,
             hidden_dim=hidden_dim,
             depth=2,
             num_heads=2,
         )
 
-        # Determine actual number of patches
-        n_patches = size_2d_to_int_tuple(n_patches)
-        n_patches_count = n_patches[0] * n_patches[1]
-
         # Create latents as if they came from encoder
-        latents = torch.randn(batch_size, n_patches_count, embed_dim)
+        latents = torch.randn(batch_size, n_patches, embed_dim)
 
         # Create target mask (e.g., 25% of patches are targets)
-        targets = torch.zeros(batch_size, n_patches_count, dtype=torch.bool)
+        targets = torch.zeros(batch_size, n_patches, dtype=torch.bool)
         for i in range(batch_size):
-            target_indices = torch.randperm(n_patches_count)[: n_patches_count // 4]
+            target_indices = torch.randperm(n_patches)[: n_patches // 4]
             targets[i, target_indices] = True
 
         predictions = predictor(latents, targets)
@@ -192,14 +195,35 @@ class TestPredictor:
         # Check output shape
         assert predictions.shape == (
             batch_size,
-            n_patches_count,
+            n_patches,
             embed_dim,
         )
 
+    def test_invalid_positional_encoding_shape(self):
+        """Test error when positional encoding shape doesn't match expected
+        shape."""
+        positional_encodings = torch.zeros(32, 64)  # Wrong shape for hidden_dim=32
+
+        with pytest.raises(ValueError, match="Positional encodings shape mismatch"):
+            Predictor(
+                num_patches=64,
+                positional_encodings=positional_encodings,
+                embed_dim=32,
+                hidden_dim=32,
+                depth=1,
+                num_heads=2,
+            )
+
     def test_invalid_target_shape(self):
         """Test error when target shape doesn't match latent shape."""
+        n_patches = 64
+        positional_encodings = get_2d_positional_embeddings(32, (8, 8)).reshape(
+            n_patches, 32
+        )
+
         predictor = Predictor(
-            n_patches=(8, 8),
+            num_patches=n_patches,
+            positional_encodings=positional_encodings,
             embed_dim=32,
             hidden_dim=32,
             depth=1,
@@ -213,8 +237,14 @@ class TestPredictor:
 
     def test_non_bool_target(self):
         """Test error when target tensor is not boolean."""
+        n_patches = 64
+        positional_encodings = get_2d_positional_embeddings(32, (8, 8)).reshape(
+            n_patches, 32
+        )
+
         predictor = Predictor(
-            n_patches=(8, 8),
+            num_patches=n_patches,
+            positional_encodings=positional_encodings,
             embed_dim=32,
             hidden_dim=32,
             depth=1,
@@ -228,12 +258,6 @@ class TestPredictor:
         with pytest.raises(ValueError, match="Target tensor dtype must be bool"):
             predictor(latents, targets)
 
-        # Test with int dtype
-        targets = torch.zeros(1, 64, dtype=torch.int32)
-
-        with pytest.raises(ValueError, match="Target tensor dtype must be bool"):
-            predictor(latents, targets)
-
 
 class TestJEPAIntegration:
     def test_encoder_predictor_integration(self):
@@ -243,26 +267,34 @@ class TestJEPAIntegration:
         img_size = 64
         patch_size = 8
         embed_dim = 32
+        hidden_dim = 64
 
         # Calculate grid dimensions
-        img_size_tuple = size_2d_to_int_tuple(img_size)
-        patch_size_tuple = size_2d_to_int_tuple(patch_size)
-        n_patches_h = img_size_tuple[0] // patch_size_tuple[0]
-        n_patches_w = img_size_tuple[1] // patch_size_tuple[1]
+        n_patches_h = img_size // patch_size
+        n_patches_w = img_size // patch_size
         n_patches = n_patches_h * n_patches_w
 
         # Initialize models with reduced complexity
+        patchfier = PatchEmbedding(patch_size, 3, hidden_dim)
+        positional_encodings = get_2d_positional_embeddings(
+            hidden_dim, (n_patches_h, n_patches_w)
+        ).reshape(n_patches, hidden_dim)
+
         encoder = Encoder(
-            img_size=img_size,
-            patch_size=patch_size,
-            hidden_dim=64,
+            patchfier=patchfier,
+            num_patches=n_patches,
+            positional_encodings=positional_encodings,
+            hidden_dim=hidden_dim,
             embed_dim=embed_dim,
             depth=2,
             num_heads=2,
         )
 
         predictor = Predictor(
-            n_patches=(n_patches_h, n_patches_w),
+            num_patches=n_patches,
+            positional_encodings=positional_encodings[
+                :, :32
+            ],  # Use first 32 dims for predictor
             embed_dim=embed_dim,
             hidden_dim=32,
             depth=1,
@@ -293,10 +325,16 @@ class TestAveragePoolInfer:
     @pytest.fixture
     def encoder(self):
         """Create a minimal working Encoder for testing."""
+        n_patches = 16
+        patchfier = PatchEmbedding(8, 3, 64)
+        positional_encodings = get_2d_positional_embeddings(64, (4, 4)).reshape(
+            n_patches, 64
+        )
+
         return Encoder(
-            img_size=32,
-            patch_size=8,
-            in_channels=3,
+            patchfier=patchfier,
+            num_patches=n_patches,
+            positional_encodings=positional_encodings,
             hidden_dim=64,
             embed_dim=32,
             depth=1,

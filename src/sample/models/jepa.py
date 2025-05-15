@@ -13,8 +13,6 @@ from pamiq_core.torch import get_device
 
 from sample.utils import size_2d, size_2d_to_int_tuple
 
-from .components.patch_embedding import PatchEmbedding
-from .components.positional_embeddings import get_2d_positional_embeddings
 from .components.transformer import Transformer
 from .utils import init_weights
 
@@ -25,9 +23,9 @@ class Encoder(nn.Module):
 
     def __init__(
         self,
-        img_size: size_2d = 224,
-        patch_size: size_2d = 16,
-        in_channels: int = 3,
+        patchfier: nn.Module,
+        num_patches: int,
+        positional_encodings: torch.Tensor,
         hidden_dim: int = 768,
         embed_dim: int = 384,
         depth: int = 12,
@@ -59,42 +57,23 @@ class Encoder(nn.Module):
         super().__init__()
         self.num_features = self.embed_dim = hidden_dim
         self.num_heads = num_heads
+        self.num_patches = num_patches
+        if positional_encodings.shape != (num_patches, hidden_dim):
+            raise ValueError(
+                "Positional encoding shape mismatch, "
+                f"expected: {(num_patches, hidden_dim)}, "
+                f"input: {positional_encodings.shape}"
+            )
 
-        # define input layer to convert input image into patches.
-        self.patch_embed = PatchEmbedding(
-            patch_size=patch_size,
-            in_channels=in_channels,
-            embed_dim=hidden_dim,
-        )
+        self.patchfier = patchfier
 
         # define mask token_vector
         self.mask_token_vector = nn.Parameter(torch.empty(hidden_dim))
 
-        # define positional encodings
-        img_size = size_2d_to_int_tuple(img_size)
-        patch_size = size_2d_to_int_tuple(patch_size)
-        img_height, img_width = img_size
-        patch_height, patch_width = patch_size
-
-        if img_height % patch_height != 0:
-            raise ValueError(
-                f"Image height {img_height} must be divisible by patch height {patch_height}"
-            )
-        if img_width % patch_width != 0:
-            raise ValueError(
-                f"Image width {img_width} must be divisible by patch width {patch_width}"
-            )
-
-        n_patches_hw = (img_height // patch_height, img_width // patch_width)
-        n_patches = n_patches_hw[0] * n_patches_hw[1]
-
-        positional_encodings = get_2d_positional_embeddings(
-            hidden_dim,
-            n_patches_hw,
-        ).reshape(1, n_patches, hidden_dim)
         self.positional_encodings: torch.Tensor
         self.register_buffer(
-            "positional_encodings", torch.from_numpy(positional_encodings).float()
+            "positional_encodings",
+            positional_encodings.unsqueeze(0),
         )
 
         # define transformer
@@ -131,7 +110,7 @@ class Encoder(nn.Module):
             Encoded latents with shape [batch_size, n_patches, out_dim]
         """
         # Patchify input images
-        x = self.patch_embed(images)
+        x = self.patchfier(images)
         # x: [batch_size, n_patches, embed_dim]
 
         # Apply mask if provided
@@ -174,7 +153,8 @@ class Predictor(nn.Module):
 
     def __init__(
         self,
-        n_patches: size_2d,
+        num_patches: int,
+        positional_encodings: torch.Tensor,
         embed_dim: int = 384,
         hidden_dim: int = 384,
         depth: int = 6,
@@ -204,21 +184,21 @@ class Predictor(nn.Module):
         """
         super().__init__()
 
+        if positional_encodings.shape != (num_patches, hidden_dim):
+            raise ValueError(
+                "Positional encodings shape mismatch, "
+                f"expected: {(num_patches, hidden_dim)}, "
+                f"input: {positional_encodings.shape}"
+            )
+
         self.input_proj = nn.Linear(embed_dim, hidden_dim, bias=True)
 
         # prepare tokens representing patches to be predicted
         self.prediction_token_vector = nn.Parameter(torch.empty(hidden_dim))
 
         # define positional encodings
-        (n_patches_vertical, n_patches_horizontal) = size_2d_to_int_tuple(n_patches)
-        positional_encodings = get_2d_positional_embeddings(
-            hidden_dim, grid_size=(n_patches_vertical, n_patches_horizontal)
-        ).reshape(1, n_patches_vertical * n_patches_horizontal, hidden_dim)
-
         self.positional_encodings: torch.Tensor
-        self.register_buffer(
-            "positional_encodings", torch.from_numpy(positional_encodings).float()
-        )
+        self.register_buffer("positional_encodings", positional_encodings.unsqueeze(0))
 
         # define transformer
         self.transformer = Transformer(

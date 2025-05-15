@@ -12,25 +12,38 @@ from torch.utils.data import DataLoader
 
 from sample.data import BufferName, DataKey
 from sample.models import ModelName
-from sample.models.image_jepa import Encoder, Predictor
-from sample.trainers.image_jepa import ImageJEPATrainer, MultiBlockMaskCollator
+from sample.models.components.patch_embedding import PatchEmbedding
+from sample.models.components.positional_embeddings import get_2d_positional_embeddings
+from sample.models.jepa import Encoder, Predictor
+from sample.trainers.jepa import JEPATrainer, MultiBlockMaskCollator2d
 from tests.sample.helpers import parametrize_device
 
 
-class TestImageJEPATrainer:
+class TestJEPATrainer:
     IMAGE_SIZE = 64
     PATCH_SIZE = 8
     CHANNELS = 3
     EMBED_DIM = 16
+    HIDDEN_DIM = 128
     N_PATCHES = IMAGE_SIZE // PATCH_SIZE
 
     @pytest.fixture
-    def context_encoder(self):
+    def patchfier(self):
+        return PatchEmbedding(self.PATCH_SIZE, self.CHANNELS, self.HIDDEN_DIM)
+
+    @pytest.fixture
+    def positional_encodings(self):
+        return get_2d_positional_embeddings(
+            self.HIDDEN_DIM, (self.N_PATCHES, self.N_PATCHES)
+        ).reshape(-1, self.HIDDEN_DIM)
+
+    @pytest.fixture
+    def context_encoder(self, patchfier, positional_encodings):
         return Encoder(
-            img_size=self.IMAGE_SIZE,
-            patch_size=self.PATCH_SIZE,
-            in_channels=self.CHANNELS,
-            hidden_dim=128,
+            patchfier=patchfier,
+            num_patches=self.N_PATCHES * self.N_PATCHES,
+            positional_encodings=positional_encodings,
+            hidden_dim=self.HIDDEN_DIM,
             embed_dim=self.EMBED_DIM,
             depth=1,
             num_heads=2,
@@ -41,9 +54,16 @@ class TestImageJEPATrainer:
         return context_encoder.clone()
 
     @pytest.fixture
-    def predictor(self):
+    def predictor_positional_encodings(self):
+        return get_2d_positional_embeddings(
+            64, (self.N_PATCHES, self.N_PATCHES)
+        ).reshape(-1, 64)
+
+    @pytest.fixture
+    def predictor(self, predictor_positional_encodings):
         return Predictor(
-            n_patches=self.N_PATCHES,
+            num_patches=self.N_PATCHES * self.N_PATCHES,
+            positional_encodings=predictor_positional_encodings,
             embed_dim=self.EMBED_DIM,
             hidden_dim=64,
             depth=1,
@@ -72,7 +92,7 @@ class TestImageJEPATrainer:
             DataLoader,
             batch_size=2,
             shuffle=True,
-            collate_fn=MultiBlockMaskCollator(
+            collate_fn=MultiBlockMaskCollator2d(
                 input_size=self.IMAGE_SIZE,
                 patch_size=self.PATCH_SIZE,
             ),
@@ -85,16 +105,19 @@ class TestImageJEPATrainer:
 
     @pytest.fixture
     def trainer(self, partial_dataloader, partial_optimizer, mocker: MockerFixture):
-        mocker.patch("sample.trainers.image_jepa.mlflow")
-        return ImageJEPATrainer(
+        mocker.patch("sample.trainers.jepa.mlflow")
+        return JEPATrainer(
             partial_dataloader,
             partial_optimizer,
+            context_encoder_name=ModelName.IMAGE_JEPA_CONTEXT_ENCODER,
+            target_encoder_name=ModelName.IMAGE_JEPA_TARGET_ENCODER,
+            predictor_name=ModelName.IMAGE_JEPA_PREDICTOR,
             min_buffer_size=4,
             min_new_data_count=2,
         )
 
     @parametrize_device
-    def test_run(self, device, data_buffers, models, trainer: ImageJEPATrainer):
+    def test_run(self, device, data_buffers, models, trainer: JEPATrainer):
         """Test JEPA Trainer workflow."""
         models = {
             name: TorchTrainingModel(m, has_inference_model=False, device=device)
@@ -121,7 +144,7 @@ class TestImageJEPATrainer:
         assert trainer.run() is False
         assert trainer.global_step == global_step
 
-    def test_save_and_load_state(self, trainer: ImageJEPATrainer, tmp_path: Path):
+    def test_save_and_load_state(self, trainer: JEPATrainer, tmp_path: Path):
         trainer_path = tmp_path / "trainer"
         trainer.save_state(trainer_path)
         global_step = trainer.global_step
@@ -132,7 +155,7 @@ class TestImageJEPATrainer:
         assert trainer.global_step == global_step
 
 
-class TestMultiBlockMaskCollator:
+class TestMultiBlockMaskCollator2d:
     @pytest.mark.parametrize("image_size", [224])
     @pytest.mark.parametrize("patch_size", [16])
     @pytest.mark.parametrize("min_keep", [10])
@@ -140,7 +163,7 @@ class TestMultiBlockMaskCollator:
     def test_sample_mask_rectangle(self, image_size, patch_size, min_keep, mask_scale):
         """Test that the sampled mask rectangle has valid dimensions and
         follows constraints."""
-        collator = MultiBlockMaskCollator(
+        collator = MultiBlockMaskCollator2d(
             input_size=image_size,
             patch_size=patch_size,
             mask_scale=mask_scale,
@@ -187,7 +210,7 @@ class TestMultiBlockMaskCollator:
         assert image_size % patch_size == 0
 
         # Initialize collator
-        collator = MultiBlockMaskCollator(
+        collator = MultiBlockMaskCollator2d(
             input_size=(image_size, image_size),
             patch_size=(patch_size, patch_size),
             n_masks=n_masks,
@@ -258,7 +281,7 @@ class TestMultiBlockMaskCollator:
         """Test the sample_masks_and_target method for correct output shapes
         and properties."""
         image_size, patch_size = 224, 16
-        collator = MultiBlockMaskCollator(
+        collator = MultiBlockMaskCollator2d(
             input_size=(image_size, image_size),
             patch_size=(patch_size, patch_size),
             n_masks=4,
@@ -290,7 +313,7 @@ class TestMultiBlockMaskCollator:
     def test_n_patches_property(self):
         """Test that the n_patches property returns the correct value."""
         image_size, patch_size = 224, 16
-        collator = MultiBlockMaskCollator(
+        collator = MultiBlockMaskCollator2d(
             input_size=(image_size, image_size),
             patch_size=(patch_size, patch_size),
         )
@@ -300,7 +323,7 @@ class TestMultiBlockMaskCollator:
 
     def test_step_method(self):
         """Test that the step method increments the counter properly."""
-        collator = MultiBlockMaskCollator(
+        collator = MultiBlockMaskCollator2d(
             input_size=224,
             patch_size=16,
         )
@@ -322,7 +345,7 @@ class TestMultiBlockMaskCollator:
     def test_invalid_dimensions(self, input_size, patch_size, expected_error):
         """Test error when dimensions are invalid."""
         with pytest.raises(ValueError, match=expected_error):
-            MultiBlockMaskCollator(
+            MultiBlockMaskCollator2d(
                 input_size=input_size,
                 patch_size=patch_size,
             )
@@ -338,7 +361,7 @@ class TestMultiBlockMaskCollator:
     def test_invalid_mask_scale(self, mask_scale, expected_error):
         """Test error when mask_scale is invalid."""
         with pytest.raises(ValueError, match=expected_error):
-            MultiBlockMaskCollator(
+            MultiBlockMaskCollator2d(
                 input_size=224,
                 patch_size=16,
                 mask_scale=mask_scale,
@@ -349,7 +372,7 @@ class TestMultiBlockMaskCollator:
         with pytest.raises(
             ValueError, match="min_keep .* must be less than or equal to total patches"
         ):
-            MultiBlockMaskCollator(
+            MultiBlockMaskCollator2d(
                 input_size=224,
                 patch_size=16,
                 min_keep=1000,  # Much larger than available patches

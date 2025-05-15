@@ -16,14 +16,13 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader, TensorDataset, default_collate
 
 from sample.data import BufferName, DataKey
-from sample.models import ModelName
-from sample.models.image_jepa import Encoder, Predictor
+from sample.models.jepa import Encoder, Predictor
 from sample.utils import size_2d, size_2d_to_int_tuple
 
 OPTIMIZER_NAME = "optimizer"
 
 
-class ImageJEPATrainer(TorchTrainer):
+class JEPATrainer(TorchTrainer):
     """Trainer for Image Joint Embedding Predictive Architecture (I-JEPA).
 
     This trainer implements the JEPA training process which involves:
@@ -41,6 +40,9 @@ class ImageJEPATrainer(TorchTrainer):
         self,
         partial_dataloader: partial[DataLoader[Tensor]],
         partial_optimizer: partial[Optimizer],
+        context_encoder_name: str,
+        target_encoder_name: str,
+        predictor_name: str,
         target_encoder_update_moving_average: float = 0.996,  # based on the original I-JEPA initinal setting.
         max_epochs: int = 1,
         data_user_name: str = BufferName.IMAGE,
@@ -67,6 +69,9 @@ class ImageJEPATrainer(TorchTrainer):
         self.data_user_name = data_user_name
         self.partial_optimizer = partial_optimizer
         self.partial_dataloader = partial_dataloader
+        self.context_encoder_name = context_encoder_name
+        self.target_encoder_name = target_encoder_name
+        self.predictor_name = predictor_name
         self.target_encoder_update_moving_average = target_encoder_update_moving_average
         self.max_epochs = max_epochs
         self.global_step = 0
@@ -94,14 +99,12 @@ class ImageJEPATrainer(TorchTrainer):
         """
         super().on_training_models_attached()
         self.context_encoder = self.get_torch_training_model(
-            ModelName.IMAGE_JEPA_CONTEXT_ENCODER, Encoder
+            self.context_encoder_name, Encoder
         )
         self.target_encoder = self.get_torch_training_model(
-            ModelName.IMAGE_JEPA_TARGET_ENCODER, Encoder
+            self.target_encoder_name, Encoder
         )
-        self.predictor = self.get_torch_training_model(
-            ModelName.IMAGE_JEPA_PREDICTOR, Predictor
-        )
+        self.predictor = self.get_torch_training_model(self.predictor_name, Predictor)
 
     @override
     def create_optimizers(self) -> OptimizersSetup:
@@ -234,11 +237,11 @@ class ImageJEPATrainer(TorchTrainer):
         self.global_step = int((path / "global_step").read_text("utf-8"))
 
 
-class MultiBlockMaskCollator:
-    """I-JEPA collator function for providing boolean mask tensors.
+class MultiBlockMaskCollator2d:
+    """Image-JEPA collator function for providing boolean mask tensors.
 
     This collator creates boolean masks for both the context encoder and predictor target.
-    It's designed to work with the I-JEPA (Image Joint Embedding Predictive Architecture) model.
+    It's designed to work with the Image-JEPA (Image Joint Embedding Predictive Architecture) model.
 
     The masks are boolean tensors where:
     - True values indicate patches to be masked (ignored)
