@@ -2,13 +2,12 @@
 
 import numpy as np
 import numpy.typing as npt
+import torch
 
 from sample.utils import size_2d, size_2d_to_int_tuple
 
 
-def get_2d_positional_embeddings(
-    embed_dim: int, grid_size: size_2d
-) -> npt.NDArray[np.float64]:
+def get_2d_positional_embeddings(embed_dim: int, grid_size: size_2d) -> torch.Tensor:
     """
     Args:
         embed_dim: dim of positional embeddings.
@@ -25,7 +24,7 @@ def get_2d_positional_embeddings(
     positional_embeddings = _get_2d_sincos_positional_embeddings_from_grid(
         embed_dim, grid
     )
-    return positional_embeddings
+    return torch.from_numpy(positional_embeddings).float()
 
 
 def _get_2d_sincos_positional_embeddings_from_grid(
