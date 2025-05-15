@@ -97,20 +97,20 @@ class Encoder(nn.Module):
 
     @override
     def forward(
-        self, images: torch.Tensor, masks: torch.Tensor | None = None
+        self, data: torch.Tensor, masks: torch.Tensor | None = None
     ) -> torch.Tensor:
-        """Encode input images into latents, applying masks if provided.
+        """Encode input data into latents, applying masks if provided.
 
         Args:
-            images: Input images with shape [batch_size, 3, height, width]
+            data: Input data
             masks: Boolean masks for images embedded as patches with shape
                 [batch_size, n_patches]. True values indicate masked patches.
 
         Returns:
             Encoded latents with shape [batch_size, n_patches, out_dim]
         """
-        # Patchify input images
-        x = self.patchfier(images)
+        # Patchify input data
+        x = self.patchfier(data)
         # x: [batch_size, n_patches, embed_dim]
 
         # Apply mask if provided
@@ -138,9 +138,9 @@ class Encoder(nn.Module):
 
     @override
     def __call__(
-        self, images: torch.Tensor, masks: torch.Tensor | None = None
+        self, data: torch.Tensor, masks: torch.Tensor | None = None
     ) -> torch.Tensor:
-        return super().__call__(images, masks)
+        return super().__call__(data, masks)
 
     def clone(self) -> Self:
         """Clone model for creating target or context encoder."""
