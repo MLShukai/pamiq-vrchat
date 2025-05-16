@@ -1,5 +1,5 @@
-import numpy as np
 import pytest
+import torch
 
 from sample.models.components.positional_embeddings import (
     get_2d_positional_embeddings,
@@ -45,6 +45,6 @@ def test_get_2d_positional_embeddings(
         positional_embeddings.shape[1] == expected_grid_size_w
     ), "grid size (width) mismatch."
     assert positional_embeddings.shape[2] == embed_dim, "dim mismatch."
-    assert np.all(
-        np.abs(positional_embeddings) <= 1.0
+    assert torch.all(
+        torch.abs(positional_embeddings) <= 1.0
     ), "some invalid values of sin and cos function"
