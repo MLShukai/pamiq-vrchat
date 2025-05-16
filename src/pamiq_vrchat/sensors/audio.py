@@ -7,6 +7,7 @@ from typing import override
 import numpy as np
 import numpy.typing as npt
 from pamiq_core.interaction.modular_env import Sensor
+from pamiq_core.interaction.wrappers import Wrapper
 
 logger = logging.getLogger(__name__)
 
@@ -97,3 +98,35 @@ def get_device_name_vrchat_is_outputting_to() -> str | None:
 
     logger.warning("Can not find speaker device VRChat.exe is outputting to.")
     return None
+
+
+class AudioBufferingWrapper(Wrapper[AudioFrame, AudioFrame]):
+    """Wrapper class that can temporarily buffer audio and return it in any
+    sample size."""
+
+    def __init__(self, buffer_size: int, reset_buffer_on_pause: bool = True) -> None:
+        """Initialize.
+
+        Args:
+            buffer_size:
+            reset_buffer_on_pause:
+        """
+        super().__init__()
+        self._buffer_size = buffer_size
+        self._reset_buffer_on_pause = reset_buffer_on_pause
+        self._buffer = None
+
+    @override
+    def wrap(self, value: AudioFrame) -> AudioFrame:
+        assert value.ndim == 2
+        if len(value) <= self._stack_size:
+            return value[-self._stack_size :]
+        if self._data is None:
+            self._data = np.zeros((self._stack_size, value.shape[1]))
+        self._data = np.concatenate([self.data, value])[-self._stack_size :]
+        return self._data.copy()  # prevent self._data from broken.
+
+    @override
+    def on_paused(self) -> None:
+        if self._reset_buffer_on_pause:
+            self._buffer = None
