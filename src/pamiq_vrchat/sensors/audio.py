@@ -118,6 +118,13 @@ class AudioBufferingWrapper(Wrapper[AudioFrame, AudioFrame]):
 
     @override
     def wrap(self, value: AudioFrame) -> AudioFrame:
+        """Reads a frame from the Soundcard and buffers it.
+
+        Args:
+            value: Audio obtained from read() of AudioSensor (shape is [self._frame_size, channels]).
+        Returns:
+            A numpy array containing the audio (shape is [self._frame_size, channels]).
+        """
         assert value.ndim == 2
         if len(value) <= self._stack_size:
             return value[-self._stack_size :]
