@@ -239,15 +239,23 @@ class TestAudioLengthCompletionWrapper:
             np.random.randn(audio_sensor_frame_size, audio_channels).astype("f")
             for _ in range(n_audios)
         ]
-        # audios_flattened = np.concatenate(audios_list)
+        audios_flattened = np.concatenate(audios_list)
         for i, audio in enumerate(audios_list):
             output_audio = audio_length_completion_wrapper.wrap(audio)
+            # check dims
             assert output_audio.shape == (audio_wrapper_frame_size, audio_channels)
-            # end_index = audio_sensor_frame_size * (i + 1)
-            # start_index = end_index - frame_size
-            # expected_audio = sample_audios.reshape(-1, n_channels)[start_index:end_index, :]
-            # zero_pad = np.zeros(max(0, frame_size - expected_audio.shape[0]), 2)
-            # expected_audio = np.concatenate([zero_pad, expected_audio])
-            # assert np.testing.assert_allclose(
-            #     read_audio, expected_audio, rtol=0.0, atol=1e-5
-            # )
+            # create expected audio (if needed, add zero padding).
+            end_index = audio_sensor_frame_size * (i + 1)
+            start_index = max(0, end_index - audio_wrapper_frame_size)
+            expected_audio = audios_flattened[start_index:end_index, :]
+            zero_pad = np.zeros(
+                (
+                    max(0, audio_wrapper_frame_size - expected_audio.shape[0]),
+                    audio_channels,
+                )
+            )
+            expected_audio = np.concatenate([zero_pad, expected_audio])
+            # check each values
+            np.testing.assert_allclose(
+                output_audio, expected_audio, rtol=0.0, atol=1e-5
+            )
