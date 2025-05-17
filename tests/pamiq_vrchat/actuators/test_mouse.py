@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from pytest_mock import MockerFixture
 
@@ -8,6 +10,9 @@ from pamiq_vrchat.actuators.mouse import (
     SmoothMouseActuator,
 )
 
+if sys.platform != "win32" and sys.platform != "linux":
+    pytest.skip(f"{sys.platform} is not supported.", allow_module_level=True)
+
 
 class TestMouseActuator:
     """Tests for the MouseActuator class."""
@@ -15,7 +20,10 @@ class TestMouseActuator:
     @pytest.fixture
     def mock_mouse_output(self, mocker: MockerFixture):
         """Create a mock for InputtinoMouseOutput."""
-        return mocker.patch("pamiq_vrchat.actuators.mouse.InputtinoMouseOutput")
+        if sys.platform == "linux":
+            return mocker.patch("pamiq_io.mouse.InputtinoMouseOutput")
+        elif sys.platform == "win32":
+            return mocker.patch("pamiq_io.mouse.DirectInputMouseOutput")
 
     def test_init(self, mock_mouse_output):
         """Test the initialization of MouseActuator."""
@@ -104,7 +112,10 @@ class TestSmoothMouseActuator:
     @pytest.fixture
     def mock_mouse_output(self, mocker: MockerFixture):
         """Create a mock for InputtinoMouseOutput."""
-        return mocker.patch("pamiq_vrchat.actuators.mouse.InputtinoMouseOutput")
+        if sys.platform == "linux":
+            return mocker.patch("pamiq_io.mouse.InputtinoMouseOutput")
+        elif sys.platform == "win32":
+            return mocker.patch("pamiq_io.mouse.DirectInputMouseOutput")
 
     def test_init(self, mock_mouse_output):
         """Test the initialization of SmoothMouseActuator."""

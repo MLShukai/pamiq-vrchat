@@ -18,7 +18,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libevdev-dev \
     libopencv-dev \
     pulseaudio \
-    v4l-utils \
     bash-completion \
 && apt-get clean \
 && rm -rf /var/lib/apt/lists/* \

@@ -1,6 +1,6 @@
 # PAMIQ VRChat
 
-Interface for PAMIQ to interact with VRChat on Linux.
+Interface for PAMIQ to interact with VRChat.
 
 ## ✨ Features
 
@@ -13,7 +13,8 @@ Interface for PAMIQ to interact with VRChat on Linux.
 
 ## 📦 Installation
 
-First, install [**inputtino**](https://github.com/games-on-whales/inputtino/tree/stable/bindings/python#installation) which is a required dependency.
+> \[!NOTE\]
+> If **🐧 Linux** user, install [**inputtino**](https://github.com/games-on-whales/inputtino/tree/stable/bindings/python#installation) which is a required dependency.
 
 ```sh
 # Install via pip
@@ -29,14 +30,14 @@ pip install .
 
 ### Prerequisites
 
-- Linux with Desktop Environment
+- Linux or Windows machine.
 - Machine capable of running VRChat
 
 ### Install Steam
 
 Download and install Steam from the [official website](https://store.steampowered.com/about/).
 
-### Enable Proton
+### **(🐧Linux User Only)** Enable Proton
 
 Open Steam → Settings → Compatibility and enable `Enable Steam Play for all other titles`.
 
@@ -58,16 +59,13 @@ After install, launch VRChat and login.
 
 For OBS installation and virtual camera setup, refer to [pamiq-io documentation](https://github.com/MLShukai/pamiq-io?tab=readme-ov-file#obs-virtual-camera).
 
-> \[!IMPORTANT\]
-> Don't forget to install `v4l-utils`
-
 > \[!NOTE\]
 > The `Output (Scaled) Resolution` and `FPS Value` in OBS Video settings will affect the output of the `ImageSensor` class.
 > ![obs-video-setting](./docs/images/obs_video_setting.png)
 
 Capture the VRChat window in OBS and enable the virtual camera.
 
-You can also use our pre-configured [Scene Collection](./obs_settings/VRChatSceneCollection.json). Import it from the OBS `Scene Collection` tab → `Import`, and ensure the checkbox is checked.
+You can also use our pre-configured [Scene Collection](./obs_settings/). Import it from the OBS `Scene Collection` tab → `Import`, and ensure the checkbox is checked.
 
 ### Enable OSC
 
@@ -90,6 +88,8 @@ from pamiq_vrchat.sensors import ImageSensor
 sensor = ImageSensor()
 # Or specify a camera index
 # sensor = ImageSensor(camera_index=0)
+# (Windows only) you can specify width and height
+# sensor = ImageSensor(width=1920, height=1080)
 
 # Capture a frame
 frame = sensor.read()
