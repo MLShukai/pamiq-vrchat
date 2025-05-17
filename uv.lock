@@ -269,6 +269,16 @@ wheels = [
 ]
 
 [[package]]
+name = "cv2-enumerate-cameras"
+version = "1.1.18.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/07/b1/6678a76c7a5e6aec76aa55cb02e6163901835e6c2e11fb247e9e99c6b926/cv2_enumerate_cameras-1.1.18.3.tar.gz", hash = "sha256:73784f13e9d31d406db95c3843f44e3b135e5c3c5c159ebf0aaeb342d84e7978", size = 9679, upload-time = "2025-03-06T11:36:10.588Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/24/53/1d78e7b724669b29a24b5b2c9b6374ee44ae365b2c425a2d27a7d5a27533/cv2_enumerate_cameras-1.1.18.3-cp32-abi3-win_amd64.whl", hash = "sha256:e81611708c55f2b734b01c6c0b9afccd4b1f99613c7f9ffd6bb2421453b07bc6", size = 19833, upload-time = "2025-03-06T11:36:07.002Z" },
+    { url = "https://files.pythonhosted.org/packages/2a/e2/4caf537f04ce21aff0f46712b868c0a36f3950c91cb274367bf5910240cb/cv2_enumerate_cameras-1.1.18.3-py3-none-any.whl", hash = "sha256:e3774d0d7b01058461a453eef8fd0203e5e9f1a035857eed18140a8abe0104df", size = 10194, upload-time = "2025-03-06T11:36:08.764Z" },
+]
+
+[[package]]
 name = "cycler"
 version = "0.12.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1187,6 +1197,7 @@ name = "pamiq-vrchat"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "cv2-enumerate-cameras" },
     { name = "inputtino-python", marker = "sys_platform == 'linux'" },
     { name = "pamiq-core" },
     { name = "pamiq-io", extra = ["directinput", "inputtino", "opencv", "osc", "soundcard"] },
@@ -1213,6 +1224,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cv2-enumerate-cameras", specifier = ">=1.1.18.3" },
     { name = "inputtino-python", marker = "sys_platform == 'linux'", git = "https://github.com/games-on-whales/inputtino.git?subdirectory=bindings%2Fpython" },
     { name = "mlflow", marker = "extra == 'sample'", specifier = ">=2.22.0" },
     { name = "pamiq-core", specifier = ">=0.2.2" },
