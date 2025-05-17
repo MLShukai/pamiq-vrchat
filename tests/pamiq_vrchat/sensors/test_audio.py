@@ -329,3 +329,40 @@ class TestAudioLengthCompletionWrapper:
             expected_audio = audios_flattened[start_index:end_index, :]
             # check each values
             assert np.array_equal(output_audio, expected_audio)
+
+    @pytest.mark.parametrize(
+        [
+            "audio_wrapper_frame_size",
+            "audio_channels",
+            "audio_sensor_frame_size",
+        ],
+        [[10, 2, 7]],
+    )
+    @pytest.mark.parametrize("reset_buffer_on_pause", [False, True])
+    def test_on_paused(
+        self,
+        audio_wrapper_frame_size: int,
+        audio_channels: int,
+        audio_sensor_frame_size: int,
+        reset_buffer_on_pause: bool,
+    ):
+        """audio_sensor_frame_size is shorter than
+        audio_length_completion_wrapper.frame_size (buffer is required)."""
+        assert (
+            audio_sensor_frame_size < audio_wrapper_frame_size
+        ), "audio_sensor_frame_size must be shorter than audio_length_completion_wrapper.frame_size"
+        audio_length_completion_wrapper = AudioLengthCompletionWrapper(
+            frame_size=audio_wrapper_frame_size,
+            reset_buffer_on_pause=reset_buffer_on_pause,
+        )
+        assert audio_length_completion_wrapper._buffer is None
+        audio = np.random.randn(audio_sensor_frame_size, audio_channels).astype(
+            np.float32
+        )
+        audio_length_completion_wrapper.wrap(audio)
+        assert audio_length_completion_wrapper._buffer is not None
+        audio_length_completion_wrapper.on_paused()
+        if reset_buffer_on_pause:
+            assert audio_length_completion_wrapper._buffer is None
+        else:
+            assert audio_length_completion_wrapper._buffer is not None
