@@ -12,6 +12,7 @@ except Exception:
 
 
 from pamiq_vrchat.sensors.audio import (
+    AudioLengthCompletionWrapper,
     AudioSensor,
     get_device_name_vrchat_is_outputting_to,
 )
@@ -205,3 +206,48 @@ PACTL_SOURCES_LIST_SHORT_CONTENT = (
     "1\talsa_output.pci-0000_00_1f.3.analog-stereo.monitor\n"
     "43\talsa_input.pci-0000_00_1f.3.analog-stereo\n"
 )
+
+
+class TestAudioLengthCompletionWrapper:
+    """Tests for the AudioLengthCompletionWrapper class."""
+
+    @pytest.mark.parametrize(
+        [
+            "audio_wrapper_frame_size",
+            "audio_channels",
+            "n_audios",
+            "audio_sensor_frame_size",
+        ],
+        [[10, 2, 10, 7]],
+    )
+    def test_wrap_when_completion_is_required(
+        self,
+        audio_wrapper_frame_size: int,
+        audio_channels: int,
+        n_audios: int,
+        audio_sensor_frame_size: int,
+    ):
+        """audio_sensor_frame_size is shorter than
+        audio_length_completion_wrapper.frame_size (completion is required)."""
+        assert (
+            audio_sensor_frame_size < audio_wrapper_frame_size
+        ), "audio_sensor_frame_size must be shorter than audio_length_completion_wrapper.frame_size"
+        audio_length_completion_wrapper = AudioLengthCompletionWrapper(
+            frame_size=audio_wrapper_frame_size
+        )
+        audios_list = [
+            np.random.randn(audio_sensor_frame_size, audio_channels).astype("f")
+            for _ in range(n_audios)
+        ]
+        # audios_flattened = np.concatenate(audios_list)
+        for i, audio in enumerate(audios_list):
+            output_audio = audio_length_completion_wrapper.wrap(audio)
+            assert output_audio.shape == (audio_wrapper_frame_size, audio_channels)
+            # end_index = audio_sensor_frame_size * (i + 1)
+            # start_index = end_index - frame_size
+            # expected_audio = sample_audios.reshape(-1, n_channels)[start_index:end_index, :]
+            # zero_pad = np.zeros(max(0, frame_size - expected_audio.shape[0]), 2)
+            # expected_audio = np.concatenate([zero_pad, expected_audio])
+            # assert np.testing.assert_allclose(
+            #     read_audio, expected_audio, rtol=0.0, atol=1e-5
+            # )
