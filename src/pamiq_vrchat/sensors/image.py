@@ -14,6 +14,7 @@ Examples:
     >>> frame = sensor.read()
 """
 
+import sys
 from typing import override
 
 import cv2
@@ -35,19 +36,34 @@ class ImageSensor(Sensor[ImageFrame]):
     """
 
     @override
-    def __init__(self, camera_index: int | None = None) -> None:
+    def __init__(
+        self,
+        camera_index: int | None = None,
+        width: int | None = None,
+        height: int | None = None,
+    ) -> None:
         """Initializes an ImageSensor instance.
 
         Args:
             camera_index: Index of the camera to use. If None, automatically
                 attempts to find and use the OBS virtual camera.
+            width: Width resolution of the camera in pixels. If None and on Windows,
+                defaults to 1280.
+            height: Height resolution of the camera in pixels. If None and on Windows,
+                defaults to 720.
         """
         super().__init__()
 
         if camera_index is None:
             camera_index = get_obs_virtual_camera_index()
 
-        self._input = OpenCVVideoInput(camera_index)
+        if sys.platform == "win32":
+            if width is None:
+                width = 1280
+            if height is None:
+                height = 720
+
+        self._input = OpenCVVideoInput(camera_index, width, height)
 
     @override
     def read(self) -> ImageFrame:
