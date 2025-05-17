@@ -1,6 +1,6 @@
 # PAMIQ VRChat
 
-Interface for PAMIQ to interact with VRChat on Linux.
+Interface for PAMIQ to interact with VRChat.
 
 ## ✨ Features
 
