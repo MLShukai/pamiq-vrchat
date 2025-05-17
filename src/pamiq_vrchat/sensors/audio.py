@@ -128,9 +128,11 @@ class AudioLengthCompletionWrapper(Wrapper[AudioFrame, AudioFrame]):
         """
         assert value.ndim == 2
         if value.shape[0] <= self._frame_size:
+            # no need to complete audio length
             return value
         if self._buffer is None:
             self._buffer = np.zeros((self._frame_size, value.shape[1]))
+        # complete audio length using audio outputted previously.
         self._buffer = np.concatenate([self._buffer, value])[-self._frame_size :]
         return self._buffer.copy()  # prevent self._buffer from broken.
 
