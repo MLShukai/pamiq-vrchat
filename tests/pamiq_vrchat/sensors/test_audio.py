@@ -257,6 +257,75 @@ class TestAudioLengthCompletionWrapper:
             )
             expected_audio = np.concatenate([zero_pad, expected_audio])
             # check each values
-            np.testing.assert_allclose(
-                output_audio, expected_audio, rtol=0.0, atol=1e-5
-            )
+            assert np.array_equal(output_audio, expected_audio)
+
+    @pytest.mark.parametrize(
+        [
+            "audio_wrapper_frame_size",
+            "audio_channels",
+            "n_audios",
+        ],
+        [[10, 2, 10]],
+    )
+    def test_wrap_when_audio_lengthes_are_equal(
+        self,
+        audio_wrapper_frame_size: int,
+        audio_channels: int,
+        n_audios: int,
+    ):
+        """audio_sensor_frame_size is equal to
+        audio_length_completion_wrapper.frame_size (no completion is
+        needed)."""
+        audio_length_completion_wrapper = AudioLengthCompletionWrapper(
+            frame_size=audio_wrapper_frame_size
+        )
+        audios_list = [
+            np.random.randn(audio_wrapper_frame_size, audio_channels).astype(np.float32)
+            for _ in range(n_audios)
+        ]
+        for i, audio in enumerate(audios_list):
+            output_audio = audio_length_completion_wrapper.wrap(audio)
+            # check dims
+            assert output_audio.shape == (audio_wrapper_frame_size, audio_channels)
+            # check each values
+            assert np.array_equal(output_audio, audio)
+
+    @pytest.mark.parametrize(
+        [
+            "audio_wrapper_frame_size",
+            "audio_channels",
+            "n_audios",
+            "audio_sensor_frame_size",
+        ],
+        [[10, 2, 10, 17]],
+    )
+    def test_wrap_when_cutting_is_required(
+        self,
+        audio_wrapper_frame_size: int,
+        audio_channels: int,
+        n_audios: int,
+        audio_sensor_frame_size: int,
+    ):
+        """audio_sensor_frame_size is longer than
+        audio_length_completion_wrapper.frame_size (cutting is required)."""
+        assert (
+            audio_sensor_frame_size > audio_wrapper_frame_size
+        ), "audio_sensor_frame_size must be longer than audio_length_completion_wrapper.frame_size"
+        audio_length_completion_wrapper = AudioLengthCompletionWrapper(
+            frame_size=audio_wrapper_frame_size
+        )
+        audios_list = [
+            np.random.randn(audio_sensor_frame_size, audio_channels).astype(np.float32)
+            for _ in range(n_audios)
+        ]
+        audios_flattened = np.concatenate(audios_list)
+        for i, audio in enumerate(audios_list):
+            output_audio = audio_length_completion_wrapper.wrap(audio)
+            # check dims
+            assert output_audio.shape == (audio_wrapper_frame_size, audio_channels)
+            # create expected audio (if needed, add zero padding).
+            end_index = audio_sensor_frame_size * (i + 1)
+            start_index = max(0, end_index - audio_wrapper_frame_size)
+            expected_audio = audios_flattened[start_index:end_index, :]
+            # check each values
+            assert np.array_equal(output_audio, expected_audio)
