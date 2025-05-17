@@ -126,7 +126,8 @@ class AudioLengthCompletionWrapper(Wrapper[AudioFrame, AudioFrame]):
         Returns:
             Audio adjusted it's length (shape is [min(AudioSensor._frame_size, self._frame_size), channels]).
         """
-        assert value.ndim == 2
+        if value.ndim != 2:
+            raise ValueError(...)
         if value.shape[0] >= self._frame_size:
             # no need to complete audio length
             return value[-self._frame_size :, :]
