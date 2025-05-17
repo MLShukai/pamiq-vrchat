@@ -130,7 +130,7 @@ class AudioLengthCompletionWrapper(Wrapper[AudioFrame, AudioFrame]):
             raise ValueError(...)
         if value.shape[0] >= self._frame_size:
             # no need to complete audio length
-            return value[-self._frame_size :, :]
+            return value[-self._frame_size :]
         if self._buffer is None:
             self._buffer = np.zeros(
                 (self._frame_size, value.shape[1]), dtype=value.dtype
