@@ -236,7 +236,7 @@ class TestAudioLengthCompletionWrapper:
             frame_size=audio_wrapper_frame_size
         )
         audios_list = [
-            np.random.randn(audio_sensor_frame_size, audio_channels).astype("f")
+            np.random.randn(audio_sensor_frame_size, audio_channels).astype(np.float32)
             for _ in range(n_audios)
         ]
         audios_flattened = np.concatenate(audios_list)
@@ -252,7 +252,8 @@ class TestAudioLengthCompletionWrapper:
                 (
                     max(0, audio_wrapper_frame_size - expected_audio.shape[0]),
                     audio_channels,
-                )
+                ),
+                dtype=np.float32,
             )
             expected_audio = np.concatenate([zero_pad, expected_audio])
             # check each values

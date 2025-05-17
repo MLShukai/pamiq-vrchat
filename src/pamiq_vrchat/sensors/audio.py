@@ -134,7 +134,9 @@ class AudioLengthCompletionWrapper(Wrapper[AudioFrame, AudioFrame]):
             # cut audio length
             return value[-self._frame_size :, :]
         if self._buffer is None:
-            self._buffer = np.zeros((self._frame_size, value.shape[1]))
+            self._buffer = np.zeros(
+                (self._frame_size, value.shape[1]), dtype=np.float32
+            )
         # complete audio length using audio output previously.
         self._buffer = np.concatenate([self._buffer, value])[-self._frame_size :]
         return self._buffer.copy()  # prevent self._buffer from broken.
