@@ -101,7 +101,7 @@ def get_device_name_vrchat_is_outputting_to() -> str | None:
 
 
 class AudioLengthCompletionWrapper(Wrapper[AudioFrame, AudioFrame]):
-    """Wrapper class that can complete audio length using audio outputted
+    """Wrapper class that can complete audio length using audio output
     previously."""
 
     def __init__(self, frame_size: int, reset_buffer_on_pause: bool = True) -> None:
@@ -132,7 +132,7 @@ class AudioLengthCompletionWrapper(Wrapper[AudioFrame, AudioFrame]):
             return value
         if self._buffer is None:
             self._buffer = np.zeros((self._frame_size, value.shape[1]))
-        # complete audio length using audio outputted previously.
+        # complete audio length using audio output previously.
         self._buffer = np.concatenate([self._buffer, value])[-self._frame_size :]
         return self._buffer.copy()  # prevent self._buffer from broken.
 
