@@ -138,5 +138,6 @@ class AudioLengthCompletionWrapper(Wrapper[AudioFrame, AudioFrame]):
 
     @override
     def on_paused(self) -> None:
+        """Reset buffer."""
         if self._reset_buffer_on_pause:
             self._buffer = None
