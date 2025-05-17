@@ -101,7 +101,8 @@ def get_device_name_vrchat_is_outputting_to() -> str | None:
 
 
 class AudioLengthCompletionWrapper(Wrapper[AudioFrame, AudioFrame]):
-    """Wrapper class that can complete audio length by past audio."""
+    """Wrapper class that can complete audio length using audio outputted
+    previously."""
 
     def __init__(self, frame_size: int, reset_buffer_on_pause: bool = True) -> None:
         """Initialize.
