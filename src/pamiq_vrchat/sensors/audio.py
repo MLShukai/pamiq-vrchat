@@ -126,11 +126,11 @@ class AudioLengthCompletionWrapper(Wrapper[AudioFrame, AudioFrame]):
         Returns:
             Audio adjusted it's length (shape is [min(AudioSensor._frame_size, self._frame_size), channels]).
         Raises:
-            ValueError: If Input dim does not match [frame_size, n_channels].
+            ValueError: If Input shape does not match the format as [frame_size, n_channels].
         """
         if value.ndim != 2:
             raise ValueError(
-                f"Input dim {value.shape} does not match [frame_size, n_channels]."
+                f"Input shape {value.shape} does not match the format as [frame_size, n_channels]."
             )
         if value.shape[0] >= self._frame_size:
             # no need to complete audio length

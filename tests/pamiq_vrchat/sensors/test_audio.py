@@ -1,5 +1,7 @@
 """Tests for the Audio_sensor module."""
 
+import re
+
 import numpy as np
 import psutil
 import pytest
@@ -289,6 +291,18 @@ class TestAudioLengthCompletionWrapper:
             assert output_audio.shape == (audio_wrapper_frame_size, audio_channels)
             # check each values
             assert np.array_equal(output_audio, audio)
+
+    def test_wrap_with_invalid_audio_dims(self):
+        """Test wrap with invalid audio size."""
+        audio_length_completion_wrapper = AudioLengthCompletionWrapper(frame_size=10)
+        audio = np.random.randn(7, 11, 13).astype(np.float32)
+        with pytest.raises(
+            ValueError,
+            match=re.escape(
+                "Input shape (7, 11, 13) does not match the format as [frame_size, n_channels]."
+            ),
+        ):
+            audio_length_completion_wrapper.wrap(audio)
 
     @pytest.mark.parametrize(
         [
