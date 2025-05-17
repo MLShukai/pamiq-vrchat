@@ -71,7 +71,9 @@ class TestAudioSensor:
             16000, "vrchat_device", None, 2
         )
 
-    def test_read(self, mock_soundcard_audio_input):
+    def test_read(
+        self, mock_soundcard_audio_input, mock_get_device_name_vrchat_is_outputting_to
+    ):
         """Test the read method returns a expected frame."""
         sensor = AudioSensor(frame_size=FRAME_SIZE)
         frame = sensor.read()
