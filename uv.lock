@@ -590,7 +590,7 @@ name = "inputtino-python"
 version = "0.1.0"
 source = { git = "https://github.com/games-on-whales/inputtino.git?subdirectory=bindings%2Fpython#fd136cfe492b4375b4507718bcca1f044588fc6f" }
 dependencies = [
-    { name = "typing-extensions" },
+    { name = "typing-extensions", marker = "sys_platform != 'darwin' and sys_platform != 'win32'" },
 ]
 
 [[package]]
@@ -1149,16 +1149,16 @@ torch = [
 
 [[package]]
 name = "pamiq-io"
-version = "0.4.1"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ad/2b/254e02e9be5172fa4e63f67a698dd5afe5a2e191d47e49f58af412c309eb/pamiq_io-0.4.1.tar.gz", hash = "sha256:276dba778f6a58504d65dc667d73ad3eab7327c34236ed993dae2e1a7dfca940", size = 59282, upload-time = "2025-04-28T23:40:17.443Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/43/0b/306e00acdf91ec423fdc529b17dcd4085e4c6d3e45a706eacdb9954f134a/pamiq_io-0.5.0.tar.gz", hash = "sha256:3078d6715b95892bacbf63fb4eaae6f9923cb128e4c33516c0bdcf62cb1c782e", size = 63824, upload-time = "2025-05-17T06:49:01.467Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8d/6f/e5d7beb125fbad6038d790d5cfc0381d9936d537bde0c7222b376da0dcab/pamiq_io-0.4.1-py3-none-any.whl", hash = "sha256:152cbbfb8f71b79c38934c7c7840b5837869174688158822353f898f983d2350", size = 23546, upload-time = "2025-04-28T23:40:15.555Z" },
+    { url = "https://files.pythonhosted.org/packages/fe/1f/f9723dc9e87f1e9a863a46eaec88b8232913f524acc3ce49c1839c2cf515/pamiq_io-0.5.0-py3-none-any.whl", hash = "sha256:b2d9640f97a62427d371fe5eec49af3f6070833029d944dd16c496157266d07b", size = 27424, upload-time = "2025-05-17T06:48:59.819Z" },
 ]
 
 [package.optional-dependencies]
 inputtino = [
-    { name = "inputtino-python" },
+    { name = "inputtino-python", marker = "sys_platform == 'linux'" },
 ]
 opencv = [
     { name = "opencv-python" },
@@ -1175,7 +1175,7 @@ name = "pamiq-vrchat"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "inputtino-python" },
+    { name = "inputtino-python", marker = "sys_platform == 'linux'" },
     { name = "pamiq-core" },
     { name = "pamiq-io", extra = ["inputtino", "opencv", "osc", "soundcard"] },
 ]
@@ -1200,11 +1200,11 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "inputtino-python", git = "https://github.com/games-on-whales/inputtino.git?subdirectory=bindings%2Fpython" },
+    { name = "inputtino-python", marker = "sys_platform == 'linux'", git = "https://github.com/games-on-whales/inputtino.git?subdirectory=bindings%2Fpython" },
     { name = "mlflow", marker = "extra == 'sample'", specifier = ">=2.22.0" },
     { name = "pamiq-core", specifier = ">=0.2.0" },
     { name = "pamiq-core", extras = ["torch"], marker = "extra == 'sample'", specifier = ">=0.2.0" },
-    { name = "pamiq-io", extras = ["inputtino", "opencv", "osc", "soundcard"], specifier = ">=0.4.1" },
+    { name = "pamiq-io", extras = ["inputtino", "opencv", "osc", "soundcard"], specifier = ">=0.5.0" },
     { name = "tensordict", marker = "extra == 'sample'", specifier = ">=0.8.2" },
     { name = "torchvision", marker = "extra == 'sample'", specifier = ">=0.22.0" },
 ]
