@@ -1,7 +1,5 @@
 import logging
-import re
-import shutil
-import subprocess
+import sys
 from typing import override
 
 import numpy as np
@@ -64,6 +62,23 @@ def get_device_name_vrchat_is_outputting_to() -> str | None:
     Returns:
         The device name VRChat.exe is using.
     """
+    if sys.platform == "linux":
+        return get_device_name_vrchat_is_outputting_to_on_linux()
+    elif sys.platform == "win32":
+        return get_device_name_vrchat_is_outputting_to_on_windows()
+    else:
+        raise RuntimeError(f"Platform {sys.platform} is not supported.")
+
+
+def get_device_name_vrchat_is_outputting_to_on_linux() -> str | None:
+    """Find the speaker device VRChat.exe is outputting to.
+
+    Linux implementation.
+    """
+    import re
+    import shutil
+    import subprocess
+
     if shutil.which("pactl") is None:
         logger.warning("pactl command is not found.")
         return
@@ -98,6 +113,35 @@ def get_device_name_vrchat_is_outputting_to() -> str | None:
 
     logger.warning("Can not find speaker device VRChat.exe is outputting to.")
     return None
+
+
+def get_device_name_vrchat_is_outputting_to_on_windows() -> str | None:
+    """Find the speaker device VRChat.exe is outputting to on Windows.
+
+    This function launches a separate Python subprocess to query the Windows
+    audio subsystem using pycaw. This indirect approach is necessary to avoid
+    a COM threading model error that occurs when calling these Windows APIs
+    directly from the main application thread:
+
+    "OSError: [WinError -2147417850] Cannot change thread mode after it is set"
+    """
+
+    import subprocess
+    from textwrap import dedent
+
+    script = dedent("""
+    import sys
+    from pycaw.pycaw import AudioUtilities
+
+    for session in AudioUtilities.GetAllSessions():
+        if session.Process and session.Process.name() == "VRChat.exe":
+            print(session.Identifier.split("|")[0], end="")
+            sys.exit(0)
+    """).strip()
+
+    out = subprocess.check_output([sys.executable, "-c", script], text=True).strip()
+    if out:
+        return out
 
 
 class AudioLengthCompletionWrapper(Wrapper[AudioFrame, AudioFrame]):

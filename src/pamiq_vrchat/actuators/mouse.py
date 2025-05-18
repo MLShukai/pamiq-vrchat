@@ -1,7 +1,8 @@
+import sys
 from typing import TypedDict, override
 
 from pamiq_core.interaction.modular_env import Actuator
-from pamiq_io.mouse import InputtinoMouseOutput, MouseButton
+from pamiq_io.mouse import MouseButton, MouseOutput
 
 from .control_models import SimpleButton, SimpleMotor
 
@@ -25,6 +26,8 @@ class MouseActuator(Actuator[MouseAction]):
     mouse movements and button presses using InputtinoMouseOutput.
     """
 
+    _mouse: MouseOutput
+
     def __init__(self) -> None:
         """Initialize the mouse actuator.
 
@@ -33,7 +36,17 @@ class MouseActuator(Actuator[MouseAction]):
         """
         super().__init__()
 
-        self._mouse = InputtinoMouseOutput()
+        if sys.platform == "linux":
+            from pamiq_io.mouse import InputtinoMouseOutput
+
+            self._mouse = InputtinoMouseOutput()
+        elif sys.platform == "win32":
+            from pamiq_io.mouse import DirectInputMouseOutput
+
+            self._mouse = DirectInputMouseOutput()
+        else:
+            raise RuntimeError(f"Your platform {sys.platform} is not supported.")
+
         self._current_action: MouseAction | None = None
 
     @override

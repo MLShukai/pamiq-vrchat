@@ -17,6 +17,7 @@ from pamiq_vrchat.sensors.audio import (
     AudioLengthCompletionWrapper,
     AudioSensor,
     get_device_name_vrchat_is_outputting_to,
+    get_device_name_vrchat_is_outputting_to_on_linux,
 )
 
 FRAME_SIZE = 1024
@@ -73,7 +74,9 @@ class TestAudioSensor:
             16000, "vrchat_device", None, 2
         )
 
-    def test_read(self, mock_soundcard_audio_input):
+    def test_read(
+        self, mock_soundcard_audio_input, mock_get_device_name_vrchat_is_outputting_to
+    ):
         """Test the read method returns a expected frame."""
         sensor = AudioSensor(frame_size=FRAME_SIZE)
         frame = sensor.read()
@@ -83,11 +86,6 @@ class TestAudioSensor:
 
 
 class TestGetDeviceIdVRChatIsOutputtingTo:
-    """Tests for get_device_name_vrchat_is_outputting_to function."""
-
-    def test_work_normally(self):
-        get_device_name_vrchat_is_outputting_to()
-
     def test_practical(self):
         processes = {proc.name() for proc in psutil.process_iter(["name"])}
 
@@ -95,6 +93,13 @@ class TestGetDeviceIdVRChatIsOutputtingTo:
             pytest.skip("VRChat process is not found in practical test.")
 
         assert get_device_name_vrchat_is_outputting_to()
+
+
+class TestGetDeviceIdVRChatIsOutputtingToOnLinux:
+    """Tests for get_device_name_vrchat_is_outputting_to function."""
+
+    def test_work_normally(self):
+        get_device_name_vrchat_is_outputting_to_on_linux()
 
     def test_normal_case(self, mocker: MockerFixture):
         """Test when VRChat output device is found."""
@@ -106,7 +111,7 @@ class TestGetDeviceIdVRChatIsOutputtingTo:
             PACTL_SOURCES_LIST_SHORT_CONTENT,
         ]
 
-        result = get_device_name_vrchat_is_outputting_to()
+        result = get_device_name_vrchat_is_outputting_to_on_linux()
 
         assert result == "alsa_output.pci-0000_00_1f.3.analog-stereo.monitor"
         assert mock_check_output.call_count == 2
@@ -115,7 +120,7 @@ class TestGetDeviceIdVRChatIsOutputtingTo:
         """Test when pactl command is not found."""
         mocker.patch("shutil.which", return_value=None)
 
-        result = get_device_name_vrchat_is_outputting_to()
+        result = get_device_name_vrchat_is_outputting_to_on_linux()
 
         assert result is None
         assert "pactl command is not found" in caplog.text
@@ -135,7 +140,7 @@ class TestGetDeviceIdVRChatIsOutputtingTo:
             "subprocess.check_output", return_value=source_outputs
         )
 
-        result = get_device_name_vrchat_is_outputting_to()
+        result = get_device_name_vrchat_is_outputting_to_on_linux()
 
         assert result is None
         mock_check_output.assert_called_once()
