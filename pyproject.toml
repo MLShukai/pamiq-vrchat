@@ -7,9 +7,11 @@ readme = "README.md"
 authors = []
 requires-python = ">=3.12"
 dependencies = [
+    "cv2-enumerate-cameras>=1.1.18.3",
     "inputtino-python;sys_platform=='linux'",
-    "pamiq-core>=0.2.0",
-    "pamiq-io[inputtino,opencv,osc,soundcard]>=0.5.0",
+    "pamiq-core>=0.2.2",
+    "pamiq-io[directinput,inputtino,opencv,osc,soundcard]>=0.5.0",
+    "pycaw>=20240210;sys_platform=='win32'",
 ]
 keywords = [
   "PAMIQ",
@@ -32,6 +34,7 @@ classifiers = [
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
   "Operating System :: POSIX :: Linux",
+  "Operating System :: Microsoft :: Windows",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",

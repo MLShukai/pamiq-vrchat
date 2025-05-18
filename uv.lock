@@ -180,6 +180,15 @@ wheels = [
 ]
 
 [[package]]
+name = "comtypes"
+version = "1.4.11"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3c/b9/4431119a640f568190499fd76fac4b4ccb5695659c4b3aac570329c150ea/comtypes-1.4.11.zip", hash = "sha256:0a4259370ec48b685fe4483b0944ba1df0aa45163922073fe9b7df1d187db09e", size = 272448, upload-time = "2025-05-14T23:32:11.608Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f1/f4/7b7fdbb613992013c4518a0bf8fee2915f79ec07bcfa6180569bca7fa8ef/comtypes-1.4.11-py3-none-any.whl", hash = "sha256:1760d5059ca7ca1d61b574c998378d879c271a86c41f88926619ea97497592bb", size = 246365, upload-time = "2025-05-14T23:32:10.427Z" },
+]
+
+[[package]]
 name = "contourpy"
 version = "1.3.2"
 source = { registry = "https://pypi.org/simple" }
@@ -257,6 +266,16 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/56/b0/d968ecdbe6fe0a863de7169bbe9e8a476868959f3af24981f6a10d2b6924/coverage-7.8.0-cp313-cp313t-win32.whl", hash = "sha256:379fe315e206b14e21db5240f89dc0774bdd3e25c3c58c2c733c99eca96f1ada", size = 214909, upload-time = "2025-03-30T20:36:19.644Z" },
     { url = "https://files.pythonhosted.org/packages/87/e9/d6b7ef9fecf42dfb418d93544af47c940aa83056c49e6021a564aafbc91f/coverage-7.8.0-cp313-cp313t-win_amd64.whl", hash = "sha256:2e4b6b87bb0c846a9315e3ab4be2d52fac905100565f4b92f02c445c8799e257", size = 216068, upload-time = "2025-03-30T20:36:21.282Z" },
     { url = "https://files.pythonhosted.org/packages/59/f1/4da7717f0063a222db253e7121bd6a56f6fb1ba439dcc36659088793347c/coverage-7.8.0-py3-none-any.whl", hash = "sha256:dbf364b4c5e7bae9250528167dfe40219b62e2d573c854d74be213e1e52069f7", size = 203435, upload-time = "2025-03-30T20:36:43.61Z" },
+]
+
+[[package]]
+name = "cv2-enumerate-cameras"
+version = "1.1.18.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/07/b1/6678a76c7a5e6aec76aa55cb02e6163901835e6c2e11fb247e9e99c6b926/cv2_enumerate_cameras-1.1.18.3.tar.gz", hash = "sha256:73784f13e9d31d406db95c3843f44e3b135e5c3c5c159ebf0aaeb342d84e7978", size = 9679, upload-time = "2025-03-06T11:36:10.588Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/24/53/1d78e7b724669b29a24b5b2c9b6374ee44ae365b2c425a2d27a7d5a27533/cv2_enumerate_cameras-1.1.18.3-cp32-abi3-win_amd64.whl", hash = "sha256:e81611708c55f2b734b01c6c0b9afccd4b1f99613c7f9ffd6bb2421453b07bc6", size = 19833, upload-time = "2025-03-06T11:36:07.002Z" },
+    { url = "https://files.pythonhosted.org/packages/2a/e2/4caf537f04ce21aff0f46712b868c0a36f3950c91cb274367bf5910240cb/cv2_enumerate_cameras-1.1.18.3-py3-none-any.whl", hash = "sha256:e3774d0d7b01058461a453eef8fd0203e5e9f1a035857eed18140a8abe0104df", size = 10194, upload-time = "2025-03-06T11:36:08.764Z" },
 ]
 
 [[package]]
@@ -1129,7 +1148,7 @@ wheels = [
 
 [[package]]
 name = "pamiq-core"
-version = "0.2.0"
+version = "0.2.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -1137,9 +1156,9 @@ dependencies = [
     { name = "starlette" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/41/01/ed7f38a9c6ed36a3d987bb3aa4eff50d9e859080d39b66a681df56ea711c/pamiq_core-0.2.0.tar.gz", hash = "sha256:42a8c9f73a6b661a38a462c186bfa4e1f7b1097f5f31c6f8fbd9f2636dbd4345", size = 419026, upload-time = "2025-04-27T01:18:49.092Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5a/63/d4457ece2d77ae69f3e28685bba758fa60c841d7e442820af11493df5b94/pamiq_core-0.2.2.tar.gz", hash = "sha256:52c0b27bfbdbf287a27ec46274cc283bc8bc5335ff82d929fa359a005426fb0c", size = 421091, upload-time = "2025-05-17T09:17:41.74Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b9/f6/6324e03aa1630c8fbded7ccd8ccf2f5f7170de91a181c632a5f2fbf903a8/pamiq_core-0.2.0-py3-none-any.whl", hash = "sha256:3357be97ef46ce20ab39965f7c90dac9aef1eb4b5ee6ef00ee5c1e21aa60bf95", size = 60728, upload-time = "2025-04-27T01:18:46.994Z" },
+    { url = "https://files.pythonhosted.org/packages/2e/ac/51500f1c78d96a8b7ea3a7db488622f791508f08ac010965602e446047b5/pamiq_core-0.2.2-py3-none-any.whl", hash = "sha256:7dc71e07483c4db16790ab12fa4faf449f582498d0dee8f2508edeffb6c38085", size = 60737, upload-time = "2025-05-17T09:17:40.132Z" },
 ]
 
 [package.optional-dependencies]
@@ -1157,6 +1176,9 @@ wheels = [
 ]
 
 [package.optional-dependencies]
+directinput = [
+    { name = "pydirectinput", marker = "sys_platform == 'win32'" },
+]
 inputtino = [
     { name = "inputtino-python", marker = "sys_platform == 'linux'" },
 ]
@@ -1175,9 +1197,11 @@ name = "pamiq-vrchat"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "cv2-enumerate-cameras" },
     { name = "inputtino-python", marker = "sys_platform == 'linux'" },
     { name = "pamiq-core" },
-    { name = "pamiq-io", extra = ["inputtino", "opencv", "osc", "soundcard"] },
+    { name = "pamiq-io", extra = ["directinput", "inputtino", "opencv", "osc", "soundcard"] },
+    { name = "pycaw", marker = "sys_platform == 'win32'" },
 ]
 
 [package.optional-dependencies]
@@ -1200,11 +1224,13 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cv2-enumerate-cameras", specifier = ">=1.1.18.3" },
     { name = "inputtino-python", marker = "sys_platform == 'linux'", git = "https://github.com/games-on-whales/inputtino.git?subdirectory=bindings%2Fpython" },
     { name = "mlflow", marker = "extra == 'sample'", specifier = ">=2.22.0" },
-    { name = "pamiq-core", specifier = ">=0.2.0" },
+    { name = "pamiq-core", specifier = ">=0.2.2" },
     { name = "pamiq-core", extras = ["torch"], marker = "extra == 'sample'", specifier = ">=0.2.0" },
-    { name = "pamiq-io", extras = ["inputtino", "opencv", "osc", "soundcard"], specifier = ">=0.5.0" },
+    { name = "pamiq-io", extras = ["directinput", "inputtino", "opencv", "osc", "soundcard"], specifier = ">=0.5.0" },
+    { name = "pycaw", marker = "sys_platform == 'win32'", specifier = ">=20240210" },
     { name = "tensordict", marker = "extra == 'sample'", specifier = ">=0.8.2" },
     { name = "torchvision", marker = "extra == 'sample'", specifier = ">=0.22.0" },
 ]
@@ -1420,6 +1446,19 @@ wheels = [
 ]
 
 [[package]]
+name = "pycaw"
+version = "20240210"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "comtypes", marker = "sys_platform == 'win32'" },
+    { name = "psutil", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3b/1a/f1fa3ceca06eceb5184b907413306b99dd790855ffdf2aee8210fa0fc192/pycaw-20240210.tar.gz", hash = "sha256:55e49359e9f227053f4fa15817a02d4a7bc52fc3db32e123894719a123c41d06", size = 22417, upload-time = "2024-02-21T10:55:05.503Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c2/e2/89e3e096d8926f19cbcf2991ae86d19e6705ea75ad0212862461cb4b83d8/pycaw-20240210-py3-none-any.whl", hash = "sha256:fbbe0ee67a7d32714240e26913266a386ae4375778c417a7e8ad6076eca62f1e", size = 24760, upload-time = "2024-02-21T10:55:02.131Z" },
+]
+
+[[package]]
 name = "pycparser"
 version = "2.22"
 source = { registry = "https://pypi.org/simple" }
@@ -1483,6 +1522,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/a4/7d/e09391c2eebeab681df2b74bfe6c43422fffede8dc74187b2b0bf6fd7571/pydantic_core-2.33.2-cp313-cp313t-macosx_11_0_arm64.whl", hash = "sha256:61c18fba8e5e9db3ab908620af374db0ac1baa69f0f32df4f61ae23f15e586ac", size = 1806162, upload-time = "2025-04-23T18:32:20.188Z" },
     { url = "https://files.pythonhosted.org/packages/f1/3d/847b6b1fed9f8ed3bb95a9ad04fbd0b212e832d4f0f50ff4d9ee5a9f15cf/pydantic_core-2.33.2-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:95237e53bb015f67b63c91af7518a62a8660376a6a0db19b89acc77a4d6199f5", size = 1981560, upload-time = "2025-04-23T18:32:22.354Z" },
     { url = "https://files.pythonhosted.org/packages/6f/9a/e73262f6c6656262b5fdd723ad90f518f579b7bc8622e43a942eec53c938/pydantic_core-2.33.2-cp313-cp313t-win_amd64.whl", hash = "sha256:c2fc0a768ef76c15ab9238afa6da7f69895bb5d1ee83aeea2e3509af4472d0b9", size = 1935777, upload-time = "2025-04-23T18:32:25.088Z" },
+]
+
+[[package]]
+name = "pydirectinput"
+version = "1.0.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5f/c0/cbcc5f1653d956ee2109b604747b7eaf37d59e50b41cc9dedabedf70aec6/PyDirectInput-1.0.4.tar.gz", hash = "sha256:bebe65102c69208688402f9f4cbd2ae7afc174fd2123e156e178b1304e7f80a2", size = 7486, upload-time = "2021-02-02T22:23:30.859Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c9/8e/f909defe798270afc2241d3a8986d51459e70c37f02d2ba549627b781b2c/PyDirectInput-1.0.4-py3-none-any.whl", hash = "sha256:238bbe97f505f9c8728a47ea6a787750dbe834ec1fb42b98b3d703d827eda83e", size = 8879, upload-time = "2021-02-02T22:23:28.115Z" },
 ]
 
 [[package]]
