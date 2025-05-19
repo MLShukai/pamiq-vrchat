@@ -14,11 +14,10 @@ Examples:
     >>> frame = sensor.read()
 """
 
-import re
-import shutil
-import subprocess
+import sys
 from typing import override
 
+import cv2
 import numpy as np
 import numpy.typing as npt
 from pamiq_core.interaction.modular_env import Sensor
@@ -37,19 +36,34 @@ class ImageSensor(Sensor[ImageFrame]):
     """
 
     @override
-    def __init__(self, camera_index: int | None = None) -> None:
+    def __init__(
+        self,
+        camera_index: int | None = None,
+        width: int | None = None,
+        height: int | None = None,
+    ) -> None:
         """Initializes an ImageSensor instance.
 
         Args:
             camera_index: Index of the camera to use. If None, automatically
                 attempts to find and use the OBS virtual camera.
+            width: Width resolution of the camera in pixels. If None and on Windows,
+                defaults to 1280.
+            height: Height resolution of the camera in pixels. If None and on Windows,
+                defaults to 720.
         """
         super().__init__()
 
         if camera_index is None:
             camera_index = get_obs_virtual_camera_index()
 
-        self._input = OpenCVVideoInput(camera_index)
+        if sys.platform == "win32":
+            if width is None:
+                width = 1280
+            if height is None:
+                height = 720
+
+        self._input = OpenCVVideoInput(camera_index, width, height)
 
     @override
     def read(self) -> ImageFrame:
@@ -67,31 +81,17 @@ class ImageSensor(Sensor[ImageFrame]):
 def get_obs_virtual_camera_index() -> int:
     """Find the device index for OBS virtual camera.
 
-    This function uses v4l2-ctl to list all video devices and find
-    the OBS virtual camera among them.
-
     Returns:
         The device index of the OBS virtual camera.
 
     Raises:
-        RuntimeError: If v4l2-ctl is not installed or if OBS virtual camera is not found.
+        RuntimeError: If OBS virtual camera is not found.
     """
-    if shutil.which("v4l2-ctl") is None:
-        raise RuntimeError("v4l2-ctl not found. Please install v4l-utils")
+    from cv2_enumerate_cameras import enumerate_cameras, supported_backends
 
-    result = subprocess.run(
-        ["v4l2-ctl", "--list-devices"],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+    for backend in supported_backends + (cv2.CAP_ANY,):
+        for cam in enumerate_cameras(backend):
+            if cam.name.strip() == "OBS Virtual Camera":
+                return cam.index
 
-    lines = result.stdout.splitlines()
-    for i, lin in enumerate(lines):
-        if "OBS Virtual Camera" in lin and i + 1 < len(lines):
-            device_path = lines[i + 1].strip()
-
-            match = re.search(r"/dev/video(\d+)", device_path)
-            if match:
-                return int(match.group(1))
     raise RuntimeError("Can not find OBS virtual camera device")

@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-22.04", "ubuntu-24.04"]
+        os: ["ubuntu-latest", "windows-latest"]
         python-version: ["3.12", "3.13"]
 
     timeout-minutes: 20
@@ -50,11 +50,14 @@ jobs:
           path: .venv
           key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}
 
-      - name: Install dependencies
+      - name: Install Ubuntu dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update -y
           sudo apt-get install -y --no-install-recommends git cmake build-essential pkg-config libevdev-dev
-          uv sync --all-extras
+
+      - name: Install dependencies
+        run: uv sync --all-extras
 
       - name: Check installed packages
         run: |
