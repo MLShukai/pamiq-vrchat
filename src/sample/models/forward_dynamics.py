@@ -2,6 +2,7 @@ from typing import override
 
 import torch
 import torch.nn as nn
+from pamiq_core.torch import TorchTrainingModel
 from torch import Tensor
 from torch.distributions import Distribution
 
@@ -75,3 +76,56 @@ class ForwardDynamics(nn.Module):
         See forward() method for full documentation.
         """
         return super().__call__(obs, action, hidden)
+
+
+def instantiate(
+    obs_dim: int,
+    action_choices: list[int],
+    action_dim: int,
+    depth: int,
+    dim: int,
+    dim_ff_hidden: int,
+    dropout: float,
+    device: torch.device | None = None,
+    dtype: torch.dtype | None = None,
+) -> TorchTrainingModel[ForwardDynamics]:
+    """Create a forward dynamics model with the specified configuration.
+
+    This factory function instantiates a ForwardDynamics model that predicts the next
+    observation given the current observation and action. It uses a QLSTM core for
+    temporal encoding and wraps the model in a TorchTrainingModel for use with the
+    PAMIQ-Core framework.
+
+    Args:
+        obs_dim: Dimension of the observation input.
+        action_choices: List specifying the number of choices for each discrete action dimension.
+        action_dim: Embedding dimension for each action component.
+        depth: Number of recurrent layers in the core QLSTM model.
+        dim: Hidden dimension of the model.
+        dim_ff_hidden: Hidden dimension of the feed-forward networks in QLSTM.
+        dropout: Dropout rate for regularization.
+        device: PyTorch device to place the model on. Defaults to None (uses current device).
+        dtype: PyTorch data type for the model parameters. Defaults to None (uses default dtype).
+
+    Returns:
+        TorchTrainingModel containing the configured forward dynamics model.
+    """
+
+    from .components.deterministic_normal import FCDeterministicNormalHead
+    from .components.multi_discretes import MultiEmbeddings
+    from .components.qlstm import QLSTM
+
+    model = ForwardDynamics(
+        observation_flatten=nn.Identity(),
+        action_flatten=MultiEmbeddings(action_choices, action_dim, do_flatten=True),
+        obs_action_projection=nn.Linear(
+            obs_dim + action_dim * len(action_choices), dim
+        ),
+        core_model=QLSTM(depth, dim, dim_ff_hidden, dropout),
+        obs_hat_dist_head=FCDeterministicNormalHead(
+            dim, obs_dim, squeeze_feature_dim=False
+        ),
+    )
+    return TorchTrainingModel(
+        model, has_inference_model=True, device=device, dtype=dtype
+    )
