@@ -111,7 +111,7 @@ class TestForwardDynamics:
         )
 
 
-class TestForwardDynamicsInstantiate:
+class TestInstantiate:
     """Tests for the instantiate function in forward_dynamics module."""
 
     def test_instantiate_creates_valid_model(self):
