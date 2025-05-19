@@ -1,6 +1,8 @@
 from typing import override
 
+import torch
 import torch.nn as nn
+from pamiq_core.torch import TorchTrainingModel
 from torch import Tensor
 from torch.distributions import Distribution
 
@@ -55,3 +57,54 @@ class PolicyValueCommon(nn.Module):
     ) -> tuple[Distribution, Tensor, Tensor]:
         """Override __call__ with proper type annotations."""
         return super().__call__(observation, hidden)
+
+
+def instantiate(
+    obs_dim: int,
+    depth: int,
+    dim: int,
+    dim_ff_hidden: int,
+    dropout: float,
+    action_choices: list[int],
+    device: torch.device | None = None,
+    dtype: torch.dtype | None = None,
+) -> TorchTrainingModel[PolicyValueCommon]:
+    """Create a policy-value model with the specified configuration.
+
+    This factory function instantiates a PolicyValueCommon model with QLSTM core,
+    multi-categorical policy head, and scalar value head, then wraps it in a
+    TorchTrainingModel for use with the PAMIQ-Core framework.
+
+    Args:
+        obs_dim: Dimension of the observation input.
+        depth: Number of recurrent layers in the core QLSTM model.
+        dim: Hidden dimension of the model.
+        dim_ff_hidden: Hidden dimension of the feed-forward networks in QLSTM.
+        dropout: Dropout rate for regularization.
+        action_choices: List of integers specifying the number of choices for each
+            discrete action dimension.
+        device: PyTorch device to place the model on. Defaults to None (uses current device).
+        dtype: PyTorch data type for the model parameters. Defaults to None (uses default dtype).
+
+    Returns:
+        TorchTrainingModel containing the configured policy-value model.
+    """
+    from .components.fc_scalar_head import FCScalarHead
+    from .components.multi_discretes import FCMultiCategoricalHead
+    from .components.qlstm import QLSTM
+
+    model = PolicyValueCommon(
+        observation_flatten=nn.Linear(obs_dim, dim)
+        if obs_dim != dim
+        else nn.Identity(),
+        core_model=QLSTM(depth, dim, dim_ff_hidden, dropout),
+        policy_head=FCMultiCategoricalHead(dim, action_choices),
+        value_head=FCScalarHead(dim, True),
+    )
+
+    return TorchTrainingModel(
+        model,
+        has_inference_model=True,
+        device=device,
+        dtype=dtype,
+    )
