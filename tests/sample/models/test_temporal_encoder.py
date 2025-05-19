@@ -1,10 +1,12 @@
 import pytest
 import torch
 import torch.nn as nn
+from pamiq_core.torch import TorchTrainingModel, get_device
 
 from sample.models.components.deterministic_normal import FCDeterministicNormalHead
 from sample.models.components.qlstm import QLSTM
-from sample.models.temporal_encoder import TemporalEncoder
+from sample.models.temporal_encoder import ObsInfo, TemporalEncoder, instantiate
+from tests.sample.helpers import parametrize_device
 
 
 class TestTemporalEncoder:
@@ -128,3 +130,77 @@ class TestTemporalEncoder:
         # Verify layer normalization was applied
         assert torch.abs(x.mean()).item() < 1e-5
         assert torch.abs(x.std() - 1.0).item() < 1e-1
+
+
+class TestInstantiate:
+    """Tests for the instantiate function in temporal_encoder module."""
+
+    @pytest.fixture
+    def obs_infos(self):
+        """Create sample observation configurations."""
+        return {
+            "image": ObsInfo(dim_in=32, dim_out=16, num_tokens=4),
+            "audio": ObsInfo(dim_in=24, dim_out=12, num_tokens=3),
+        }
+
+    def test_instantiate_creates_valid_model(self, obs_infos):
+        """Test that instantiate creates a valid TorchTrainingModel with
+        TemporalEncoder."""
+        model = instantiate(
+            obs_infos=obs_infos, depth=2, dim=64, dim_ff_hidden=128, dropout=0.1
+        )
+
+        # Check model type
+        assert isinstance(model, TorchTrainingModel)
+        assert isinstance(model.model, TemporalEncoder)
+
+    @parametrize_device
+    def test_instantiate_with_device(self, device, obs_infos):
+        """Test that instantiate correctly places the model on specified
+        device."""
+        model = instantiate(
+            obs_infos=obs_infos,
+            depth=2,
+            dim=64,
+            dim_ff_hidden=128,
+            dropout=0.1,
+            device=device,
+        )
+
+        assert get_device(model.model) == device
+
+        # Test with some input on the correct device
+        observations = {
+            "image": torch.randn(1, 4, 32, device=device),
+            "audio": torch.randn(1, 3, 24, device=device),
+        }
+
+        hidden = torch.randn(1, 2, 64, device=device)
+
+        # Should not raise device mismatch errors
+        obs_hat_dists, next_hidden = model.model(observations, hidden)
+        assert obs_hat_dists["image"].sample().shape == (1, 4, 32)
+        assert obs_hat_dists["audio"].sample().shape == (1, 3, 24)
+        assert next_hidden.device == device
+
+    def test_instantiate_model_inference(self, obs_infos):
+        """Test that the instantiated model can perform inference with correct
+        shapes."""
+        model = instantiate(
+            obs_infos=obs_infos, depth=2, dim=64, dim_ff_hidden=128, dropout=0.1
+        )
+
+        # Create sample observations
+        observations = {
+            "image": torch.randn(4, 32),  # tokens=4, dim=32
+            "audio": torch.randn(3, 24),  # tokens=3, dim=24
+        }
+
+        hidden = torch.randn(2, 64)  # depth=2, dim=64
+
+        # Test inference
+        x, next_hidden = model.inference_model(observations, hidden)
+
+        # Check output shapes
+        assert x.shape == (64,)  # encoded feature
+        assert next_hidden.shape == (2, 64)  # batch_size, depth, seq_len, dim
