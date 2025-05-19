@@ -151,7 +151,7 @@ class TemporalEncoderTrainer(TorchTrainer):
                 self.optimizers[OPTIMIZER_NAME].zero_grad()
 
                 # Forward pass
-                _, _, obs_hat_dists = self.temporal_encoder.model(observations, hiddens)
+                obs_hat_dists, _ = self.temporal_encoder.model(observations, hiddens)
 
                 # Calculate losses for each modality
                 total_loss = torch.tensor(0.0, device=device)

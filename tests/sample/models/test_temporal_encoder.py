@@ -89,10 +89,9 @@ class TestTemporalEncoder:
 
     def test_forward(self, encoder, observations, hidden):
         """Test forward pass of TemporalEncoder."""
-        x, next_hidden, obs_hat_dists = encoder(observations, hidden)
+        obs_hat_dists, next_hidden = encoder(observations, hidden)
 
         # Check output shapes
-        assert x.shape == (self.BATCH_SIZE, self.SEQ_LEN, self.HIDDEN_DIM)
         assert next_hidden.shape == (
             self.BATCH_SIZE,
             self.HIDDEN_DEPTH,
