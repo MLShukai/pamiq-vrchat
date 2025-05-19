@@ -52,14 +52,20 @@ class ResizeAndCenterCrop(nn.Module):
                 f"Input tensor must have at least 3 dimensions, got {input.ndim}"
             )
 
-        inpt_img_size = input.shape[-2:]
-        if min(inpt_img_size) == 0:
+        input_img_size = input.shape[-2:]
+        if min(input_img_size) == 0:
             raise ValueError(
-                f"Input image dimensions must be non-zero, got {tuple(inpt_img_size)}"
+                f"Input image dimensions must be non-zero, got {tuple(input_img_size)}"
             )
 
-        max_size = math.ceil(max(inpt_img_size) / min(inpt_img_size) * max(self.size))
-        input = F.resize(input, None, max_size=max_size)
+        ar_input = input_img_size[1] / input_img_size[0]
+        ar_size = self.size[1] / self.size[0]
+
+        if ar_input < ar_size:
+            scale_size = (math.ceil(self.size[1] / ar_input), self.size[1])
+        else:
+            scale_size = (self.size[0], math.ceil(self.size[0] * ar_input))
+        input = F.resize(input, list(scale_size))
         input = F.center_crop(input, self.size)
         return input
 
