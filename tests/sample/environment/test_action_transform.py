@@ -176,10 +176,6 @@ class TestActionTransform:
     @pytest.mark.parametrize(
         "action,error_msg",
         [
-            (
-                torch.zeros((2, len(ACTION_CHOICES))),
-                "Action tensor must be 1-dimensional",
-            ),
             (torch.zeros(3), f"Action tensor must have {len(ACTION_CHOICES)} elements"),
         ],
     )

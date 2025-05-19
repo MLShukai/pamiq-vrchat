@@ -165,8 +165,7 @@ class ActionTransform:
         Raises:
             ValueError: If action tensor shape is invalid.
         """
-        if action.ndim != 1:
-            raise ValueError("Action tensor must be 1-dimensional")
+        action = action.flatten()
         if action.numel() != len(ACTION_CHOICES):
             raise ValueError(f"Action tensor must have {len(ACTION_CHOICES)} elements")
 
