@@ -107,7 +107,7 @@ class TestPolicyValueCommon:
         )
 
 
-class TestPolicyInstantiate:
+class TestInstantiate:
     """Tests for the instantiate function in policy module."""
 
     @pytest.mark.parametrize("obs_dim", [32, 64])
