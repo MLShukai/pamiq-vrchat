@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import torch
 
-from sample.env.image_transforms import (
+from sample.environment.image_transforms import (
     ResizeAndCenterCrop,
     Standardize,
     create_vrchat_transform,
