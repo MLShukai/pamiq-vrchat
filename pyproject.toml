@@ -51,6 +51,7 @@ sample = [
     "mlflow>=2.22.0",
     "pamiq-core[torch]>=0.2.0",
     "tensordict>=0.8.2",
+    "torchaudio>=2.7.0",
     "torchvision>=0.22.0",
 ]
 
