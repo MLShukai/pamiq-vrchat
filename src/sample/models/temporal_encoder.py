@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import override
 
 import torch
@@ -8,7 +9,27 @@ from pamiq_core.torch import get_device
 from torch import Tensor
 from torch.distributions import Distribution
 
-from .components.stacked_hidden_state import StackedHiddenState
+from .components.deterministic_normal import FCDeterministicNormalHead
+from .components.qlstm import QLSTM
+from .components.stacked_features import LerpStackedFeatures, ToStackedFeatures
+
+
+@dataclass
+class ObsInfo:
+    """Configuration for observation processing in temporal encoder.
+
+    This dataclass defines the dimensions and feature stack configuration for
+    each modality processed by the temporal encoder.
+
+    Attributes:
+        dim: Input dimension of the observation.
+        dim_hidden: Hidden dimension after feature transformation.
+        num_tokens: Number of tokens of observation.
+    """
+
+    dim: int
+    dim_hidden: int
+    num_tokens: int
 
 
 class TemporalEncoder(nn.Module):
@@ -16,55 +37,48 @@ class TemporalEncoder(nn.Module):
 
     def __init__(
         self,
-        observation_flattens: Mapping[str, nn.Module],
-        flattened_obses_projection: nn.Module,
-        core_model: StackedHiddenState,
-        obs_hat_dist_heads: Mapping[str, nn.Module],
+        obs_infos: Mapping[str, ObsInfo | tuple[int, int, int]],
+        dim: int,
+        depth: int,
+        dim_ff_hidden: int,
+        dropout: float,
     ) -> None:
         """Initializes TemporalEncoder.
 
         Args:
-            observation_flattens: The dict contains the flatten module for each modality
-            flattened_obses_projection: Projects the concatenated flattened observations to fixed size vector.
-            core_model: Core model for temporal encoding.
-            obs_hat_dist_heads: Observation prediction heads for each modality
-
-        Raises:
-            KeyError: If keys between observation_flattens and obs_hat_dist_heads are not matched.
+            obs_infos: Dictionary mapping modality names to their observation configuration.
+            depth: Number of recurrent layers in the core QLSTM model.
+            dim: Hidden dimension of the encoder.
+            dim_ff_hidden: Hidden dimension of the feed-forward networks in QLSTM.
+            dropout: Dropout rate for regularization.
         """
         super().__init__()
-        if obs_hat_dist_heads.keys() != observation_flattens.keys():
-            raise KeyError(
-                "The keys between observation_flattens and obs_hat_dist_heads are not matched! "
-                f"observation_flattens keys: {observation_flattens.keys()}, "
-                f"obs_hat_dist_heads keys: {obs_hat_dist_heads.keys()}"
+        obs_flattens = {}
+        obs_hat_heads = {}
+        flattened_size = 0
+        for name, info in obs_infos.items():
+            if isinstance(info, tuple):
+                info = ObsInfo(*info)
+            obs_flattens[name] = LerpStackedFeatures(
+                info.dim, info.dim_hidden, info.num_tokens
             )
 
-        self.observation_flattens = nn.ModuleDict(observation_flattens)
+            obs_hat_heads[name] = nn.Sequential(
+                ToStackedFeatures(dim, info.dim, info.num_tokens),
+                FCDeterministicNormalHead(info.dim, info.dim),
+            )
+            flattened_size += info.dim_hidden
 
-        self.flattened_obses_projection = flattened_obses_projection
-        self.core_model = core_model
-        self.obs_hat_dist_heads = nn.ModuleDict(obs_hat_dist_heads)
+        self.observation_flattens = nn.ModuleDict(obs_flattens)
 
-    @override
-    def forward(
+        self.flattened_obses_projection = nn.Linear(flattened_size, dim)
+        self.core_model = QLSTM(depth, dim, dim_ff_hidden, dropout)
+        self.obs_hat_dist_heads = nn.ModuleDict(obs_hat_heads)
+
+    def _common_flow(
         self, observations: Mapping[str, Tensor], hidden: Tensor
-    ) -> tuple[Tensor, Tensor, Mapping[str, Distribution]]:
-        """Forward path of multimodal temporal encoder.
-
-        Args:
-            observations: Dictionary mapping modality names to observation tensors
-            hidden: Hidden state tensor for temporal module
-
-        Returns:
-            A tuple containing:
-                - Embedded observation representation
-                - Next hidden state
-                - Dictionary of predicted observation distributions for each modality
-
-        Raises:
-            KeyError: If keys between observation_flattens and observations are not matched.
-        """
+    ) -> tuple[Tensor, Tensor]:
+        """Common data flow of Temporal Encoder."""
         if observations.keys() != self.observation_flattens.keys():
             raise KeyError("Observations keys are not matched!")
 
@@ -74,13 +88,34 @@ class TemporalEncoder(nn.Module):
 
         x = self.flattened_obses_projection(torch.cat(obs_flats, dim=-1))
         x, next_hidden = self.core_model(x, hidden)
+        return x, next_hidden
+
+    @override
+    def forward(
+        self, observations: Mapping[str, Tensor], hidden: Tensor
+    ) -> tuple[Mapping[str, Distribution], Tensor]:
+        """Forward path of multimodal temporal encoder.
+
+        Args:
+            observations: Dictionary mapping modality names to observation tensors
+            hidden: Hidden state tensor for temporal module
+
+        Returns:
+            A tuple containing:
+                - Dictionary of predicted observation distributions for each modality
+                - Next hidden state
+
+        Raises:
+            KeyError: If keys between observation_flattens and observations are not matched.
+        """
+        x, next_hidden = self._common_flow(observations, hidden)
         obs_hat_dists = {k: layer(x) for k, layer in self.obs_hat_dist_heads.items()}
-        return x, next_hidden, obs_hat_dists
+        return obs_hat_dists, next_hidden
 
     @override
     def __call__(
         self, observations: Mapping[str, Tensor], hidden: Tensor
-    ) -> tuple[Tensor, Tensor, Mapping[str, Distribution]]:
+    ) -> tuple[Mapping[str, Distribution], Tensor]:
         """Call forward method with type checking.
 
         This method is an override of nn.Module.__call__ to provide
@@ -104,6 +139,6 @@ class TemporalEncoder(nn.Module):
         """
         device = get_device(self)
         observations = {k: v.to(device) for k, v in observations.items()}
-        x, next_hidden, _ = self(observations, hidden.to(device))
+        x, next_hidden = self._common_flow(observations, hidden.to(device))
         x = F.layer_norm(x, x.shape[-1:])
         return x, next_hidden

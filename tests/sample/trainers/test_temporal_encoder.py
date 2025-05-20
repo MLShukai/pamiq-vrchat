@@ -1,22 +1,16 @@
-from functools import partial
 from pathlib import Path
 
 import pytest
 import torch
-from pamiq_core.data.impls import RandomReplacementBuffer
+from pamiq_core.data.impls import SequentialBuffer
 from pamiq_core.testing import connect_components
 from pamiq_core.torch import TorchTrainingModel
 from pytest_mock import MockerFixture
 from tensordict import TensorDict
-from torch.optim import AdamW
-from torch.utils.data import DataLoader
 
 from sample.data import BufferName, DataKey
 from sample.models import ModelName
-from sample.models.components.deterministic_normal import FCDeterministicNormalHead
-from sample.models.components.qlstm import QLSTM
-from sample.models.temporal_encoder import TemporalEncoder
-from sample.trainers.sampler import RandomTimeSeriesSampler
+from sample.models.temporal_encoder import ObsInfo, TemporalEncoder
 from sample.trainers.temporal_encoder import (
     TemporalEncoderTrainer,
     transpose_and_stack_collator,
@@ -73,36 +67,17 @@ class TestTransposeAndStackCollator:
 
 
 class TestTemporalEncoderTrainer:
-    HIDDEN_DEPTH = 2
-    HIDDEN_DIM = 8
-    MODALITIES = {"image": 16, "audio": 8}
     SEQ_LEN = 5
+    DEPTH = 2
+    DIM = 8
+    OBS_INFOS = {
+        "image": ObsInfo(dim=32, dim_hidden=16, num_tokens=4),
+        "audio": ObsInfo(dim=24, dim_hidden=12, num_tokens=3),
+    }
 
     @pytest.fixture
     def temporal_encoder(self):
-        observation_flattens = {
-            k: torch.nn.Linear(dim, dim) for k, dim in self.MODALITIES.items()
-        }
-        flattened_obses_projection = torch.nn.Linear(
-            sum(self.MODALITIES.values()), self.HIDDEN_DIM
-        )
-        core_model = QLSTM(
-            depth=self.HIDDEN_DEPTH,
-            dim=self.HIDDEN_DIM,
-            dim_ff_hidden=self.HIDDEN_DIM * 2,
-            dropout=0.0,
-        )
-        obs_hat_dist_heads = {
-            k: FCDeterministicNormalHead(self.HIDDEN_DIM, dim)
-            for k, dim in self.MODALITIES.items()
-        }
-
-        return TemporalEncoder(
-            observation_flattens=observation_flattens,
-            flattened_obses_projection=flattened_obses_projection,
-            core_model=core_model,
-            obs_hat_dist_heads=obs_hat_dist_heads,
-        )
+        return TemporalEncoder(self.OBS_INFOS, self.DIM, self.DEPTH, self.DIM * 2, 0.1)
 
     @pytest.fixture
     def models(self, temporal_encoder):
@@ -111,37 +86,22 @@ class TestTemporalEncoderTrainer:
     @pytest.fixture
     def data_buffers(self):
         return {
-            BufferName.TEMPORAL: RandomReplacementBuffer(
+            BufferName.TEMPORAL: SequentialBuffer(
                 [DataKey.OBSERVATION, DataKey.HIDDEN], max_size=16
             )
         }
 
     @pytest.fixture
-    def partial_dataloader(self):
-        return partial(DataLoader, batch_size=2)
-
-    @pytest.fixture
-    def partial_sampler(self):
-        return partial(RandomTimeSeriesSampler, sequence_length=self.SEQ_LEN)
-
-    @pytest.fixture
-    def partial_optimizer(self):
-        return partial(AdamW, lr=1e-4)
-
-    @pytest.fixture
     def trainer(
         self,
-        partial_dataloader,
-        partial_sampler,
-        partial_optimizer,
         mocker: MockerFixture,
     ):
         mocker.patch("sample.trainers.temporal_encoder.mlflow")
         return TemporalEncoderTrainer(
-            partial_dataloader,
-            partial_sampler,
-            partial_optimizer,
-            min_buffer_size=2,
+            seq_len=self.SEQ_LEN,
+            batch_size=2,
+            lr=1e-4,
+            min_buffer_size=self.SEQ_LEN,
             min_new_data_count=1,
         )
 
@@ -161,10 +121,13 @@ class TestTemporalEncoderTrainer:
         # Collect temporal data
         for _ in range(8):
             observations = TensorDict(
-                {k: torch.randn(dim) for k, dim in self.MODALITIES.items()},
+                {
+                    k: torch.randn(v.num_tokens, v.dim)
+                    for k, v in self.OBS_INFOS.items()
+                },
                 batch_size=(),
             )
-            hidden = torch.randn(self.HIDDEN_DEPTH, self.HIDDEN_DIM)
+            hidden = torch.randn(self.DEPTH, self.DIM)
 
             collector.collect(
                 {DataKey.OBSERVATION: observations, DataKey.HIDDEN: hidden}
