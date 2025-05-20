@@ -56,7 +56,6 @@ class TemporalEncoderTrainer(TorchTrainer):
     @override
     def __init__(
         self,
-        max_samples: int = 1,
         seq_len: int = 2,
         batch_size: int = 1,
         lr: float = 0.0001,
@@ -68,23 +67,21 @@ class TemporalEncoderTrainer(TorchTrainer):
         """Initialize the TemporalEncoder trainer.
 
         Args:
-            partial_dataloader: Partially configured DataLoader to be used with
-                dynamically created datasets during training.
-            partial_sampler: Partially configured RandomTimeSeriesSampler for
-                time series data sampling.
-            partial_optimizer: Partially configured optimizer to be used with
-                the model parameters.
+            seq_len: Sequence length per batch.
+            batch_size: Number of data samples for 1 step.
             max_epochs: Maximum number of epochs to train per training session.
             data_user_name: Name of the data user providing training data.
             min_buffer_size: Minimum buffer size required before training starts.
             min_new_data_count: Minimum number of new data points required for training.
         """
+        if min_buffer_size < seq_len:
+            raise ValueError("min_buffer_size must be larger than seq_len")
+
         super().__init__(data_user_name, min_buffer_size, min_new_data_count)
 
         self.partial_sampler = partial(
-            RandomTimeSeriesSampler, sequence_length=seq_len, max_samples=max_samples
+            RandomTimeSeriesSampler, sequence_length=seq_len, max_samples=batch_size
         )
-        self.partial_dataloader = partial(DataLoader, batch_size=batch_size)
         self.partial_optimizer = partial(AdamW, lr=lr)
 
         self.data_user_name = data_user_name
@@ -134,7 +131,7 @@ class TemporalEncoderTrainer(TorchTrainer):
             torch.stack(cast(list[Tensor], list(data[DataKey.HIDDEN]))),
         )
         sampler = self.partial_sampler(dataset)
-        dataloader = self.partial_dataloader(
+        dataloader = DataLoader(
             dataset=dataset, sampler=sampler, collate_fn=transpose_and_stack_collator
         )
         device = get_device(self.temporal_encoder.model)

@@ -98,11 +98,10 @@ class TestTemporalEncoderTrainer:
     ):
         mocker.patch("sample.trainers.temporal_encoder.mlflow")
         return TemporalEncoderTrainer(
-            max_samples=1,
             seq_len=self.SEQ_LEN,
             batch_size=2,
             lr=1e-4,
-            min_buffer_size=2,
+            min_buffer_size=self.SEQ_LEN,
             min_new_data_count=1,
         )
 
