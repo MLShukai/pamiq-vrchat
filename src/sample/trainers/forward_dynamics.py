@@ -56,7 +56,7 @@ class ImaginingForwardDynamicsTrainer(TorchTrainer):
             min_new_data_count: Minimum number of new data points required for training.
             imagenation_average_method: Method to average the loss over the imagination sequence.
         """
-        if min_buffer_size <= imagination_length + seq_len:
+        if min_buffer_size < imagination_length + seq_len:
             raise ValueError(
                 "Buffer size must be greater than imagination length + sequence length."
             )
