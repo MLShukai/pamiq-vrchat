@@ -1,3 +1,4 @@
+from functools import partial
 from pathlib import Path
 
 import pytest
@@ -6,6 +7,7 @@ from pamiq_core.data.impls import SequentialBuffer
 from pamiq_core.testing import connect_components
 from pamiq_core.torch import TorchTrainingModel
 from pytest_mock import MockerFixture
+from torch.optim import AdamW
 
 from sample.data import BufferName, DataKey
 from sample.models import ModelName
@@ -54,9 +56,9 @@ class TestPPOPolicyTrainer:
     ):
         mocker.patch("sample.trainers.ppo_policy.mlflow")
         return PPOPolicyTrainer(
+            partial_optimizer=partial(AdamW, lr=3e-4),
             seq_len=self.SEQ_LEN,
             batch_size=4,
-            lr=3e-4,
             min_buffer_size=3,
             min_new_data_count=1,
         )
