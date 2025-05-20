@@ -9,7 +9,7 @@ from pamiq_core import DataUser
 from pamiq_core.torch import OptimizersSetup, TorchTrainer, get_device
 from tensordict import TensorDict
 from torch import Tensor
-from torch.optim import Optimizer
+from torch.optim import AdamW
 from torch.utils.data import DataLoader, TensorDataset
 
 from sample.data import BufferName, DataKey
@@ -56,9 +56,10 @@ class TemporalEncoderTrainer(TorchTrainer):
     @override
     def __init__(
         self,
-        partial_dataloader: partial[DataLoader[Tensor]],
-        partial_sampler: partial[RandomTimeSeriesSampler],
-        partial_optimizer: partial[Optimizer],
+        max_samples: int = 1,
+        seq_len: int = 2,
+        batch_size: int = 1,
+        lr: float = 0.0001,
         max_epochs: int = 1,
         data_user_name: str = BufferName.TEMPORAL,
         min_buffer_size: int = 2,
@@ -80,10 +81,14 @@ class TemporalEncoderTrainer(TorchTrainer):
         """
         super().__init__(data_user_name, min_buffer_size, min_new_data_count)
 
+        self.partial_sampler = partial(
+            RandomTimeSeriesSampler, sequence_length=seq_len, max_samples=max_samples
+        )
+        self.partial_dataloader = partial(DataLoader, batch_size=batch_size)
+        self.partial_optimizer = partial(AdamW, lr=lr)
+
         self.data_user_name = data_user_name
-        self.partial_optimizer = partial_optimizer
-        self.partial_dataloader = partial_dataloader
-        self.partial_sampler = partial_sampler
+
         self.max_epochs = max_epochs
         self.global_step = 0
 

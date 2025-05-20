@@ -1,4 +1,3 @@
-from functools import partial
 from pathlib import Path
 
 import pytest
@@ -8,13 +7,10 @@ from pamiq_core.testing import connect_components
 from pamiq_core.torch import TorchTrainingModel
 from pytest_mock import MockerFixture
 from tensordict import TensorDict
-from torch.optim import AdamW
-from torch.utils.data import DataLoader
 
 from sample.data import BufferName, DataKey
 from sample.models import ModelName
 from sample.models.temporal_encoder import ObsInfo, TemporalEncoder
-from sample.trainers.sampler import RandomTimeSeriesSampler
 from sample.trainers.temporal_encoder import (
     TemporalEncoderTrainer,
     transpose_and_stack_collator,
@@ -96,30 +92,16 @@ class TestTemporalEncoderTrainer:
         }
 
     @pytest.fixture
-    def partial_dataloader(self):
-        return partial(DataLoader, batch_size=2)
-
-    @pytest.fixture
-    def partial_sampler(self):
-        return partial(RandomTimeSeriesSampler, sequence_length=self.SEQ_LEN)
-
-    @pytest.fixture
-    def partial_optimizer(self):
-        return partial(AdamW, lr=1e-4)
-
-    @pytest.fixture
     def trainer(
         self,
-        partial_dataloader,
-        partial_sampler,
-        partial_optimizer,
         mocker: MockerFixture,
     ):
         mocker.patch("sample.trainers.temporal_encoder.mlflow")
         return TemporalEncoderTrainer(
-            partial_dataloader,
-            partial_sampler,
-            partial_optimizer,
+            max_samples=1,
+            seq_len=self.SEQ_LEN,
+            batch_size=2,
+            lr=1e-4,
             min_buffer_size=2,
             min_new_data_count=1,
         )
