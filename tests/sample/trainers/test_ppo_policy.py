@@ -1,4 +1,3 @@
-from functools import partial
 from pathlib import Path
 
 import pytest
@@ -7,14 +6,11 @@ from pamiq_core.data.impls import SequentialBuffer
 from pamiq_core.testing import connect_components
 from pamiq_core.torch import TorchTrainingModel
 from pytest_mock import MockerFixture
-from torch.optim import AdamW
-from torch.utils.data import DataLoader
 
 from sample.data import BufferName, DataKey
 from sample.models import ModelName
 from sample.models.policy import PolicyValueCommon
 from sample.trainers.ppo_policy import PPOPolicyTrainer
-from sample.trainers.sampler import RandomTimeSeriesSampler
 from tests.sample.helpers import parametrize_device
 
 
@@ -52,30 +48,15 @@ class TestPPOPolicyTrainer:
         }
 
     @pytest.fixture
-    def partial_dataloader(self):
-        return partial(DataLoader, batch_size=4)
-
-    @pytest.fixture
-    def partial_sampler(self):
-        return partial(RandomTimeSeriesSampler, sequence_length=self.SEQ_LEN)
-
-    @pytest.fixture
-    def partial_optimizer(self):
-        return partial(AdamW, lr=3e-4)
-
-    @pytest.fixture
     def trainer(
         self,
-        partial_dataloader,
-        partial_sampler,
-        partial_optimizer,
         mocker: MockerFixture,
     ):
         mocker.patch("sample.trainers.ppo_policy.mlflow")
         return PPOPolicyTrainer(
-            partial_dataloader,
-            partial_sampler,
-            partial_optimizer,
+            seq_len=self.SEQ_LEN,
+            batch_size=4,
+            lr=3e-4,
             min_buffer_size=3,
             min_new_data_count=1,
         )

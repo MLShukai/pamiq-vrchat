@@ -7,7 +7,7 @@ import torch
 from pamiq_core import DataUser
 from pamiq_core.torch import OptimizersSetup, TorchTrainer, get_device
 from torch import Tensor
-from torch.optim import Optimizer
+from torch.optim import AdamW
 from torch.utils.data import DataLoader, TensorDataset
 
 from sample.data import BufferName, DataKey
@@ -24,9 +24,9 @@ class PPOPolicyTrainer(TorchTrainer):
     @override
     def __init__(
         self,
-        partial_dataloader: partial[DataLoader[Tensor]],
-        partial_sampler: partial[RandomTimeSeriesSampler],
-        partial_optimizer: partial[Optimizer],
+        seq_len: int = 1,
+        batch_size: int = 1,
+        lr: float = 1e-4,
         max_epochs: int = 1,
         norm_advantage: bool = True,
         clip_coef: float = 0.1,
@@ -39,12 +39,9 @@ class PPOPolicyTrainer(TorchTrainer):
         """Initialize the PPO Policy trainer.
 
         Args:
-            partial_dataloader: Partially configured DataLoader to be used with
-                dynamically created datasets during training.
-            partial_sampler: Partially configured RandomTimeSeriesSampler for
-                time series data sampling.
-            partial_optimizer: Partially configured optimizer to be used with
-                the model parameters.
+            seq_len: Sequence length per batch.
+            batch_size: Number of data samples for 1 step.
+            lr: Learning rate for optimizer.
             max_epochs: Maximum number of epochs to train per training session.
             norm_advantage: Whether to normalize advantages.
             clip_coef: Clipping coefficient for PPO.
@@ -57,9 +54,10 @@ class PPOPolicyTrainer(TorchTrainer):
         super().__init__(data_user_name, min_buffer_size, min_new_data_count)
 
         self.data_user_name = data_user_name
-        self.partial_optimizer = partial_optimizer
-        self.partial_dataloader = partial_dataloader
-        self.partial_sampler = partial_sampler
+        self.partial_sampler = partial(
+            RandomTimeSeriesSampler, sequence_length=seq_len, max_samples=batch_size
+        )
+        self.partial_optimizer = partial(AdamW, lr=lr)
         self.max_epochs = max_epochs
         self.norm_advantage = norm_advantage
         self.clip_coef = clip_coef
@@ -180,7 +178,7 @@ class PPOPolicyTrainer(TorchTrainer):
             ]
         )
         sampler = self.partial_sampler(dataset)
-        dataloader = self.partial_dataloader(dataset=dataset, sampler=sampler)
+        dataloader = DataLoader(dataset=dataset, sampler=sampler)
         device = get_device(self.policy_value.model)
 
         for _ in range(self.max_epochs):
