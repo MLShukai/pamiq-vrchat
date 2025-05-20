@@ -13,9 +13,7 @@ from torch.utils.data import DataLoader
 
 from sample.data import BufferName, DataKey
 from sample.models import ModelName
-from sample.models.components.deterministic_normal import FCDeterministicNormalHead
-from sample.models.components.qlstm import QLSTM
-from sample.models.temporal_encoder import TemporalEncoder
+from sample.models.temporal_encoder import ObsInfo, TemporalEncoder
 from sample.trainers.sampler import RandomTimeSeriesSampler
 from sample.trainers.temporal_encoder import (
     TemporalEncoderTrainer,
@@ -73,36 +71,17 @@ class TestTransposeAndStackCollator:
 
 
 class TestTemporalEncoderTrainer:
-    HIDDEN_DEPTH = 2
-    HIDDEN_DIM = 8
-    MODALITIES = {"image": 16, "audio": 8}
     SEQ_LEN = 5
+    DEPTH = 2
+    DIM = 8
+    OBS_INFOS = {
+        "image": ObsInfo(dim=32, dim_hidden=16, num_tokens=4),
+        "audio": ObsInfo(dim=24, dim_hidden=12, num_tokens=3),
+    }
 
     @pytest.fixture
     def temporal_encoder(self):
-        observation_flattens = {
-            k: torch.nn.Linear(dim, dim) for k, dim in self.MODALITIES.items()
-        }
-        flattened_obses_projection = torch.nn.Linear(
-            sum(self.MODALITIES.values()), self.HIDDEN_DIM
-        )
-        core_model = QLSTM(
-            depth=self.HIDDEN_DEPTH,
-            dim=self.HIDDEN_DIM,
-            dim_ff_hidden=self.HIDDEN_DIM * 2,
-            dropout=0.0,
-        )
-        obs_hat_dist_heads = {
-            k: FCDeterministicNormalHead(self.HIDDEN_DIM, dim)
-            for k, dim in self.MODALITIES.items()
-        }
-
-        return TemporalEncoder(
-            observation_flattens=observation_flattens,
-            flattened_obses_projection=flattened_obses_projection,
-            core_model=core_model,
-            obs_hat_dist_heads=obs_hat_dist_heads,
-        )
+        return TemporalEncoder(self.OBS_INFOS, self.DIM, self.DEPTH, self.DIM * 2, 0.1)
 
     @pytest.fixture
     def models(self, temporal_encoder):
@@ -161,10 +140,13 @@ class TestTemporalEncoderTrainer:
         # Collect temporal data
         for _ in range(8):
             observations = TensorDict(
-                {k: torch.randn(dim) for k, dim in self.MODALITIES.items()},
+                {
+                    k: torch.randn(v.num_tokens, v.dim)
+                    for k, v in self.OBS_INFOS.items()
+                },
                 batch_size=(),
             )
-            hidden = torch.randn(self.HIDDEN_DEPTH, self.HIDDEN_DIM)
+            hidden = torch.randn(self.DEPTH, self.DIM)
 
             collector.collect(
                 {DataKey.OBSERVATION: observations, DataKey.HIDDEN: hidden}
