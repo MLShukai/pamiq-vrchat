@@ -55,35 +55,17 @@ class TestImaginingForwardDynamicsTrainer:
         }
 
     @pytest.fixture
-    def partial_dataloader(self):
-        partial_dataloader = partial(DataLoader, batch_size=2)
-        return partial_dataloader
-
-    @pytest.fixture
-    def partial_sampler(self):
-        partial_sampler = partial(RandomTimeSeriesSampler, sequence_length=self.LEN_SEQ)
-        return partial_sampler
-
-    @pytest.fixture
-    def partial_optimizer(self):
-        partial_optimizer = partial(AdamW, lr=1e-4, weight_decay=0.04)
-        return partial_optimizer
-
-    @pytest.fixture
     def trainer(
         self,
-        partial_dataloader,
-        partial_sampler,
-        partial_optimizer,
         mocker: MockerFixture,
     ):
         mocker.patch("sample.trainers.forward_dynamics.mlflow")
         trainer = ImaginingForwardDynamicsTrainer(
-            partial_dataloader,
-            partial_sampler,
-            partial_optimizer,
+            partial(AdamW, lr=1e-4, weight_decay=0.04),
+            seq_len=self.LEN_SEQ,
+            batch_size=2,
             imagination_length=4,
-            min_buffer_size=8,
+            min_buffer_size=self.LEN,
             min_new_data_count=4,
         )
         return trainer
