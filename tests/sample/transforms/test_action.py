@@ -3,7 +3,7 @@ import torch
 
 from pamiq_vrchat import ActionType
 from pamiq_vrchat.actuators import MouseButton, OscAxes, OscButtons
-from sample.environment.action_transform import (
+from sample.transforms.action import (
     ACTION_CHOICES,
     MOUSE_ACTION_CHOICES,
     OSC_ACTION_CHOICES,
