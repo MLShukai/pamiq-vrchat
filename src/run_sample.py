@@ -257,7 +257,7 @@ def main() -> None:
     #          Create Model Components
     # #########################################
 
-    def create_models(self) -> dict[ModelName, TrainingModel[Any]]:
+    def create_models() -> dict[ModelName, TrainingModel[Any]]:
         from pamiq_core.torch import TorchTrainingModel
 
         from sample.models import ForwardDynamics, PolicyValueCommon, TemporalEncoder
