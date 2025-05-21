@@ -1,8 +1,13 @@
 from typing import override
 
+import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.distributions import Distribution
+
+from .components.fc_scalar_head import FCScalarHead
+from .components.multi_discretes import FCMultiCategoricalHead
+from .components.qlstm import QLSTM
 
 
 class PolicyValueCommon(nn.Module):
@@ -10,24 +15,28 @@ class PolicyValueCommon(nn.Module):
 
     def __init__(
         self,
-        observation_flatten: nn.Module,
-        core_model: nn.Module,
-        policy_head: nn.Module,
-        value_head: nn.Module,
+        obs_dim: int,
+        action_choices: list[int],
+        dim: int,
+        depth: int,
+        dim_ff_hidden: int,
+        dropout: float = 0.1,
     ) -> None:
-        """Constructs the model with components.
+        """Constructs the PolicyValueCommon network.
 
         Args:
-            observation_flatten: Layer that processes observation.
-            core_model: Layer that processes observation with hidden state
-            policy_head: Layer that predicts actions.
-            value_head: Layer that predicts state values.
+            obs_dim: Dimension of the observation input.
+            depth: Number of recurrent layers in the core QLSTM model.
+            dim: Hidden dimension of the model.
+            dim_ff_hidden: Hidden dimension of the feed-forward networks in QLSTM.
+            dropout: Dropout rate for regularization.
+            action_choices: List of integers specifying the number of choices for
         """
         super().__init__()
-        self.observation_flatten = observation_flatten
-        self.core_model = core_model
-        self.policy_head = policy_head
-        self.value_head = value_head
+        self.obs_proj = nn.Linear(obs_dim, dim) if obs_dim != dim else nn.Identity()
+        self.core_model = QLSTM(depth, dim, dim_ff_hidden, dropout)
+        self.policy_head = FCMultiCategoricalHead(dim, action_choices)
+        self.value_head = FCScalarHead(dim, squeeze_scalar_dim=True)
 
     @override
     def forward(
@@ -45,7 +54,7 @@ class PolicyValueCommon(nn.Module):
                 - Tensor containing the estimated state value
                 - Updated hidden state tensor for use in next forward pass
         """
-        obs_embed = self.observation_flatten(observation)
+        obs_embed = self.obs_proj(observation)
         x, hidden = self.core_model(obs_embed, hidden)
         return self.policy_head(x), self.value_head(x), hidden
 
