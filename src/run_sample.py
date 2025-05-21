@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 # #########################################
 #      Environment Hyper parameters
@@ -145,7 +145,7 @@ class CliArgs:
 
 import torch
 import tyro
-from pamiq_core import Interaction
+from pamiq_core import Interaction, TrainingModel
 
 from sample.data import BufferName
 from sample.models import ModelName
@@ -252,3 +252,58 @@ def main() -> None:
         return FixedIntervalInteraction.with_sleep_adjustor(
             agent, environment, InteractionHPs.frame_interval
         )
+
+    # #########################################
+    #          Create Model Components
+    # #########################################
+
+    def create_models(self) -> dict[ModelName, TrainingModel[Any]]:
+        from pamiq_core.torch import TorchTrainingModel
+
+        from sample.models import ForwardDynamics, PolicyValueCommon, TemporalEncoder
+        from sample.transforms.action import ACTION_CHOICES
+
+        # TODO: create JEPA and assign obs infos
+        temporal_encoder = TorchTrainingModel(
+            TemporalEncoder(
+                obs_infos={},
+                dim=model_hparams.temporal_encoder.dim,
+                depth=model_hparams.temporal_encoder.depth,
+                dim_ff_hidden=model_hparams.temporal_encoder.dim_ff_hidden,
+                dropout=model_hparams.temporal_encoder.dropout,
+            ),
+            has_inference_model=True,
+            device=device,
+            inference_procedure=TemporalEncoder.infer,
+        )
+
+        forward_dynamics = TorchTrainingModel(
+            ForwardDynamics(
+                obs_dim=model_hparams.temporal_encoder.dim,
+                action_choices=list(ACTION_CHOICES),
+                action_dim=model_hparams.forward_dynamics.action_dim,
+                dim=model_hparams.forward_dynamics.dim,
+                depth=model_hparams.forward_dynamics.depth,
+                dim_ff_hidden=model_hparams.forward_dynamics.dim_ff_hidden,
+                dropout=model_hparams.forward_dynamics.dropout,
+            ),
+            has_inference_model=True,
+            device=device,
+        )
+
+        policy = TorchTrainingModel(
+            PolicyValueCommon(
+                obs_dim=model_hparams.temporal_encoder.dim,
+                action_choices=list(ACTION_CHOICES),
+                dim=model_hparams.policy.dim,
+                depth=model_hparams.policy.depth,
+                dim_ff_hidden=model_hparams.policy.dim_ff_hidden,
+                dropout=model_hparams.policy.dropout,
+            )
+        )
+
+        return {
+            ModelName.TEMPORAL_ENCODER: temporal_encoder,
+            ModelName.FORWARD_DYNAMICS: forward_dynamics,
+            ModelName.POLICY_VALUE: policy,
+        }
