@@ -34,6 +34,7 @@ class ImaginingForwardDynamicsTrainer(TorchTrainer):
         self,
         partial_optimizer: partial[Optimizer],
         seq_len: int = 1,
+        max_samples: int = 1,
         batch_size: int = 1,
         max_epochs: int = 1,
         data_user_name: str = BufferName.FORWARD_DYNAMICS,
@@ -48,7 +49,8 @@ class ImaginingForwardDynamicsTrainer(TorchTrainer):
             partial_optimizer: Partially configured optimizer to be used with
                 the model parameters.
             seq_len: Sequence length per batch.
-            batch_size: Number of data samples for 1 step.
+            max_samples: Max number of sample from dataset in 1 epoch.
+            batch_size: Data sample size of 1 batch.
             max_epochs: Maximum number of epochs to train per training session.
             data_user_name: Name of the data user providing training data.
             imagination_length: Length of the imagination sequence.
@@ -69,8 +71,9 @@ class ImaginingForwardDynamicsTrainer(TorchTrainer):
         self.partial_sampler = partial(
             RandomTimeSeriesSampler,
             sequence_length=seq_len + imagination_length,
-            max_samples=batch_size,
+            max_samples=max_samples,
         )
+        self.partial_dataloader = partial(DataLoader, batch_size=batch_size)
         self.max_epochs = max_epochs
         self.data_user_name = data_user_name
         self.imagination_length = imagination_length
@@ -147,7 +150,7 @@ class ImaginingForwardDynamicsTrainer(TorchTrainer):
             torch.stack(list(data[DataKey.HIDDEN])),
         )
         sampler = self.partial_sampler(dataset=dataset)
-        dataloader = DataLoader(dataset=dataset, sampler=sampler)
+        dataloader = self.partial_dataloader(dataset=dataset, sampler=sampler)
         device = get_device(self.forward_dynamics.model)
 
         for _ in range(self.max_epochs):
