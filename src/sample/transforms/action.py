@@ -1,8 +1,8 @@
-from typing import Final
+from typing import Any, Final
 
 import torch
 
-from pamiq_vrchat import ActionType, VRChatAction
+from pamiq_vrchat import ActionType
 from pamiq_vrchat.actuators import (
     MouseAction,
     MouseButton,
@@ -151,7 +151,7 @@ class ActionTransform:
         self._mouse = MouseTransform(mouse_vx, mouse_vy)
         self._osc = OscTransform()
 
-    def __call__(self, action: torch.Tensor) -> VRChatAction:
+    def __call__(self, action: torch.Tensor) -> dict[str, Any]:
         """Transform discrete action tensor into VRChatAction format.
 
         Args:
