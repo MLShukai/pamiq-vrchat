@@ -19,6 +19,7 @@ class ObservationType(StrEnum):
     """
 
     IMAGE = auto()
+    AUDIO = auto()
 
 
 class ActionType(StrEnum):
