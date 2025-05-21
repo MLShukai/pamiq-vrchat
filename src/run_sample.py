@@ -145,22 +145,8 @@ class CliArgs:
 
 import torch
 import tyro
-from pamiq_core import FixedIntervalInteraction, LaunchConfig, launch
-from pamiq_core.interaction.modular_env import (
-    ActuatorsDict,
-    ModularEnvironment,
-    SensorsDict,
-)
-from pamiq_core.interaction.wrappers import ActuatorWrapper, SensorWrapper
+from pamiq_core import Interaction
 
-from pamiq_vrchat import ActionType, ObservationType, actuators, sensors
-from sample import transforms
-from sample.agents import (
-    CuriosityAgent,
-    IntegratedCuriosityFramework,
-    TemporalEncodingAgent,
-    UnimodalEncodingAgent,
-)
 from sample.data import BufferName
 from sample.models import ModelName
 from sample.utils import average_exponentially
@@ -181,69 +167,88 @@ def main() -> None:
             raise
 
     # #########################################
-    #    Instantiate Interaction Components
+    #       Create Interaction Components
     # #########################################
-    agent = IntegratedCuriosityFramework(
-        unimodal_agents={
-            ObservationType.IMAGE: UnimodalEncodingAgent(
-                ModelName.IMAGE_JEPA_TARGET_ENCODER, BufferName.IMAGE
-            ),
-            ObservationType.AUDIO: UnimodalEncodingAgent(
-                ModelName.AUDIO_JEPA_TARGET_ENCODER, BufferName.AUDIO
-            ),
-        },
-        temporal_agent=TemporalEncodingAgent(
-            torch.zeros(
-                model_hparams.temporal_encoder.depth,
-                model_hparams.temporal_encoder.dim,
-                device=device,
-            )
-        ),
-        curiosity_agent=CuriosityAgent(
-            initial_forward_dynamics_hidden=torch.zeros(
-                model_hparams.forward_dynamics.depth,
-                model_hparams.forward_dynamics.dim,
-                device=device,
-            ),
-            initial_policy_hidden=torch.zeros(
-                model_hparams.policy.depth,
-                model_hparams.policy.dim,
-            ),
-            max_imagination_steps=InteractionHPs.Agent.imagination_length,
-            reward_average_method=average_exponentially,
-            log_every_n_steps=round(1 / InteractionHPs.frame_interval),  # 1 sec
-        ),
-    )
 
-    environment = ModularEnvironment(
-        sensor=SensorsDict(
-            {
-                ObservationType.IMAGE: SensorWrapper(
-                    sensors.ImageSensor(),
-                    transforms.image.create_vrchat_transform(
-                        InteractionHPs.Env.Obs.Image.size(),
-                    ),
+    def create_interaction() -> Interaction:
+        from pamiq_core import FixedIntervalInteraction
+        from pamiq_core.interaction.modular_env import (
+            ActuatorsDict,
+            ModularEnvironment,
+            SensorsDict,
+        )
+        from pamiq_core.interaction.wrappers import ActuatorWrapper, SensorWrapper
+
+        from pamiq_vrchat import ActionType, ObservationType, actuators, sensors
+        from sample import transforms
+        from sample.agents import (
+            CuriosityAgent,
+            IntegratedCuriosityFramework,
+            TemporalEncodingAgent,
+            UnimodalEncodingAgent,
+        )
+
+        agent = IntegratedCuriosityFramework(
+            unimodal_agents={
+                ObservationType.IMAGE: UnimodalEncodingAgent(
+                    ModelName.IMAGE_JEPA_TARGET_ENCODER, BufferName.IMAGE
+                ),
+                ObservationType.AUDIO: UnimodalEncodingAgent(
+                    ModelName.AUDIO_JEPA_TARGET_ENCODER, BufferName.AUDIO
+                ),
+            },
+            temporal_agent=TemporalEncodingAgent(
+                torch.zeros(
+                    model_hparams.temporal_encoder.depth,
+                    model_hparams.temporal_encoder.dim,
+                    device=device,
                 )
-            }
-        ),
-        actuator=ActuatorWrapper(
-            ActuatorsDict(
+            ),
+            curiosity_agent=CuriosityAgent(
+                initial_forward_dynamics_hidden=torch.zeros(
+                    model_hparams.forward_dynamics.depth,
+                    model_hparams.forward_dynamics.dim,
+                    device=device,
+                ),
+                initial_policy_hidden=torch.zeros(
+                    model_hparams.policy.depth,
+                    model_hparams.policy.dim,
+                ),
+                max_imagination_steps=InteractionHPs.Agent.imagination_length,
+                reward_average_method=average_exponentially,
+                log_every_n_steps=round(1 / InteractionHPs.frame_interval),  # 1 sec
+            ),
+        )
+
+        environment = ModularEnvironment(
+            sensor=SensorsDict(
                 {
-                    ActionType.MOUSE: actuators.SmoothMouseActuator(
-                        InteractionHPs.frame_interval,
-                        InteractionHPs.Env.Action.Mouse.time_constant,
-                    ),
-                    ActionType.OSC: actuators.SmoothOscActuator(
-                        InteractionHPs.Env.Action.Osc.host,
-                        InteractionHPs.Env.Action.Osc.port,
-                        delta_time=InteractionHPs.frame_interval,
-                        time_constant=InteractionHPs.Env.Action.Osc.time_constant,
-                    ),
+                    ObservationType.IMAGE: SensorWrapper(
+                        sensors.ImageSensor(),
+                        transforms.image.create_vrchat_transform(
+                            InteractionHPs.Env.Obs.Image.size(),
+                        ),
+                    )
                 }
             ),
-            transforms.action.ActionTransform(),
-        ),
-    )
-    interaction = FixedIntervalInteraction.with_sleep_adjustor(  # noqa: F841
-        agent, environment, InteractionHPs.frame_interval
-    )
+            actuator=ActuatorWrapper(
+                ActuatorsDict(
+                    {
+                        ActionType.MOUSE: actuators.SmoothMouseActuator(
+                            InteractionHPs.frame_interval,
+                            InteractionHPs.Env.Action.Mouse.time_constant,
+                        ),
+                        ActionType.OSC: actuators.SmoothOscActuator(
+                            InteractionHPs.Env.Action.Osc.host,
+                            InteractionHPs.Env.Action.Osc.port,
+                            delta_time=InteractionHPs.frame_interval,
+                            time_constant=InteractionHPs.Env.Action.Osc.time_constant,
+                        ),
+                    }
+                ),
+                transforms.action.ActionTransform(),
+            ),
+        )
+        return FixedIntervalInteraction.with_sleep_adjustor(
+            agent, environment, InteractionHPs.frame_interval
+        )
