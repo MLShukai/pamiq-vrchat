@@ -11,52 +11,21 @@ class TestForwardDynamics:
     # Test hyperparameters
     BATCH_SIZE = 2
     SEQ_LEN = 3
-    HIDDEN_DEPTH = 2
-    HIDDEN_DIM = 8
+    DEPTH = 2
+    DIM = 8
     OBS_DIM = 16
     ACTION_DIM = 4
+    ACTION_CHOICES = [2, 3, 4]
 
     @pytest.fixture
-    def observation_flatten(self):
-        return nn.Linear(self.OBS_DIM, self.OBS_DIM)
-
-    @pytest.fixture
-    def action_flatten(self):
-        return nn.Linear(self.ACTION_DIM, self.ACTION_DIM)
-
-    @pytest.fixture
-    def obs_action_projection(self):
-        combined_dim = self.OBS_DIM + self.ACTION_DIM
-        return nn.Linear(combined_dim, self.HIDDEN_DIM)
-
-    @pytest.fixture
-    def core_model(self):
-        return QLSTM(
-            depth=self.HIDDEN_DEPTH,
-            dim=self.HIDDEN_DIM,
-            dim_ff_hidden=self.HIDDEN_DIM * 2,
-            dropout=0.0,
-        )
-
-    @pytest.fixture
-    def obs_hat_dist_head(self):
-        return FCDeterministicNormalHead(self.HIDDEN_DIM, self.OBS_DIM)
-
-    @pytest.fixture
-    def dynamics_model(
-        self,
-        observation_flatten,
-        action_flatten,
-        obs_action_projection,
-        core_model,
-        obs_hat_dist_head,
-    ):
+    def dynamics_model(self):
         return ForwardDynamics(
-            observation_flatten,
-            action_flatten,
-            obs_action_projection,
-            core_model,
-            obs_hat_dist_head,
+            self.OBS_DIM,
+            self.ACTION_CHOICES,
+            self.ACTION_DIM,
+            self.DIM,
+            self.DEPTH,
+            self.DIM * 2,
         )
 
     @pytest.fixture
@@ -65,11 +34,14 @@ class TestForwardDynamics:
 
     @pytest.fixture
     def action(self):
-        return torch.randn(self.BATCH_SIZE, self.SEQ_LEN, self.ACTION_DIM)
+        actions = []
+        for choice in self.ACTION_CHOICES:
+            actions.append(torch.randint(0, choice, (self.BATCH_SIZE, self.SEQ_LEN)))
+        return torch.stack(actions, dim=-1)
 
     @pytest.fixture
     def hidden(self):
-        return torch.randn(self.BATCH_SIZE, self.HIDDEN_DEPTH, self.HIDDEN_DIM)
+        return torch.randn(self.BATCH_SIZE, self.DEPTH, self.DIM)
 
     def test_forward(self, dynamics_model, obs, action, hidden):
         """Test forward pass of ForwardDynamics model."""
@@ -81,9 +53,9 @@ class TestForwardDynamics:
         assert sample.shape == (self.BATCH_SIZE, self.SEQ_LEN, self.OBS_DIM)
         assert next_hidden.shape == (
             self.BATCH_SIZE,
-            self.HIDDEN_DEPTH,
+            self.DEPTH,
             self.SEQ_LEN,
-            self.HIDDEN_DIM,
+            self.DIM,
         )
 
         # Check distribution properties
@@ -103,7 +75,7 @@ class TestForwardDynamics:
         assert single_sample.shape == (1, self.SEQ_LEN, self.OBS_DIM)
         assert single_next_hidden.shape == (
             1,
-            self.HIDDEN_DEPTH,
+            self.DEPTH,
             self.SEQ_LEN,
-            self.HIDDEN_DIM,
+            self.DIM,
         )

@@ -32,9 +32,9 @@ class ImaginingForwardDynamicsTrainer(TorchTrainer):
 
     def __init__(
         self,
-        partial_dataloader: partial[DataLoader[Tensor]],
-        partial_sampler: partial[RandomTimeSeriesSampler],
         partial_optimizer: partial[Optimizer],
+        seq_len: int = 1,
+        batch_size: int = 1,
         max_epochs: int = 1,
         data_user_name: str = BufferName.FORWARD_DYNAMICS,
         imagination_length: int = 1,
@@ -45,12 +45,10 @@ class ImaginingForwardDynamicsTrainer(TorchTrainer):
         """Initialize the ForwardDynamicsTrainer.
 
         Args:
-            partial_dataloader: Partially configured DataLoader to be used with
-                dynamically created datasets during training.
             partial_optimizer: Partially configured optimizer to be used with
                 the model parameters.
-            partial_sampler: Partially configured sampler to be used with the dataset.
-            partial_optimizer: Partial function for creating an optimizer.
+            seq_len: Sequence length per batch.
+            batch_size: Number of data samples for 1 step.
             max_epochs: Maximum number of epochs to train per training session.
             data_user_name: Name of the data user providing training data.
             imagination_length: Length of the imagination sequence.
@@ -58,18 +56,25 @@ class ImaginingForwardDynamicsTrainer(TorchTrainer):
             min_new_data_count: Minimum number of new data points required for training.
             imagenation_average_method: Method to average the loss over the imagination sequence.
         """
-        super().__init__(data_user_name, min_buffer_size, min_new_data_count)
-
-        self.partial_dataloader = partial_dataloader
-        self.partial_sampler = partial_sampler
-        self.partial_optimizer = partial_optimizer
-        self.max_epochs = max_epochs
-        self.data_user_name = data_user_name
+        if min_buffer_size < imagination_length + seq_len:
+            raise ValueError(
+                "Buffer size must be greater than imagination length + sequence length."
+            )
         if imagination_length < 1:
             raise ValueError("Imagination length must be greater than 0")
+
+        super().__init__(data_user_name, min_buffer_size, min_new_data_count)
+
+        self.partial_optimizer = partial_optimizer
+        self.partial_sampler = partial(
+            RandomTimeSeriesSampler,
+            sequence_length=seq_len + imagination_length,
+            max_samples=batch_size,
+        )
+        self.max_epochs = max_epochs
+        self.data_user_name = data_user_name
         self.imagination_length = imagination_length
-        if min_buffer_size <= imagination_length:
-            raise ValueError("Buffer size must be greater than imagination length")
+
         self.imagination_average_method = imagination_average_method
         self.global_step = 0
 
@@ -142,7 +147,7 @@ class ImaginingForwardDynamicsTrainer(TorchTrainer):
             torch.stack(list(data[DataKey.HIDDEN])),
         )
         sampler = self.partial_sampler(dataset=dataset)
-        dataloader = self.partial_dataloader(dataset=dataset, sampler=sampler)
+        dataloader = DataLoader(dataset=dataset, sampler=sampler)
         device = get_device(self.forward_dynamics.model)
 
         for _ in range(self.max_epochs):
