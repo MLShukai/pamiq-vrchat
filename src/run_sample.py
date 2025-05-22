@@ -187,6 +187,7 @@ import logging
 from datetime import datetime
 
 import colorlog
+import mlflow
 import torch
 import tyro
 from pamiq_core import (
@@ -501,17 +502,20 @@ def main() -> None:
     #                 Launch
     # #########################################
 
-    launch(
-        interaction=create_interaction(),
-        models=create_models(),
-        data=create_data_buffers(),
-        trainers=create_trainers(),
-        config=LaunchConfig(
-            states_dir=args.output_dir / "states",
-            save_state_interval=24 * 60 * 60,  # 1 day.
-            max_keep_states=3,
-        ),
-    )
+    mlflow.set_tracking_uri(args.output_dir / "mlflow")
+
+    with mlflow.start_run():
+        launch(
+            interaction=create_interaction(),
+            models=create_models(),
+            data=create_data_buffers(),
+            trainers=create_trainers(),
+            config=LaunchConfig(
+                states_dir=args.output_dir / "states",
+                save_state_interval=24 * 60 * 60,  # 1 day.
+                max_keep_states=3,
+            ),
+        )
 
 
 if __name__ == "__main__":
