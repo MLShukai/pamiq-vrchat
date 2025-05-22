@@ -515,3 +515,7 @@ def main() -> None:
             max_keep_states=3,
         ),
     )
+
+
+if __name__ == "__main__":
+    main()
