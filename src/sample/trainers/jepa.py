@@ -289,7 +289,7 @@ class JEPATrainer(TorchTrainer):
 
 
 class MultiBlockMaskCollator2d:
-    """Image-JEPA collator function for providing boolean mask tensors.
+    """JEPA collator function for providing boolean mask tensors.
 
     This collator creates boolean masks for both the context encoder and predictor target.
     It's designed to work with the Image-JEPA (Image Joint Embedding Predictive Architecture) model.
@@ -297,8 +297,6 @@ class MultiBlockMaskCollator2d:
     The masks are boolean tensors where:
     - True values indicate patches to be masked (ignored)
     - False values indicate patches to be processed or predicted
-
-    This differs from IJEPAMaskCollator which uses integer indices for masked patches.
     """
 
     def __init__(
