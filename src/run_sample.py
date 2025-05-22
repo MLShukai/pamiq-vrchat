@@ -206,6 +206,7 @@ def main() -> None:
             UnimodalEncodingAgent,
         )
 
+        # ----- Agent -----
         agent = IntegratedCuriosityFramework(
             unimodal_agents={
                 ObservationType.IMAGE: UnimodalEncodingAgent(
@@ -238,13 +239,15 @@ def main() -> None:
             ),
         )
 
+        # ----- Environment -----
+        hparams = InteractionHPs.Env
         environment = ModularEnvironment(
             sensor=SensorsDict(
                 {
                     ObservationType.IMAGE: SensorWrapper(
                         sensors.ImageSensor(),
                         transforms.image.create_vrchat_transform(
-                            InteractionHPs.Env.Obs.Image.size(),
+                            hparams.Obs.Image.size(),
                         ),
                     )
                 }
@@ -254,13 +257,13 @@ def main() -> None:
                     {
                         ActionType.MOUSE: actuators.SmoothMouseActuator(
                             InteractionHPs.frame_interval,
-                            InteractionHPs.Env.Action.Mouse.time_constant,
+                            hparams.Action.Mouse.time_constant,
                         ),
                         ActionType.OSC: actuators.SmoothOscActuator(
-                            InteractionHPs.Env.Action.Osc.host,
-                            InteractionHPs.Env.Action.Osc.port,
+                            hparams.Action.Osc.host,
+                            hparams.Action.Osc.port,
                             delta_time=InteractionHPs.frame_interval,
-                            time_constant=InteractionHPs.Env.Action.Osc.time_constant,
+                            time_constant=hparams.Action.Osc.time_constant,
                         ),
                     }
                 ),
@@ -282,41 +285,48 @@ def main() -> None:
         from sample.transforms.action import ACTION_CHOICES
 
         # TODO: create JEPA and assign obs infos
+
+        # ----- Temporal Encoder -----
+        hparams = model_hparams.temporal_encoder
         temporal_encoder = TorchTrainingModel(
             TemporalEncoder(
                 obs_infos={},
-                dim=model_hparams.temporal_encoder.dim,
-                depth=model_hparams.temporal_encoder.depth,
-                dim_ff_hidden=model_hparams.temporal_encoder.dim_ff_hidden,
-                dropout=model_hparams.temporal_encoder.dropout,
+                dim=hparams.dim,
+                depth=hparams.depth,
+                dim_ff_hidden=hparams.dim_ff_hidden,
+                dropout=hparams.dropout,
             ),
             has_inference_model=True,
             device=device,
             inference_procedure=TemporalEncoder.infer,
         )
 
+        # ----- Forward Dynamics -----
+        hparams = model_hparams.forward_dynamics
         forward_dynamics = TorchTrainingModel(
             ForwardDynamics(
                 obs_dim=model_hparams.temporal_encoder.dim,
                 action_choices=list(ACTION_CHOICES),
-                action_dim=model_hparams.forward_dynamics.action_dim,
-                dim=model_hparams.forward_dynamics.dim,
-                depth=model_hparams.forward_dynamics.depth,
-                dim_ff_hidden=model_hparams.forward_dynamics.dim_ff_hidden,
-                dropout=model_hparams.forward_dynamics.dropout,
+                action_dim=hparams.action_dim,
+                dim=hparams.dim,
+                depth=hparams.depth,
+                dim_ff_hidden=hparams.dim_ff_hidden,
+                dropout=hparams.dropout,
             ),
             has_inference_model=True,
             device=device,
         )
 
+        # ----- Policy -----
+        hparams = model_hparams.policy
         policy = TorchTrainingModel(
             PolicyValueCommon(
                 obs_dim=model_hparams.temporal_encoder.dim,
                 action_choices=list(ACTION_CHOICES),
-                dim=model_hparams.policy.dim,
-                depth=model_hparams.policy.depth,
-                dim_ff_hidden=model_hparams.policy.dim_ff_hidden,
-                dropout=model_hparams.policy.dropout,
+                dim=hparams.dim,
+                depth=hparams.depth,
+                dim_ff_hidden=hparams.dim_ff_hidden,
+                dropout=hparams.dropout,
             )
         )
 
@@ -341,34 +351,39 @@ def main() -> None:
             TemporalEncoderTrainer,
         )
 
+        # ----- Temporal Encoder Trainer -----
+        hparams = TrainerHPs.TemporalEncoder
         temporal_encoder = TemporalEncoderTrainer(
-            partial_optimzier=partial(AdamW, lr=TrainerHPs.TemporalEncoder.lr),
-            seq_len=TrainerHPs.TemporalEncoder.seq_len,
-            max_samples=TrainerHPs.TemporalEncoder.seq_len,
-            batch_size=TrainerHPs.TemporalEncoder.batch_size,
-            min_new_data_count=TrainerHPs.TemporalEncoder.min_new_data_count,
-            min_buffer_size=TrainerHPs.TemporalEncoder.seq_len + 1,
+            partial_optimzier=partial(AdamW, lr=hparams.lr),
+            seq_len=hparams.seq_len,
+            max_samples=hparams.seq_len,
+            batch_size=hparams.batch_size,
+            min_new_data_count=hparams.min_new_data_count,
+            min_buffer_size=hparams.seq_len + 1,
         )
 
+        # ----- Forward Dynamics Trainer -----
+        hparams = TrainerHPs.ForwardDynamics
         forward_dynamics = ImaginingForwardDynamicsTrainer(
-            partial_optimizer=partial(AdamW, lr=TrainerHPs.ForwardDynamics.lr),
-            seq_len=TrainerHPs.ForwardDynamics.seq_len,
-            max_samples=TrainerHPs.ForwardDynamics.max_samples,
-            batch_size=TrainerHPs.ForwardDynamics.batch_size,
+            partial_optimizer=partial(AdamW, lr=hparams.lr),
+            seq_len=hparams.seq_len,
+            max_samples=hparams.max_samples,
+            batch_size=hparams.batch_size,
             imagination_length=InteractionHPs.Agent.imagination_length,
-            min_buffer_size=TrainerHPs.ForwardDynamics.seq_len
-            + InteractionHPs.Agent.imagination_length,
-            min_new_data_count=TrainerHPs.ForwardDynamics.min_new_data_count,
+            min_buffer_size=hparams.seq_len + InteractionHPs.Agent.imagination_length,
+            min_new_data_count=hparams.min_new_data_count,
             imagination_average_method=average_exponentially,
         )
 
+        # ----- PPO Policy Trainer -----
+        hparams = TrainerHPs.PPOPolicy
         policy = PPOPolicyTrainer(
-            partial_optimizer=partial(AdamW, lr=TrainerHPs.PPOPolicy.lr),
-            seq_len=TrainerHPs.PPOPolicy.seq_len,
-            max_samples=TrainerHPs.PPOPolicy.max_samples,
-            batch_size=TrainerHPs.PPOPolicy.batch_size,
-            min_buffer_size=TrainerHPs.PPOPolicy.seq_len,
-            min_new_data_count=TrainerHPs.PPOPolicy.min_new_data_count,
+            partial_optimizer=partial(AdamW, lr=hparams.lr),
+            seq_len=hparams.seq_len,
+            max_samples=hparams.max_samples,
+            batch_size=hparams.batch_size,
+            min_buffer_size=hparams.seq_len,
+            min_new_data_count=hparams.min_new_data_count,
         )
 
         return {
