@@ -148,11 +148,14 @@ class DataBufferHPs:
 
     class Audio: ...
 
-    class Temporal: ...
+    class Temporal:
+        max_size = 1000
 
-    class ForwardDynamics: ...
+    class ForwardDynamics:
+        max_size = 1000
 
-    class Policy: ...
+    class Policy:
+        max_size = 1000
 
 
 # #############################################
@@ -177,7 +180,7 @@ class CliArgs:
 
 import torch
 import tyro
-from pamiq_core import Interaction, Trainer, TrainingModel
+from pamiq_core import DataBuffer, Interaction, Trainer, TrainingModel
 
 from sample.data import BufferName
 from sample.models import ModelName
@@ -404,4 +407,46 @@ def main() -> None:
             "temporal_encoder": temporal_encoder,
             "forward_dynamics": forward_dynamics,
             "policy": policy,
+        }
+
+    # #########################################
+    #            Create Data Buffers
+    # #########################################
+
+    def create_data_buffers() -> dict[str, DataBuffer[Any]]:
+        from pamiq_core.data.impls import SequentialBuffer
+
+        from sample.data import DataKey
+
+        # TODO: Write Data Buffer definition for Audio and Image.
+
+        # ----- Temporal Buffer -----
+        temporal = SequentialBuffer(
+            collecting_data_names=[DataKey.OBSERVATION, DataKey.HIDDEN],
+            max_size=DataBufferHPs.Temporal.max_size,
+        )
+
+        # ----- Forward Dynamics Buffer -----
+        forward_dynamics = SequentialBuffer(
+            collecting_data_names=[DataKey.OBSERVATION, DataKey.ACTION, DataKey.HIDDEN],
+            max_size=DataBufferHPs.ForwardDynamics.max_size,
+        )
+
+        # ----- Policy Buffer -----
+        policy = SequentialBuffer(
+            collecting_data_names=[
+                DataKey.OBSERVATION,
+                DataKey.HIDDEN,
+                DataKey.ACTION,
+                DataKey.ACTION_LOG_PROB,
+                DataKey.REWARD,
+                DataKey.VALUE,
+            ],
+            max_size=DataBufferHPs.Policy.max_size,
+        )
+
+        return {
+            BufferName.TEMPORAL: temporal,
+            BufferName.FORWARD_DYNAMICS: forward_dynamics,
+            BufferName.POLICY: policy,
         }
