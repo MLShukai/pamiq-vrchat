@@ -67,11 +67,8 @@ class Encoder(nn.Module):
         # define mask token_vector
         self.mask_token_vector = nn.Parameter(torch.empty(hidden_dim))
 
-        self.positional_encodings: torch.Tensor
-        self.register_buffer(
-            "positional_encodings",
-            positional_encodings.unsqueeze(0),
-        )
+        self.register_buffer("positional_encodings", None)
+        self.positional_encodings = positional_encodings.unsqueeze(0)
 
         # define transformer
         self.transformer = Transformer(
@@ -192,8 +189,8 @@ class Predictor(nn.Module):
         self.prediction_token_vector = nn.Parameter(torch.empty(hidden_dim))
 
         # define positional encodings
-        self.positional_encodings: torch.Tensor
-        self.register_buffer("positional_encodings", positional_encodings.unsqueeze(0))
+        self.register_buffer("positional_encodings", None)
+        self.positional_encodings = positional_encodings.unsqueeze(0)
 
         # define transformer
         self.transformer = Transformer(
