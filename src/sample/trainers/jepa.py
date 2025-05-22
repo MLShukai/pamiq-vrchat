@@ -1,6 +1,7 @@
 import itertools
 import math
 import random
+from collections.abc import Callable
 from functools import partial
 from multiprocessing import Value
 from pathlib import Path
@@ -74,14 +75,15 @@ class JEPATrainer(TorchTrainer):
     @override
     def __init__(
         self,
-        partial_dataloader: partial[DataLoader[Tensor]],
         partial_optimizer: partial[Optimizer],
         context_encoder_name: str,
         target_encoder_name: str,
         predictor_name: str,
         data_user_name: str,
+        collate_fn: Callable[[list[tuple[Tensor]]], tuple[Tensor, Tensor, Tensor]],
         log_prefix: str = "jepa",
         target_encoder_update_moving_average: float = 0.996,  # based on the original I-JEPA initinal setting.
+        batch_size: int = 1,
         max_epochs: int = 1,
         min_buffer_size: int = 0,
         min_new_data_count: int = 0,
@@ -89,8 +91,6 @@ class JEPATrainer(TorchTrainer):
         """Initialize the JEPA trainer.
 
         Args:
-            partial_dataloader: Partially configured DataLoader to be used with
-                dynamically created datasets during training.
             partial_optimizer: Partially configured optimizer to be used with
                 the model parameters.
             context_encoder_name: Name of the context encoder model to retrieve
@@ -100,10 +100,12 @@ class JEPATrainer(TorchTrainer):
             predictor_name: Name of the predictor model to retrieve from the
                 model registry.
             data_user_name: Name of the data user providing training data.
+            collate_fn: Collator function for sampling input data, encoder mask and predictor target.
             log_prefix: Prefix for training metrics in MLflow logging.
             target_encoder_update_moving_average: Momentum coefficient for updating
                 the target encoder from the context encoder (higher values mean
                 slower updates, default: 0.996 based on original I-JEPA).
+            batch_size: Data sample size for 1 step.
             max_epochs: Maximum number of epochs to train per training session.
             min_buffer_size: Minimum buffer size required before training starts.
             min_new_data_count: Minimum number of new data points required for training.
@@ -112,7 +114,13 @@ class JEPATrainer(TorchTrainer):
 
         self.data_user_name = data_user_name
         self.partial_optimizer = partial_optimizer
-        self.partial_dataloader = partial_dataloader
+        self.partial_dataloader = partial(
+            DataLoader,
+            batch_size=batch_size,
+            shuffle=True,
+            drop_last=True,
+            collate_fn=collate_fn,
+        )
         self.context_encoder_name = context_encoder_name
         self.target_encoder_name = target_encoder_name
         self.predictor_name = predictor_name

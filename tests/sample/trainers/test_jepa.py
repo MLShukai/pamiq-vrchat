@@ -8,7 +8,6 @@ from pamiq_core.testing import connect_components
 from pamiq_core.torch import TorchTrainingModel
 from pytest_mock import MockerFixture
 from torch.optim import AdamW
-from torch.utils.data import DataLoader
 
 from sample.data import BufferName, DataKey
 from sample.models import ModelName
@@ -90,42 +89,38 @@ class TestJEPATrainer:
         }
 
     @pytest.fixture
-    def partial_dataloader(self):
-        return partial(
-            DataLoader,
-            batch_size=2,
-            shuffle=True,
-            collate_fn=MultiBlockMaskCollator2d(
-                input_size=self.IMAGE_SIZE,
-                patch_size=self.PATCH_SIZE,
-            ),
-        )
-
-    @pytest.fixture
     def partial_optimizer(self):
         partial_optimizer = partial(AdamW, lr=1e-4, weight_decay=0.04)
         return partial_optimizer
 
     @pytest.fixture
-    def trainer(self, partial_dataloader, partial_optimizer, mocker: MockerFixture):
+    def collate_fn(self) -> MultiBlockMaskCollator2d:
+        return MultiBlockMaskCollator2d(
+            input_size=self.IMAGE_SIZE,
+            patch_size=self.PATCH_SIZE,
+        )
+
+    @pytest.fixture
+    def trainer(self, partial_optimizer, collate_fn, mocker: MockerFixture):
         mocker.patch("sample.trainers.jepa.mlflow")
         return JEPATrainer(
-            partial_dataloader,
             partial_optimizer,
             **IMAGE_CONFIG,
+            collate_fn=collate_fn,
+            batch_size=2,
             min_buffer_size=4,
             min_new_data_count=2,
         )
 
     @pytest.mark.parametrize("modality_cfg", [IMAGE_CONFIG, AUDIO_CONFIG])
     def test_initilization(
-        self, modality_cfg, partial_dataloader, partial_optimizer, mocker: MockerFixture
+        self, modality_cfg, partial_optimizer, collate_fn, mocker: MockerFixture
     ):
         mocker.patch("sample.trainers.jepa.mlflow")
         JEPATrainer(
-            partial_dataloader,
             partial_optimizer,
             **modality_cfg,
+            collate_fn=collate_fn,
             min_buffer_size=4,
             min_new_data_count=2,
         )
