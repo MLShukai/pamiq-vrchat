@@ -13,7 +13,7 @@ from pamiq_core.torch import get_device
 
 from sample.utils import size_2d, size_2d_to_int_tuple
 
-from .components.patch_embedding import PatchEmbedding
+from .components.image_patchifier import ImagePatchifier
 from .components.positional_embeddings import get_2d_positional_embeddings
 from .components.transformer import Transformer
 from .utils import init_weights
@@ -61,7 +61,7 @@ class Encoder(nn.Module):
         self.num_heads = num_heads
 
         # define input layer to convert input image into patches.
-        self.patch_embed = PatchEmbedding(
+        self.patch_embed = ImagePatchifier(
             patch_size=patch_size,
             in_channels=in_channels,
             embed_dim=hidden_dim,
