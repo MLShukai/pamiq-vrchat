@@ -13,7 +13,7 @@ PROJECT_ROOT = rootutils.setup_root(__file__)  # Retrieve project root directory
 # #########################################
 
 
-class InteractionHPs:
+class InteractionHParams:
     """Environment hyper parameter name space."""
 
     frame_interval: float = 0.1  # seconds
@@ -53,7 +53,7 @@ class InteractionHPs:
 
 
 @dataclass
-class ModelHPs:
+class ModelHParams:
     """Model hyper parameter name space.
 
     Default values are large size model
@@ -111,7 +111,7 @@ class ModelHPs:
 
 
 @dataclass
-class TrainerHPs:
+class TrainerHParams:
     """Trainer hyper parameter name space."""
 
     class ImageJEPA: ...
@@ -148,7 +148,7 @@ class TrainerHPs:
 # #############################################
 
 
-class DataBufferHPs:
+class DataBufferHParams:
     """DataBuffer hyper parameter namespace."""
 
     class Image: ...
@@ -244,7 +244,7 @@ def main() -> None:
 
     match args.model_size:
         case "large":
-            model_hparams = ModelHPs.create_large()
+            model_hparams = ModelHParams.create_large()
         case _:
             raise
 
@@ -297,14 +297,14 @@ def main() -> None:
                     model_hparams.policy.depth,
                     model_hparams.policy.dim,
                 ),
-                max_imagination_steps=InteractionHPs.Agent.imagination_length,
+                max_imagination_steps=InteractionHParams.Agent.imagination_length,
                 reward_average_method=average_exponentially,
-                log_every_n_steps=round(1 / InteractionHPs.frame_interval),  # 1 sec
+                log_every_n_steps=round(1 / InteractionHParams.frame_interval),  # 1 sec
             ),
         )
 
         # ----- Environment -----
-        hparams = InteractionHPs.Env
+        hparams = InteractionHParams.Env
         environment = ModularEnvironment(
             sensor=SensorsDict(
                 {
@@ -320,13 +320,13 @@ def main() -> None:
                 ActuatorsDict(
                     {
                         ActionType.MOUSE: actuators.SmoothMouseActuator(
-                            InteractionHPs.frame_interval,
+                            InteractionHParams.frame_interval,
                             hparams.Action.Mouse.time_constant,
                         ),
                         ActionType.OSC: actuators.SmoothOscActuator(
                             hparams.Action.Osc.host,
                             hparams.Action.Osc.port,
-                            delta_time=InteractionHPs.frame_interval,
+                            delta_time=InteractionHParams.frame_interval,
                             time_constant=hparams.Action.Osc.time_constant,
                         ),
                     }
@@ -335,7 +335,7 @@ def main() -> None:
             ),
         )
         return FixedIntervalInteraction.with_sleep_adjustor(
-            agent, environment, InteractionHPs.frame_interval
+            agent, environment, InteractionHParams.frame_interval
         )
 
     # #########################################
@@ -416,7 +416,7 @@ def main() -> None:
         )
 
         # ----- Temporal Encoder Trainer -----
-        hparams = TrainerHPs.TemporalEncoder
+        hparams = TrainerHParams.TemporalEncoder
         temporal_encoder = TemporalEncoderTrainer(
             partial_optimzier=partial(AdamW, lr=hparams.lr),
             seq_len=hparams.seq_len,
@@ -427,20 +427,22 @@ def main() -> None:
         )
 
         # ----- Forward Dynamics Trainer -----
-        hparams = TrainerHPs.ForwardDynamics
+        hparams = TrainerHParams.ForwardDynamics
         forward_dynamics = ImaginingForwardDynamicsTrainer(
             partial_optimizer=partial(AdamW, lr=hparams.lr),
             seq_len=hparams.seq_len,
             max_samples=hparams.max_samples,
             batch_size=hparams.batch_size,
-            imagination_length=InteractionHPs.Agent.imagination_length,
-            min_buffer_size=hparams.seq_len + InteractionHPs.Agent.imagination_length,
+            imagination_length=InteractionHParams.Agent.imagination_length,
+            min_buffer_size=(
+                hparams.seq_len + InteractionHParams.Agent.imagination_length
+            ),
             min_new_data_count=hparams.min_new_data_count,
             imagination_average_method=average_exponentially,
         )
 
         # ----- PPO Policy Trainer -----
-        hparams = TrainerHPs.PPOPolicy
+        hparams = TrainerHParams.PPOPolicy
         policy = PPOPolicyTrainer(
             partial_optimizer=partial(AdamW, lr=hparams.lr),
             seq_len=hparams.seq_len,
@@ -470,13 +472,13 @@ def main() -> None:
         # ----- Temporal Buffer -----
         temporal = SequentialBuffer(
             collecting_data_names=[DataKey.OBSERVATION, DataKey.HIDDEN],
-            max_size=DataBufferHPs.Temporal.max_size,
+            max_size=DataBufferHParams.Temporal.max_size,
         )
 
         # ----- Forward Dynamics Buffer -----
         forward_dynamics = SequentialBuffer(
             collecting_data_names=[DataKey.OBSERVATION, DataKey.ACTION, DataKey.HIDDEN],
-            max_size=DataBufferHPs.ForwardDynamics.max_size,
+            max_size=DataBufferHParams.ForwardDynamics.max_size,
         )
 
         # ----- Policy Buffer -----
@@ -489,7 +491,7 @@ def main() -> None:
                 DataKey.REWARD,
                 DataKey.VALUE,
             ],
-            max_size=DataBufferHPs.Policy.max_size,
+            max_size=DataBufferHParams.Policy.max_size,
         )
 
         return {
