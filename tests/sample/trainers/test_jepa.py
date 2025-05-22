@@ -46,7 +46,6 @@ class TestJEPATrainer:
     def context_encoder(self, patchfier, positional_encodings):
         return Encoder(
             patchfier=patchfier,
-            num_patches=self.N_PATCHES * self.N_PATCHES,
             positional_encodings=positional_encodings,
             hidden_dim=self.HIDDEN_DIM,
             embed_dim=self.EMBED_DIM,
@@ -67,7 +66,6 @@ class TestJEPATrainer:
     @pytest.fixture
     def predictor(self, predictor_positional_encodings):
         return Predictor(
-            num_patches=self.N_PATCHES * self.N_PATCHES,
             positional_encodings=predictor_positional_encodings,
             embed_dim=self.EMBED_DIM,
             hidden_dim=64,

@@ -24,7 +24,6 @@ class TestEncoder:
 
         encoder = Encoder(
             patchfier=patchfier,
-            num_patches=n_patches,
             positional_encodings=positional_encodings,
             hidden_dim=hidden_dim,
             embed_dim=embed_dim,
@@ -51,7 +50,6 @@ class TestEncoder:
 
         encoder = Encoder(
             patchfier=patchfier,
-            num_patches=n_patches,
             positional_encodings=positional_encodings,
             hidden_dim=64,
             embed_dim=32,
@@ -76,13 +74,26 @@ class TestEncoder:
         """Test error when positional encoding shape doesn't match expected
         shape."""
         patchfier = PatchEmbedding(8, 3, 64)
-        positional_encodings = torch.zeros(64, 32)  # Wrong shape
 
-        with pytest.raises(ValueError, match="Positional encoding shape mismatch"):
+        with pytest.raises(
+            ValueError,
+            match="positional_encodings channel dimension must be hidden_dim.",
+        ):
             Encoder(
                 patchfier=patchfier,
-                num_patches=64,
-                positional_encodings=positional_encodings,
+                positional_encodings=torch.zeros(64, 32),  # Wrong channel size
+                hidden_dim=64,
+                embed_dim=32,
+                depth=1,
+                num_heads=2,
+            )
+
+        with pytest.raises(ValueError, match="positional_encodings must be 2d tensor!"):
+            Encoder(
+                patchfier=patchfier,
+                positional_encodings=torch.zeros(
+                    64,
+                ),  # Wrong dims size
                 hidden_dim=64,
                 embed_dim=32,
                 depth=1,
@@ -99,7 +110,6 @@ class TestEncoder:
 
         encoder = Encoder(
             patchfier=patchfier,
-            num_patches=n_patches,
             positional_encodings=positional_encodings,
             hidden_dim=64,
             embed_dim=64,
@@ -124,7 +134,6 @@ class TestEncoder:
 
         encoder = Encoder(
             patchfier=patchfier,
-            num_patches=n_patches,
             positional_encodings=positional_encodings,
             hidden_dim=64,
             embed_dim=64,
@@ -148,7 +157,6 @@ class TestEncoder:
 
         encoder = Encoder(
             patchfier=patchfier,
-            num_patches=n_patches,
             positional_encodings=positional_encodings,
             hidden_dim=64,
             embed_dim=64,
@@ -173,7 +181,6 @@ class TestPredictor:
         )
 
         predictor = Predictor(
-            num_patches=n_patches,
             positional_encodings=positional_encodings,
             embed_dim=embed_dim,
             hidden_dim=hidden_dim,
@@ -202,12 +209,26 @@ class TestPredictor:
     def test_invalid_positional_encoding_shape(self):
         """Test error when positional encoding shape doesn't match expected
         shape."""
-        positional_encodings = torch.zeros(32, 64)  # Wrong shape for hidden_dim=32
 
-        with pytest.raises(ValueError, match="Positional encodings shape mismatch"):
+        with pytest.raises(
+            ValueError,
+            match="positional_encodings channel dimension must be hidden_dim.",
+        ):
             Predictor(
-                num_patches=64,
-                positional_encodings=positional_encodings,
+                positional_encodings=torch.zeros(
+                    32, 64
+                ),  # Wrong shape for hidden_dim=32
+                embed_dim=32,
+                hidden_dim=32,
+                depth=1,
+                num_heads=2,
+            )
+
+        with pytest.raises(ValueError, match="positional_encodings must be 2d tensor!"):
+            Predictor(
+                positional_encodings=torch.zeros(
+                    32,
+                ),  # Wrong dim size
                 embed_dim=32,
                 hidden_dim=32,
                 depth=1,
@@ -222,7 +243,6 @@ class TestPredictor:
         )
 
         predictor = Predictor(
-            num_patches=n_patches,
             positional_encodings=positional_encodings,
             embed_dim=32,
             hidden_dim=32,
@@ -243,7 +263,6 @@ class TestPredictor:
         )
 
         predictor = Predictor(
-            num_patches=n_patches,
             positional_encodings=positional_encodings,
             embed_dim=32,
             hidden_dim=32,
@@ -282,7 +301,6 @@ class TestJEPAIntegration:
 
         encoder = Encoder(
             patchfier=patchfier,
-            num_patches=n_patches,
             positional_encodings=positional_encodings,
             hidden_dim=hidden_dim,
             embed_dim=embed_dim,
@@ -291,7 +309,6 @@ class TestJEPAIntegration:
         )
 
         predictor = Predictor(
-            num_patches=n_patches,
             positional_encodings=positional_encodings[
                 :, :32
             ],  # Use first 32 dims for predictor
@@ -333,7 +350,6 @@ class TestAveragePoolInfer:
 
         return Encoder(
             patchfier=patchfier,
-            num_patches=n_patches,
             positional_encodings=positional_encodings,
             hidden_dim=64,
             embed_dim=32,
@@ -344,7 +360,7 @@ class TestAveragePoolInfer:
     def test_basic_functionality(self, encoder):
         """Test basic pooling functionality."""
         # Setup
-        pooler = AveragePoolInfer2d(n_patches=(4, 4), kernel_size=2)
+        pooler = AveragePoolInfer2d(num_patches=(4, 4), kernel_size=2)
         image = torch.randn(1, 3, 32, 32)
 
         # Encode and pool
@@ -355,7 +371,7 @@ class TestAveragePoolInfer:
 
     def test_different_batch_sizes(self, encoder):
         """Test with different batch sizes."""
-        pooler = AveragePoolInfer2d(n_patches=(4, 4), kernel_size=2)
+        pooler = AveragePoolInfer2d(num_patches=(4, 4), kernel_size=2)
 
         # Test with batch size 2
         image_batch2 = torch.randn(2, 3, 32, 32)
@@ -369,7 +385,7 @@ class TestAveragePoolInfer:
 
     def test_no_batch_dimension(self, encoder):
         """Test with input tensor that has no batch dimension."""
-        pooler = AveragePoolInfer2d(n_patches=(4, 4), kernel_size=2)
+        pooler = AveragePoolInfer2d(num_patches=(4, 4), kernel_size=2)
 
         # Create an image without batch dimension
         image = torch.randn(3, 32, 32)
@@ -382,7 +398,7 @@ class TestAveragePoolInfer:
 
     def test_multi_dimensional_batch(self, encoder):
         """Test with multi-dimensional batch."""
-        pooler = AveragePoolInfer2d(n_patches=(4, 4), kernel_size=2)
+        pooler = AveragePoolInfer2d(num_patches=(4, 4), kernel_size=2)
 
         # Create a batch with multiple dimensions [2, 3, 3, 32, 32]
         image = torch.randn(2, 3, 3, 32, 32)
@@ -398,20 +414,20 @@ class TestAveragePoolInfer:
         # Original number of patches is 4x4=16
 
         # Test with kernel size 1 (no reduction)
-        pooler1 = AveragePoolInfer2d(n_patches=(4, 4), kernel_size=1)
+        pooler1 = AveragePoolInfer2d(num_patches=(4, 4), kernel_size=1)
         image = torch.randn(1, 3, 32, 32)
         result1 = pooler1(encoder, image)
         assert result1.shape == (1, 16, 32)  # No reduction
 
         # Test with kernel size (2, 1) (reduction only in height)
-        pooler2 = AveragePoolInfer2d(n_patches=(4, 4), kernel_size=(2, 1))
+        pooler2 = AveragePoolInfer2d(num_patches=(4, 4), kernel_size=(2, 1))
         result2 = pooler2(encoder, image)
         assert result2.shape == (1, 8, 32)  # 4x4 -> 2x4 = 8 patches
 
     def test_custom_stride(self, encoder):
         """Test with custom stride value."""
         # Test with stride different from kernel size
-        pooler = AveragePoolInfer2d(n_patches=(4, 4), kernel_size=2, stride=1)
+        pooler = AveragePoolInfer2d(num_patches=(4, 4), kernel_size=2, stride=1)
         image = torch.randn(1, 3, 32, 32)
         result = pooler(encoder, image)
 
