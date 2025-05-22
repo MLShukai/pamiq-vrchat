@@ -55,11 +55,7 @@ class AudioPatchifier(nn.Module):
     """Convert input audios into patch embeddings."""
 
     @override
-    def __init__(
-        self,
-        in_channels: int,
-        embed_dim: int = 512,
-    ) -> None:
+    def __init__(self, in_channels: int, embed_dim: int = 512) -> None:
         """
 
         Args:
