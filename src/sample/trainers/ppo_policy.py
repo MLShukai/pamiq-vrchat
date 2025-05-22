@@ -26,6 +26,7 @@ class PPOPolicyTrainer(TorchTrainer):
         self,
         partial_optimizer: partial[Optimizer],
         seq_len: int = 1,
+        max_samples: int = 1,
         batch_size: int = 1,
         max_epochs: int = 1,
         norm_advantage: bool = True,
@@ -41,7 +42,8 @@ class PPOPolicyTrainer(TorchTrainer):
         Args:
             partial_optimizer: Partially initialized optimizer lacking with model parameters.
             seq_len: Sequence length per batch.
-            batch_size: Number of data samples for 1 step.
+            max_samples: Number of samples from entire dataset.
+            batch_size: Data size of 1 batch.
             max_epochs: Maximum number of epochs to train per training session.
             norm_advantage: Whether to normalize advantages.
             clip_coef: Clipping coefficient for PPO.
@@ -56,8 +58,9 @@ class PPOPolicyTrainer(TorchTrainer):
         self.data_user_name = data_user_name
         self.partial_optimizer = partial_optimizer
         self.partial_sampler = partial(
-            RandomTimeSeriesSampler, sequence_length=seq_len, max_samples=batch_size
+            RandomTimeSeriesSampler, sequence_length=seq_len, max_samples=max_samples
         )
+        self.partial_dataloader = partial(DataLoader, batch_size=batch_size)
         self.max_epochs = max_epochs
         self.norm_advantage = norm_advantage
         self.clip_coef = clip_coef
@@ -178,7 +181,7 @@ class PPOPolicyTrainer(TorchTrainer):
             ]
         )
         sampler = self.partial_sampler(dataset)
-        dataloader = DataLoader(dataset=dataset, sampler=sampler)
+        dataloader = self.partial_dataloader(dataset=dataset, sampler=sampler)
         device = get_device(self.policy_value.model)
 
         for _ in range(self.max_epochs):
