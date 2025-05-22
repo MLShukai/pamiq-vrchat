@@ -1,5 +1,12 @@
+import logging.handlers
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Literal, Self
+
+import rootutils
+
+PROJECT_ROOT = rootutils.setup_root(__file__)  # Retrieve project root directory
+
 
 # #########################################
 #      Environment Hyper parameters
@@ -173,14 +180,28 @@ class CliArgs:
     device: str = "cuda"
     """Compute device for model."""
 
+    output_dir: Path = PROJECT_ROOT / "logs"
+    """Root directory to store states and logs."""
+
 
 # #############################################
 #                Main procedure
 # #############################################
 
+import logging
+from datetime import datetime
+
+import colorlog
 import torch
 import tyro
-from pamiq_core import DataBuffer, Interaction, Trainer, TrainingModel
+from pamiq_core import (
+    DataBuffer,
+    Interaction,
+    LaunchConfig,
+    Trainer,
+    TrainingModel,
+    launch,
+)
 
 from sample.data import BufferName
 from sample.models import ModelName
@@ -188,9 +209,35 @@ from sample.utils import average_exponentially
 
 
 def main() -> None:
+    # #########################################
+    #              Read Cli Args
+    # #########################################
+
     args = tyro.cli(CliArgs)
 
     device = torch.device(args.device)
+
+    # #########################################
+    #               Setup Logging
+    # #########################################
+
+    stream_handler = colorlog.StreamHandler()
+    stream_handler.setFormatter(
+        colorlog.ColoredFormatter(
+            "%(log_color)s%(asctime)s %(levelname)s [%(name)s] %(message)s"
+        )
+    )
+    file_handler = logging.handlers.TimedRotatingFileHandler(
+        args.output_dir / datetime.now().strftime("%Y-%m-%d_%H-%M-%S.log"),
+        when="D",
+        backupCount=6,  # 7 days logs
+        encoding="utf-8",
+    )
+    file_handler.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)s [%(name)s] %(message)s")
+    )
+    logging.basicConfig(level=logging.INFO, handlers=[stream_handler, file_handler])
+
     # #########################################
     #         Create Hparams Objects
     # #########################################
@@ -295,7 +342,7 @@ def main() -> None:
     #          Create Model Components
     # #########################################
 
-    def create_models() -> dict[ModelName, TrainingModel[Any]]:
+    def create_models() -> dict[str, TrainingModel[Any]]:
         from pamiq_core.torch import TorchTrainingModel
 
         from sample.models import ForwardDynamics, PolicyValueCommon, TemporalEncoder
@@ -450,3 +497,19 @@ def main() -> None:
             BufferName.FORWARD_DYNAMICS: forward_dynamics,
             BufferName.POLICY: policy,
         }
+
+    # #########################################
+    #                 Launch
+    # #########################################
+
+    launch(
+        interaction=create_interaction(),
+        models=create_models(),
+        data=create_data_buffers(),
+        trainers=create_trainers(),
+        config=LaunchConfig(
+            states_dir=args.output_dir / "states",
+            save_state_interval=24 * 60 * 60,  # 1 day.
+            max_keep_states=3,
+        ),
+    )
