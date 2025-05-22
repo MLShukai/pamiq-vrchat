@@ -9,7 +9,7 @@ from pamiq_core import DataUser
 from pamiq_core.torch import OptimizersSetup, TorchTrainer, get_device
 from tensordict import TensorDict
 from torch import Tensor
-from torch.optim import AdamW
+from torch.optim import Optimizer
 from torch.utils.data import DataLoader, TensorDataset
 
 from sample.data import BufferName, DataKey
@@ -56,9 +56,10 @@ class TemporalEncoderTrainer(TorchTrainer):
     @override
     def __init__(
         self,
-        seq_len: int = 2,
+        partial_optimzier: partial[Optimizer],
+        seq_len: int = 1,
+        max_samples: int = 1,
         batch_size: int = 1,
-        lr: float = 0.0001,
         max_epochs: int = 1,
         data_user_name: str = BufferName.TEMPORAL,
         min_buffer_size: int = 2,
@@ -67,22 +68,26 @@ class TemporalEncoderTrainer(TorchTrainer):
         """Initialize the TemporalEncoder trainer.
 
         Args:
+            partial_optimizer: Partially initialized optimizer lacking with model parameters.
             seq_len: Sequence length per batch.
-            batch_size: Number of data samples for 1 step.
+            max_samples: Number of samples from entire dataset.
+            batch_size: Data size of 1 batch.
             max_epochs: Maximum number of epochs to train per training session.
             data_user_name: Name of the data user providing training data.
             min_buffer_size: Minimum buffer size required before training starts.
             min_new_data_count: Minimum number of new data points required for training.
         """
+        seq_len += 1  # to sample future target.
         if min_buffer_size < seq_len:
             raise ValueError("min_buffer_size must be larger than seq_len")
 
         super().__init__(data_user_name, min_buffer_size, min_new_data_count)
 
+        self.partial_optimizer = partial_optimzier
         self.partial_sampler = partial(
-            RandomTimeSeriesSampler, sequence_length=seq_len, max_samples=batch_size
+            RandomTimeSeriesSampler, sequence_length=seq_len, max_samples=max_samples
         )
-        self.partial_optimizer = partial(AdamW, lr=lr)
+        self.partial_dataloader = partial(DataLoader, batch_size=batch_size)
 
         self.data_user_name = data_user_name
 
@@ -131,7 +136,7 @@ class TemporalEncoderTrainer(TorchTrainer):
             torch.stack(cast(list[Tensor], list(data[DataKey.HIDDEN]))),
         )
         sampler = self.partial_sampler(dataset)
-        dataloader = DataLoader(
+        dataloader = self.partial_dataloader(
             dataset=dataset, sampler=sampler, collate_fn=transpose_and_stack_collator
         )
         device = get_device(self.temporal_encoder.model)
