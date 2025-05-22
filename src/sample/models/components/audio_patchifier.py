@@ -43,6 +43,14 @@ class ConvBlock(nn.Module):
 
     @override
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply conv1d, norm and activation.
+
+        Args:
+            x: Input features. Shape is [batch_size, in_channels, length].
+
+        Returns:
+            Output features. Shape is [batch_size, out_channels, floor((length - kernel_size)/stride) + 1].
+        """
         x = self.conv(x)
         x = x.transpose(-2, -1)
         x = self.layer_norm(x)
