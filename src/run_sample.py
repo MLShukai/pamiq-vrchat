@@ -217,6 +217,8 @@ def main() -> None:
 
     device = torch.device(args.device)
 
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+
     # #########################################
     #               Setup Logging
     # #########################################
