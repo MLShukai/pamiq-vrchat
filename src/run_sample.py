@@ -107,13 +107,10 @@ class ModelHPs:
 class TrainerHPs:
     """Trainer hyper parameter name space."""
 
-    @dataclass
     class ImageJEPA: ...
 
-    @dataclass
     class AudioJEPA: ...
 
-    @dataclass
     class TemporalEncoder:
         lr: float = 0.0001
         seq_len: int = 256
@@ -122,7 +119,6 @@ class TrainerHPs:
         batch_size: int = 1
         min_new_data_count: int = 128
 
-    @dataclass
     class ForwardDynamics:
         lr: float = 0.0001
         seq_len: int = 256
@@ -131,7 +127,6 @@ class TrainerHPs:
         batch_size: int = 1
         min_new_data_count: int = 128
 
-    @dataclass
     class PPOPolicy:
         lr: float = 0.0001
         seq_len: int = 256
