@@ -5,7 +5,9 @@ import torch.nn as nn
 from torch import Tensor
 from torch.distributions import Distribution
 
-from .components.stacked_hidden_state import StackedHiddenState
+from .components.deterministic_normal import FCDeterministicNormalHead
+from .components.multi_discretes import MultiEmbeddings
+from .components.qlstm import QLSTM
 
 
 class ForwardDynamics(nn.Module):
@@ -21,27 +23,34 @@ class ForwardDynamics(nn.Module):
     @override
     def __init__(
         self,
-        observation_flatten: nn.Module,
-        action_flatten: nn.Module,
-        obs_action_projection: nn.Module,
-        core_model: StackedHiddenState,
-        obs_hat_dist_head: nn.Module,
+        obs_dim: int,
+        action_choices: list[int],
+        action_dim: int,
+        dim: int,
+        depth: int,
+        dim_ff_hidden: int,
+        dropout: float = 0.1,
     ) -> None:
         """Initialize the forward dynamics model.
 
         Args:
-            observation_flatten: Module to flatten observation tensors.
-            action_flatten: Module to flatten action tensors.
-            obs_action_projection: Module to project concatenated observation and action.
-            core_model: Recurrent core model maintaining hidden state.
-            obs_hat_dist_head: Module converting features to observation distribution.
+            obs_dim: Dimension of the observation input.
+            action_choices: List specifying the number of choices for each discrete action dimension.
+            action_dim: Embedding dimension for each action component.
+            dim: Hidden dimension of the model.
+            depth: Number of recurrent layers in the core QLSTM model.
+            dim_ff_hidden: Hidden dimension of the feed-forward networks in QLSTM.
+            dropout: Dropout rate for regularization.
         """
         super().__init__()
-        self.observation_flatten = observation_flatten
-        self.action_flatten = action_flatten
-        self.obs_action_projection = obs_action_projection
-        self.core_model = core_model
-        self.obs_hat_dist_head = obs_hat_dist_head
+        self.action_flatten = MultiEmbeddings(
+            action_choices, action_dim, do_flatten=True
+        )
+        self.obs_action_projection = nn.Linear(
+            obs_dim + action_dim * len(action_choices), dim
+        )
+        self.core_model = QLSTM(depth, dim, dim_ff_hidden, dropout)
+        self.obs_hat_dist_head = FCDeterministicNormalHead(dim, obs_dim)
 
     @override
     def forward(
@@ -59,9 +68,8 @@ class ForwardDynamics(nn.Module):
                 - Distribution representing predicted next observation.
                 - Updated hidden state tensor for use in next prediction.
         """
-        obs_flat = self.observation_flatten(obs)
         action_flat = self.action_flatten(action)
-        x = self.obs_action_projection(torch.cat((obs_flat, action_flat), dim=-1))
+        x = self.obs_action_projection(torch.cat((obs, action_flat), dim=-1))
         x, next_hidden = self.core_model(x, hidden)
         obs_hat_dist = self.obs_hat_dist_head(x)
         return obs_hat_dist, next_hidden
