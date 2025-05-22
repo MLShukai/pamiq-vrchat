@@ -114,13 +114,31 @@ class TrainerHPs:
     class AudioJEPA: ...
 
     @dataclass
-    class TemporalEncoder: ...
+    class TemporalEncoder:
+        lr: float = 0.0001
+        seq_len: int = 256
+        # Iteration count is max_samples / batch_size
+        max_samples: int = 64
+        batch_size: int = 1
+        min_new_data_count: int = 128
 
     @dataclass
-    class ForwardDynamics: ...
+    class ForwardDynamics:
+        lr: float = 0.0001
+        seq_len: int = 256
+        # Iteration count is max_samples / batch_size
+        max_samples: int = 64
+        batch_size: int = 1
+        min_new_data_count: int = 128
 
     @dataclass
-    class PPOPolicy: ...
+    class PPOPolicy:
+        lr: float = 0.0001
+        seq_len: int = 256
+        # Iteration count is max_samples / batch_size
+        max_samples: int = 64
+        batch_size: int = 1
+        min_new_data_count: int = 128
 
 
 # #############################################
@@ -145,7 +163,7 @@ class CliArgs:
 
 import torch
 import tyro
-from pamiq_core import Interaction, TrainingModel
+from pamiq_core import Interaction, Trainer, TrainingModel
 
 from sample.data import BufferName
 from sample.models import ModelName
@@ -306,4 +324,55 @@ def main() -> None:
             ModelName.TEMPORAL_ENCODER: temporal_encoder,
             ModelName.FORWARD_DYNAMICS: forward_dynamics,
             ModelName.POLICY_VALUE: policy,
+        }
+
+    # #########################################
+    #             Create Trainers
+    # #########################################
+
+    def create_trainers() -> dict[str, Trainer]:
+        from functools import partial
+
+        from torch.optim import AdamW
+
+        from sample.trainers import (
+            ImaginingForwardDynamicsTrainer,
+            PPOPolicyTrainer,
+            TemporalEncoderTrainer,
+        )
+
+        temporal_encoder = TemporalEncoderTrainer(
+            partial_optimzier=partial(AdamW, lr=TrainerHPs.TemporalEncoder.lr),
+            seq_len=TrainerHPs.TemporalEncoder.seq_len,
+            max_samples=TrainerHPs.TemporalEncoder.seq_len,
+            batch_size=TrainerHPs.TemporalEncoder.batch_size,
+            min_new_data_count=TrainerHPs.TemporalEncoder.min_new_data_count,
+            min_buffer_size=TrainerHPs.TemporalEncoder.seq_len + 1,
+        )
+
+        forward_dynamics = ImaginingForwardDynamicsTrainer(
+            partial_optimizer=partial(AdamW, lr=TrainerHPs.ForwardDynamics.lr),
+            seq_len=TrainerHPs.ForwardDynamics.seq_len,
+            max_samples=TrainerHPs.ForwardDynamics.max_samples,
+            batch_size=TrainerHPs.ForwardDynamics.batch_size,
+            imagination_length=InteractionHPs.Agent.imagination_length,
+            min_buffer_size=TrainerHPs.ForwardDynamics.seq_len
+            + InteractionHPs.Agent.imagination_length,
+            min_new_data_count=TrainerHPs.ForwardDynamics.min_new_data_count,
+            imagination_average_method=average_exponentially,
+        )
+
+        policy = PPOPolicyTrainer(
+            partial_optimizer=partial(AdamW, lr=TrainerHPs.PPOPolicy.lr),
+            seq_len=TrainerHPs.PPOPolicy.seq_len,
+            max_samples=TrainerHPs.PPOPolicy.max_samples,
+            batch_size=TrainerHPs.PPOPolicy.batch_size,
+            min_buffer_size=TrainerHPs.PPOPolicy.seq_len,
+            min_new_data_count=TrainerHPs.PPOPolicy.min_new_data_count,
+        )
+
+        return {
+            "temporal_encoder": temporal_encoder,
+            "forward_dynamics": forward_dynamics,
+            "policy": policy,
         }
