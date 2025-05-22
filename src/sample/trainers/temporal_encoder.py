@@ -58,6 +58,7 @@ class TemporalEncoderTrainer(TorchTrainer):
         self,
         partial_optimzier: partial[Optimizer],
         seq_len: int = 1,
+        max_samples: int = 1,
         batch_size: int = 1,
         max_epochs: int = 1,
         data_user_name: str = BufferName.TEMPORAL,
@@ -69,7 +70,8 @@ class TemporalEncoderTrainer(TorchTrainer):
         Args:
             partial_optimizer: Partially initialized optimizer lacking with model parameters.
             seq_len: Sequence length per batch.
-            batch_size: Number of data samples for 1 step.
+            max_samples: Number of samples from entire dataset.
+            batch_size: Data size of 1 batch.
             max_epochs: Maximum number of epochs to train per training session.
             data_user_name: Name of the data user providing training data.
             min_buffer_size: Minimum buffer size required before training starts.
@@ -83,8 +85,9 @@ class TemporalEncoderTrainer(TorchTrainer):
 
         self.partial_optimizer = partial_optimzier
         self.partial_sampler = partial(
-            RandomTimeSeriesSampler, sequence_length=seq_len, max_samples=batch_size
+            RandomTimeSeriesSampler, sequence_length=seq_len, max_samples=max_samples
         )
+        self.partial_dataloader = partial(DataLoader, batch_size=batch_size)
 
         self.data_user_name = data_user_name
 
@@ -133,7 +136,7 @@ class TemporalEncoderTrainer(TorchTrainer):
             torch.stack(cast(list[Tensor], list(data[DataKey.HIDDEN]))),
         )
         sampler = self.partial_sampler(dataset)
-        dataloader = DataLoader(
+        dataloader = self.partial_dataloader(
             dataset=dataset, sampler=sampler, collate_fn=transpose_and_stack_collator
         )
         device = get_device(self.temporal_encoder.model)

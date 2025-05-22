@@ -102,6 +102,7 @@ class TestTemporalEncoderTrainer:
         return TemporalEncoderTrainer(
             partial(AdamW, lr=1e-4),
             seq_len=self.SEQ_LEN,
+            max_samples=3,
             batch_size=2,
             min_buffer_size=self.SEQ_LEN + 1,
             min_new_data_count=1,

@@ -63,6 +63,7 @@ class TestImaginingForwardDynamicsTrainer:
         trainer = ImaginingForwardDynamicsTrainer(
             partial(AdamW, lr=1e-4, weight_decay=0.04),
             seq_len=self.LEN_SEQ,
+            max_samples=4,
             batch_size=2,
             imagination_length=4,
             min_buffer_size=self.LEN,
