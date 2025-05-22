@@ -21,13 +21,8 @@ class InteractionHParams:
     class Env:
         class Obs:
             class Image:
-                height: int = 144
-                width: int = 144
+                size: tuple[int, int] = (144, 144)  # (height, width)
                 channels: int = 3
-
-                @classmethod
-                def size(cls) -> tuple[int, int]:
-                    return (cls.height, cls.width)
 
             class Audio:
                 sample_rate: int = 16000
@@ -313,7 +308,7 @@ def main() -> None:
                     ObservationType.IMAGE: SensorWrapper(
                         sensors.ImageSensor(),
                         transforms.image.create_vrchat_transform(
-                            hparams.Obs.Image.size(),
+                            hparams.Obs.Image.size,
                         ),
                     )
                 }
