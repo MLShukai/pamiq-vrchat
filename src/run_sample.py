@@ -142,6 +142,25 @@ class TrainerHPs:
 
 
 # #############################################
+#          Data Buffer Hyper Parameters
+# #############################################
+
+
+class DataBufferHPs:
+    """DataBuffer hyper parameter namespace."""
+
+    class Image: ...
+
+    class Audio: ...
+
+    class Temporal: ...
+
+    class ForwardDynamics: ...
+
+    class Policy: ...
+
+
+# #############################################
 #               Launch Arguments
 # #############################################
 
