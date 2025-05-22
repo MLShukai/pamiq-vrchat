@@ -58,7 +58,8 @@ class TestPPOPolicyTrainer:
         return PPOPolicyTrainer(
             partial_optimizer=partial(AdamW, lr=3e-4),
             seq_len=self.SEQ_LEN,
-            batch_size=4,
+            max_samples=4,
+            batch_size=2,
             min_buffer_size=3,
             min_new_data_count=1,
         )
