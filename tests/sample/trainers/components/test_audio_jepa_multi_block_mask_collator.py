@@ -6,20 +6,20 @@ from sample.trainers.components.audio_jepa_multi_block_mask_collator import (
 )
 
 
+@pytest.mark.parametrize(
+    [
+        "input_sample_size",
+        "patch_sample_size",
+        "stride",
+        "mask_scale",
+        "n_masks",
+        "min_keep",
+    ],
+    [
+        [16080, 400, 320, (0.1, 0.25), 4, 10],
+    ],
+)
 class TestAudioJEPAMultiBlockMaskCollator:
-    @pytest.mark.parametrize(
-        [
-            "input_sample_size",
-            "patch_sample_size",
-            "stride",
-            "mask_scale",
-            "n_masks",
-            "min_keep",
-        ],
-        [
-            [16080, 400, 320, (0.1, 0.25), 4, 10],
-        ],
-    )
     def test_sample_mask(
         self,
         input_sample_size: int,
@@ -58,20 +58,6 @@ class TestAudioJEPAMultiBlockMaskCollator:
             # test min keep
             assert (n_patches - mask_sample_size) >= min_keep
 
-    # collator params
-    @pytest.mark.parametrize(
-        [
-            "input_sample_size",
-            "patch_sample_size",
-            "stride",
-            "mask_scale",
-            "n_masks",
-            "min_keep",
-        ],
-        [
-            [16080, 400, 320, (0.1, 0.25), 4, 10],
-        ],
-    )
     # test input params
     @pytest.mark.parametrize("batch_size", [1, 4])
     @pytest.mark.parametrize(
@@ -160,19 +146,6 @@ class TestAudioJEPAMultiBlockMaskCollator:
             collated_encoder_masks == collated_predictor_targets
         ), "encoder masks and predictor targets must be different"
 
-    @pytest.mark.parametrize(
-        [
-            "input_sample_size",
-            "patch_sample_size",
-            "stride",
-            "mask_scale",
-            "n_masks",
-            "min_keep",
-        ],
-        [
-            [16080, 400, 320, (0.1, 0.25), 4, 10],
-        ],
-    )
     def test_sample_masks_and_target(
         self,
         input_sample_size: int,
