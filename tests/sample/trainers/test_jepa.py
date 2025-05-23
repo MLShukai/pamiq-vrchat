@@ -11,7 +11,7 @@ from torch.optim import AdamW
 
 from sample.data import BufferName, DataKey
 from sample.models import ModelName
-from sample.models.components.patch_embedding import PatchEmbedding
+from sample.models.components.image_patchifier import ImagePatchifier
 from sample.models.components.positional_embeddings import get_2d_positional_embeddings
 from sample.models.jepa import Encoder, Predictor
 from sample.trainers.jepa import (
@@ -33,7 +33,7 @@ class TestJEPATrainer:
 
     @pytest.fixture
     def patchfier(self):
-        return PatchEmbedding(self.PATCH_SIZE, self.CHANNELS, self.HIDDEN_DIM)
+        return ImagePatchifier(self.PATCH_SIZE, self.CHANNELS, self.HIDDEN_DIM)
 
     @pytest.fixture
     def positional_encodings(self):

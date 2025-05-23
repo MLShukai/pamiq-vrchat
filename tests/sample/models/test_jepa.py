@@ -2,7 +2,7 @@ import pytest
 import torch
 import torch.nn as nn
 
-from sample.models.components.patch_embedding import PatchEmbedding
+from sample.models.components.image_patchifier import ImagePatchifier
 from sample.models.components.positional_embeddings import (
     get_1d_positional_embeddings,
     get_2d_positional_embeddings,
@@ -21,7 +21,7 @@ class TestEncoder:
     ):
         """Test Encoder's forward pass without mask."""
         n_patches = (img_size // patch_size) ** 2
-        patchfier = PatchEmbedding(patch_size, 3, hidden_dim)
+        patchfier = ImagePatchifier(patch_size, 3, hidden_dim)
         positional_encodings = get_2d_positional_embeddings(
             hidden_dim, (img_size // patch_size, img_size // patch_size)
         ).reshape(n_patches, hidden_dim)
@@ -47,7 +47,7 @@ class TestEncoder:
     def test_forward_with_mask(self, batch_size, img_size, patch_size, mask_ratio):
         """Test Encoder's forward pass with mask."""
         n_patches = (img_size // patch_size) ** 2
-        patchfier = PatchEmbedding(patch_size, 3, 64)
+        patchfier = ImagePatchifier(patch_size, 3, 64)
         positional_encodings = get_2d_positional_embeddings(
             64, (img_size // patch_size, img_size // patch_size)
         ).reshape(n_patches, 64)
@@ -77,7 +77,7 @@ class TestEncoder:
     def test_invalid_positional_encoding_shape(self):
         """Test error when positional encoding shape doesn't match expected
         shape."""
-        patchfier = PatchEmbedding(8, 3, 64)
+        patchfier = ImagePatchifier(8, 3, 64)
 
         with pytest.raises(
             ValueError,
@@ -107,7 +107,7 @@ class TestEncoder:
     def test_invalid_mask_shape(self):
         """Test error when mask shape doesn't match encoded image shape."""
         n_patches = 64
-        patchfier = PatchEmbedding(8, 3, 64)
+        patchfier = ImagePatchifier(8, 3, 64)
         positional_encodings = get_2d_positional_embeddings(64, (8, 8)).reshape(
             n_patches, 64
         )
@@ -131,7 +131,7 @@ class TestEncoder:
     def test_non_bool_mask(self):
         """Test error when mask tensor is not boolean."""
         n_patches = 64
-        patchfier = PatchEmbedding(8, 3, 64)
+        patchfier = ImagePatchifier(8, 3, 64)
         positional_encodings = get_2d_positional_embeddings(64, (8, 8)).reshape(
             n_patches, 64
         )
@@ -154,7 +154,7 @@ class TestEncoder:
 
     def test_clone(self):
         n_patches = 64
-        patchfier = PatchEmbedding(8, 3, 64)
+        patchfier = ImagePatchifier(8, 3, 64)
         positional_encodings = get_2d_positional_embeddings(64, (8, 8)).reshape(
             n_patches, 64
         )
@@ -298,7 +298,7 @@ class TestJEPAIntegration:
         n_patches = n_patches_h * n_patches_w
 
         # Initialize models with reduced complexity
-        patchfier = PatchEmbedding(patch_size, 3, hidden_dim)
+        patchfier = ImagePatchifier(patch_size, 3, hidden_dim)
         positional_encodings = get_2d_positional_embeddings(
             hidden_dim, (n_patches_h, n_patches_w)
         ).reshape(n_patches, hidden_dim)
@@ -368,7 +368,7 @@ class TestAveragePoolInfer:
     def encoder_2d(self):
         """Create encoder for 2D data."""
         n_patches = 64
-        patchfier = PatchEmbedding(8, 3, 64)
+        patchfier = ImagePatchifier(8, 3, 64)
         positional_encodings = get_2d_positional_embeddings(64, (8, 8)).reshape(
             n_patches, 64
         )

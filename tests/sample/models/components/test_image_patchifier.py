@@ -1,16 +1,16 @@
 import pytest
 import torch
 
-from sample.models.components.patch_embedding import PatchEmbedding
+from sample.models.components.image_patchifier import ImagePatchifier
 
 
-class TestPatchEmbedding:
+class TestImagePatchifier:
     @pytest.mark.parametrize("batch_size", [1, 4])
     @pytest.mark.parametrize("img_size", [224, 512])
     @pytest.mark.parametrize("patch_size", [16])
     @pytest.mark.parametrize("embed_dim", [768])
     def test_forward(self, batch_size, img_size, patch_size, embed_dim):
-        layer = PatchEmbedding(patch_size, 3, embed_dim)
+        layer = ImagePatchifier(patch_size, 3, embed_dim)
 
         image = torch.randn(batch_size, 3, img_size, img_size)
         out = layer(image)
