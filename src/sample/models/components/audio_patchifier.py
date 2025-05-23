@@ -2,7 +2,6 @@
 # https://github.com/facebookresearch/fairseq/blob/main/fairseq/models/wav2vec/wav2vec2.py#L844
 # https://github.com/facebookresearch/fairseq/blob/main/examples/data2vec/models/modalities/audio.py#L29
 
-import dataclasses
 from typing import override
 
 import torch
