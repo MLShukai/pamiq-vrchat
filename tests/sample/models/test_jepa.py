@@ -385,7 +385,6 @@ class TestAveragePoolInfer:
     @pytest.mark.parametrize(
         "ndim,num_patches,kernel_size,stride,error_msg",
         [
-            (4, 16, 2, None, "ndim must be 1, 2, or 3"),
             (2, (4, 4, 4), 2, None, "Expected tuple of length 2, got 3"),
             (2, 16, (2, 2, 2), None, "Expected tuple of length 2, got 3"),
             (2, 16, 2, (1, 1, 1), "Expected tuple of length 2, got 3"),
@@ -406,7 +405,6 @@ class TestAveragePoolInfer:
         [
             (1, nn.AvgPool1d),
             (2, nn.AvgPool2d),
-            (3, nn.AvgPool3d),
         ],
     )
     def test_pooling_layer_selection(self, ndim, expected_pool_type):
@@ -486,9 +484,3 @@ class TestAveragePoolInfer:
         image = torch.randn(1, 3, 64, 64)
         result = pooler(encoder_2d, image)
         assert result.shape == (1, 32, 32)  # 8x4 = 32
-
-    def test_3d_pooling_init(self):
-        """Test 3D pooling initialization."""
-        pooler = AveragePoolInfer(ndim=3, num_patches=(4, 4, 4), kernel_size=2)
-        assert pooler.num_patches == (4, 4, 4)
-        assert isinstance(pooler.pool, nn.AvgPool3d)

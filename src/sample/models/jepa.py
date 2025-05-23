@@ -6,7 +6,7 @@ Architecture (JEPA) model.
 
 import copy
 from collections.abc import Callable
-from typing import Self, override
+from typing import Literal, Self, override
 
 import torch
 import torch.nn as nn
@@ -263,12 +263,12 @@ class Predictor(nn.Module):
 
 
 class AveragePoolInfer:
-    """Applies average pooling to encoded N-dimensional patches from a JEPA
-    encoder."""
+    """Applies average pooling to encoded 1d (audio) or 2d (image) patches from
+    a JEPA encoder."""
 
     def __init__(
         self,
-        ndim: int,
+        ndim: Literal[1, 2],
         num_patches: int | tuple[int, ...],
         kernel_size: int | tuple[int, ...],
         stride: int | tuple[int, ...] | None = None,
@@ -276,7 +276,7 @@ class AveragePoolInfer:
         """Initialize the average pooling inference wrapper.
 
         Args:
-            ndim: Number of spatial dimensions (1, 2, or 3).
+            ndim: Number of spatial dimensions (1 or 2 are supported).
             num_patches: Number of patches in the original encoded representation.
                 If int, assumes uniform patches across all dimensions.
                 If tuple, length must match ndim.
@@ -290,11 +290,8 @@ class AveragePoolInfer:
 
         Raises:
             ValueError:
-                - If ndim is not 1, 2, or 3.
                 - If num_patches, kernel_size, stride tuple length doesn't match ndim.
         """
-        if ndim not in (1, 2, 3):
-            raise ValueError(f"ndim must be 1, 2, or 3, got {ndim}")
 
         self.ndim = ndim
 
@@ -317,8 +314,6 @@ class AveragePoolInfer:
                 self.pool = nn.AvgPool1d(kernel_size, stride)  # pyright: ignore[reportArgumentType, ]
             case 2:
                 self.pool = nn.AvgPool2d(kernel_size, stride)  # pyright: ignore[reportArgumentType, ]
-            case 3:
-                self.pool = nn.AvgPool3d(kernel_size, stride)  # pyright: ignore[reportArgumentType, ]
 
     def __call__(self, encoder: Encoder, data: torch.Tensor) -> torch.Tensor:
         """Process data through the encoder and apply average pooling to the
