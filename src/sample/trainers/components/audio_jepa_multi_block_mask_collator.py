@@ -1,4 +1,3 @@
-import math
 import random
 from multiprocessing import Value
 
