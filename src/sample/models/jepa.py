@@ -13,8 +13,6 @@ from pamiq_core.torch import get_device
 
 from sample.utils import size_2d, size_2d_to_int_tuple
 
-from .components.patch_embedding import PatchEmbedding
-from .components.positional_embeddings import get_2d_positional_embeddings
 from .components.transformer import Transformer
 from .utils import init_weights
 
@@ -25,9 +23,8 @@ class Encoder(nn.Module):
 
     def __init__(
         self,
-        img_size: size_2d = 224,
-        patch_size: size_2d = 16,
-        in_channels: int = 3,
+        patchfier: nn.Module,
+        positional_encodings: torch.Tensor,
         hidden_dim: int = 768,
         embed_dim: int = 384,
         depth: int = 12,
@@ -42,9 +39,8 @@ class Encoder(nn.Module):
         """Initialize the JEPAEncoder.
 
         Args:
-            img_size: Input image size.
-            patch_size: Pixel size per patch.
-            in_channels: Input image channels.
+            patchfier: Patchfy input data to patch sequence.
+            positional_encodings: Positional encoding tensors to be added to patchfied input data.
             hidden_dim: Hidden dimension per patch.
             embed_dim: Output dimension per patch.
             depth: Number of transformer layers.
@@ -59,43 +55,20 @@ class Encoder(nn.Module):
         super().__init__()
         self.num_features = self.embed_dim = hidden_dim
         self.num_heads = num_heads
+        if positional_encodings.ndim != 2:
+            raise ValueError("positional_encodings must be 2d tensor!")
+        if positional_encodings.size(1) != hidden_dim:
+            raise ValueError(
+                "positional_encodings channel dimension must be hidden_dim."
+            )
 
-        # define input layer to convert input image into patches.
-        self.patch_embed = PatchEmbedding(
-            patch_size=patch_size,
-            in_channels=in_channels,
-            embed_dim=hidden_dim,
-        )
+        self.patchfier = patchfier
 
         # define mask token_vector
         self.mask_token_vector = nn.Parameter(torch.empty(hidden_dim))
 
-        # define positional encodings
-        img_size = size_2d_to_int_tuple(img_size)
-        patch_size = size_2d_to_int_tuple(patch_size)
-        img_height, img_width = img_size
-        patch_height, patch_width = patch_size
-
-        if img_height % patch_height != 0:
-            raise ValueError(
-                f"Image height {img_height} must be divisible by patch height {patch_height}"
-            )
-        if img_width % patch_width != 0:
-            raise ValueError(
-                f"Image width {img_width} must be divisible by patch width {patch_width}"
-            )
-
-        n_patches_hw = (img_height // patch_height, img_width // patch_width)
-        n_patches = n_patches_hw[0] * n_patches_hw[1]
-
-        positional_encodings = get_2d_positional_embeddings(
-            hidden_dim,
-            n_patches_hw,
-        ).reshape(1, n_patches, hidden_dim)
-        self.positional_encodings: torch.Tensor
-        self.register_buffer(
-            "positional_encodings", torch.from_numpy(positional_encodings).float()
-        )
+        self.register_buffer("positional_encodings", None)
+        self.positional_encodings = positional_encodings.unsqueeze(0)
 
         # define transformer
         self.transformer = Transformer(
@@ -118,20 +91,20 @@ class Encoder(nn.Module):
 
     @override
     def forward(
-        self, images: torch.Tensor, masks: torch.Tensor | None = None
+        self, data: torch.Tensor, masks: torch.Tensor | None = None
     ) -> torch.Tensor:
-        """Encode input images into latents, applying masks if provided.
+        """Encode input data into latents, applying masks if provided.
 
         Args:
-            images: Input images with shape [batch_size, 3, height, width]
+            data: Input data
             masks: Boolean masks for images embedded as patches with shape
                 [batch_size, n_patches]. True values indicate masked patches.
 
         Returns:
             Encoded latents with shape [batch_size, n_patches, out_dim]
         """
-        # Patchify input images
-        x = self.patch_embed(images)
+        # Patchify input data
+        x = self.patchfier(data)
         # x: [batch_size, n_patches, embed_dim]
 
         # Apply mask if provided
@@ -159,9 +132,9 @@ class Encoder(nn.Module):
 
     @override
     def __call__(
-        self, images: torch.Tensor, masks: torch.Tensor | None = None
+        self, data: torch.Tensor, masks: torch.Tensor | None = None
     ) -> torch.Tensor:
-        return super().__call__(images, masks)
+        return super().__call__(data, masks)
 
     def clone(self) -> Self:
         """Clone model for creating target or context encoder."""
@@ -174,7 +147,7 @@ class Predictor(nn.Module):
 
     def __init__(
         self,
-        n_patches: size_2d,
+        positional_encodings: torch.Tensor,
         embed_dim: int = 384,
         hidden_dim: int = 384,
         depth: int = 6,
@@ -189,8 +162,8 @@ class Predictor(nn.Module):
         """Initialize the JEPAPredictor.
 
         Args:
-            n_patches: Number of patches along vertical and horizontal axes.
-            embed_dim: Output dimension of the context encoder.
+            positional_encodings: Positional encoding tensors to be added to patchfied input data.
+                Shape is [num_patch, hidden_dim]
             hidden_dim: Hidden dimension for prediction.
             depth: Number of transformer layers.
             num_heads: Number of attention heads for transformer layers.
@@ -203,6 +176,12 @@ class Predictor(nn.Module):
             init_std: Standard deviation for weight initialization.
         """
         super().__init__()
+        if positional_encodings.ndim != 2:
+            raise ValueError("positional_encodings must be 2d tensor!")
+        if positional_encodings.size(1) != hidden_dim:
+            raise ValueError(
+                "positional_encodings channel dimension must be hidden_dim."
+            )
 
         self.input_proj = nn.Linear(embed_dim, hidden_dim, bias=True)
 
@@ -210,15 +189,8 @@ class Predictor(nn.Module):
         self.prediction_token_vector = nn.Parameter(torch.empty(hidden_dim))
 
         # define positional encodings
-        (n_patches_vertical, n_patches_horizontal) = size_2d_to_int_tuple(n_patches)
-        positional_encodings = get_2d_positional_embeddings(
-            hidden_dim, grid_size=(n_patches_vertical, n_patches_horizontal)
-        ).reshape(1, n_patches_vertical * n_patches_horizontal, hidden_dim)
-
-        self.positional_encodings: torch.Tensor
-        self.register_buffer(
-            "positional_encodings", torch.from_numpy(positional_encodings).float()
-        )
+        self.register_buffer("positional_encodings", None)
+        self.positional_encodings = positional_encodings.unsqueeze(0)
 
         # define transformer
         self.transformer = Transformer(
@@ -291,57 +263,57 @@ class Predictor(nn.Module):
         return super().__call__(latents, targets)
 
 
-class AveragePoolInfer:
-    """Applies average pooling to encoded image patches from a JEPA encoder."""
+class AveragePoolInfer2d:
+    """Applies average pooling to encoded 2d patches (such as image) from a
+    JEPA encoder."""
 
     def __init__(
-        self, n_patches: size_2d, kernel_size: size_2d, stride: size_2d | None = None
+        self, num_patches: size_2d, kernel_size: size_2d, stride: size_2d | None = None
     ) -> None:
         """Initialize the average pooling inference wrapper.
 
         Args:
-            n_patches: Number of patches in the original encoded representation,
+            num_patches: Number of patches in the original encoded representation,
                 either as a single integer for square arrangements or a tuple (height, width).
             kernel_size: Size of the pooling kernel, either as a single integer
                 for square kernels or a tuple (height, width).
             stride: Stride of the pooling operation, either as a single integer
                 or a tuple (height, width). If None, defaults to kernel_size.
         """
-        self.n_patches = size_2d_to_int_tuple(n_patches)
+        self.num_patches = size_2d_to_int_tuple(num_patches)
         self.pool = nn.AvgPool2d(kernel_size, stride)
 
-    def __call__(self, encoder: Encoder, images: torch.Tensor) -> torch.Tensor:
-        """Process image through the encoder and apply average pooling to the
+    def __call__(self, encoder: Encoder, data: torch.Tensor) -> torch.Tensor:
+        """Process data through the encoder and apply average pooling to the
         result.
 
         Args:
-            encoder: Image JEPA Encoder instance.
-            images: Image tensor with shape [*batch, channels, height, width].
+            encoder: JEPA Encoder instance.
+            data: 2d tensor with shape [*batch, dim, patch] where patch = height * width.
 
         Returns:
             Tensor with shape [*batch, patch', dim] where patch' is the reduced number
             of patches after pooling.
+            Output shape detail: https://docs.pytorch.org/docs/stable/generated/torch.nn.AvgPool2d.html
         """
         device = get_device(encoder)
-        images = images.to(device)
+        data = data.to(device)
 
-        if no_batch := images.ndim < 4:
-            images = images.unsqueeze(0)
+        if no_batch := data.ndim < 4:
+            data = data.unsqueeze(0)
 
-        batch_shape = images.shape[:-3]
-        images = images.reshape(
-            -1, *images.shape[-3:]
-        )  # [batch', channels, height, width]
+        batch_shape = data.shape[:-3]
+        data = data.reshape(-1, *data.shape[-3:])  # [batch', dim, height, width]
 
-        x = encoder(images)  # [batch', patch, dim]
+        x = encoder(data)  # [batch', patch, dim]
         x = torch.nn.functional.layer_norm(x, (x.size(-1),))
 
         x = x.transpose(-1, -2)  # [batch', dim, patch]
 
         x = x.reshape(
-            -1, x.size(-2), *self.n_patches
+            -1, x.size(-2), *self.num_patches
         )  # [batch', dim, patch_v, patch_h]
-        x: torch.Tensor = self.pool(x)  # [batch', dim, patch_v', patch_h']
+        x: torch.Tensor = self.pool(x)  # [batch', dim, patch_h', patch_w']
         x = x.flatten(-2).transpose(-1, -2)  # [batch', patch', dim]
 
         x = x.reshape(*batch_shape, *x.shape[-2:])  # [*batch, patch', dim]
