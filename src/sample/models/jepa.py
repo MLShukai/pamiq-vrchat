@@ -5,13 +5,12 @@ Architecture (JEPA) model.
 """
 
 import copy
-from typing import Self, override
+from collections.abc import Callable
+from typing import Literal, Self, override
 
 import torch
 import torch.nn as nn
 from pamiq_core.torch import get_device
-
-from sample.utils import size_2d, size_2d_to_int_tuple
 
 from .components.transformer import Transformer
 from .utils import init_weights
@@ -23,7 +22,7 @@ class Encoder(nn.Module):
 
     def __init__(
         self,
-        patchfier: nn.Module,
+        patchfier: Callable[[torch.Tensor], torch.Tensor],
         positional_encodings: torch.Tensor,
         hidden_dim: int = 768,
         embed_dim: int = 384,
@@ -263,25 +262,58 @@ class Predictor(nn.Module):
         return super().__call__(latents, targets)
 
 
-class AveragePoolInfer2d:
-    """Applies average pooling to encoded 2d patches (such as image) from a
-    JEPA encoder."""
+class AveragePoolInfer:
+    """Applies average pooling to encoded 1d (audio) or 2d (image) patches from
+    a JEPA encoder."""
 
     def __init__(
-        self, num_patches: size_2d, kernel_size: size_2d, stride: size_2d | None = None
+        self,
+        ndim: Literal[1, 2],
+        num_patches: int | tuple[int, ...],
+        kernel_size: int | tuple[int, ...],
+        stride: int | tuple[int, ...] | None = None,
     ) -> None:
         """Initialize the average pooling inference wrapper.
 
         Args:
-            num_patches: Number of patches in the original encoded representation,
-                either as a single integer for square arrangements or a tuple (height, width).
-            kernel_size: Size of the pooling kernel, either as a single integer
-                for square kernels or a tuple (height, width).
-            stride: Stride of the pooling operation, either as a single integer
-                or a tuple (height, width). If None, defaults to kernel_size.
+            ndim: Number of spatial dimensions (1 or 2 are supported).
+            num_patches: Number of patches in the original encoded representation.
+                If int, assumes uniform patches across all dimensions.
+                If tuple, length must match ndim.
+            kernel_size: Size of the pooling kernel.
+                If int, uses same size for all dimensions.
+                If tuple, length must match ndim.
+            stride: Stride of the pooling operation.
+                If None, defaults to kernel_size.
+                If int, uses same stride for all dimensions.
+                If tuple, length must match ndim.
+
+        Raises:
+            ValueError:
+                - If num_patches, kernel_size, stride tuple length doesn't match ndim.
         """
-        self.num_patches = size_2d_to_int_tuple(num_patches)
-        self.pool = nn.AvgPool2d(kernel_size, stride)
+
+        self.ndim = ndim
+
+        def validate_and_normalize(obj: int | tuple[int, ...]) -> tuple[int, ...]:
+            if isinstance(obj, int):
+                return (obj,) * ndim
+            if len(obj) != ndim:
+                raise ValueError(f"Expected tuple of length {ndim}, got {len(obj)}")
+            return obj
+
+        # Validate and normalize num_patches
+        self.num_patches = validate_and_normalize(num_patches)
+        kernel_size = validate_and_normalize(kernel_size)
+        if stride is not None:
+            stride = validate_and_normalize(stride)
+
+        # Create appropriate pooling layer
+        match ndim:
+            case 1:
+                self.pool = nn.AvgPool1d(kernel_size, stride)  # pyright: ignore[reportArgumentType, ]
+            case 2:
+                self.pool = nn.AvgPool2d(kernel_size, stride)  # pyright: ignore[reportArgumentType, ]
 
     def __call__(self, encoder: Encoder, data: torch.Tensor) -> torch.Tensor:
         """Process data through the encoder and apply average pooling to the
@@ -289,34 +321,40 @@ class AveragePoolInfer2d:
 
         Args:
             encoder: JEPA Encoder instance.
-            data: 2d tensor with shape [*batch, dim, patch] where patch = height * width.
+            data: N-dimensional tensor with shape [*batch, dim, *spatial_dims].
 
         Returns:
             Tensor with shape [*batch, patch', dim] where patch' is the reduced number
             of patches after pooling.
-            Output shape detail: https://docs.pytorch.org/docs/stable/generated/torch.nn.AvgPool2d.html
         """
         device = get_device(encoder)
         data = data.to(device)
 
-        if no_batch := data.ndim < 4:
+        # Handle batch dimension
+        data_ndim = 1 + self.ndim  # dim + spatial dimensions
+        if no_batch := data.ndim < data_ndim:
             data = data.unsqueeze(0)
 
-        batch_shape = data.shape[:-3]
-        data = data.reshape(-1, *data.shape[-3:])  # [batch', dim, height, width]
+        batch_shape = data.shape[:-data_ndim]
+        data = data.reshape(-1, *data.shape[-data_ndim:])
 
+        # Encode
         x = encoder(data)  # [batch', patch, dim]
         x = torch.nn.functional.layer_norm(x, (x.size(-1),))
 
         x = x.transpose(-1, -2)  # [batch', dim, patch]
 
-        x = x.reshape(
-            -1, x.size(-2), *self.num_patches
-        )  # [batch', dim, patch_v, patch_h]
-        x: torch.Tensor = self.pool(x)  # [batch', dim, patch_h', patch_w']
-        x = x.flatten(-2).transpose(-1, -2)  # [batch', patch', dim]
+        # Reshape for pooling: [batch', dim, *spatial_patch_dims]
+        x = x.reshape(-1, x.size(-2), *self.num_patches)
 
-        x = x.reshape(*batch_shape, *x.shape[-2:])  # [*batch, patch', dim]
+        # Apply pooling
+        x: torch.Tensor = self.pool(x)
+
+        # Flatten spatial dimensions and transpose back
+        x = x.flatten(-self.ndim).transpose(-1, -2)  # [batch', patch', dim]
+
+        # Restore original batch shape
+        x = x.reshape(*batch_shape, *x.shape[-2:])
         if no_batch:
             x = x.squeeze(0)
         return x
