@@ -12,8 +12,6 @@ import torch
 import torch.nn as nn
 from pamiq_core.torch import get_device
 
-from sample.utils import size_2d, size_2d_to_int_tuple
-
 from .components.transformer import Transformer
 from .utils import init_weights
 
