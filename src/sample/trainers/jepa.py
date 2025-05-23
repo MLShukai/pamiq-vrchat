@@ -537,18 +537,24 @@ class MultiBlockMaskCollator1d:
             min_keep: Minimum number of patches to keep unmasked.
         """
         super().__init__()
-        assert mask_scale[0] < mask_scale[1]
-        assert mask_scale[0] > 0
-        assert mask_scale[1] < 1
+        if mask_scale[0] >= mask_scale[1]:
+            raise ValueError("mask_scale[1] must be larger than mask_scale[0].")
+        if mask_scale[0] <= 0 or mask_scale[1] >= 1:
+            raise ValueError("mask_scale must be in range (0, 1).")
 
-        assert patch_size <= input_size
-        assert stride <= patch_size
-        assert (input_size - (patch_size - stride)) % stride == 0
+        if not (stride <= patch_size <= input_size):
+            raise ValueError("stride <= patch_size <= input_size.")
+        if not ((input_size - (patch_size - stride)) % stride == 0):
+            raise ValueError("(input_size - (patch_size - stride)) % stride) must be 0")
+
         self.input_size = input_size
         self.patch_size = patch_size
 
         self.n_patches = (input_size - (self.patch_size - stride)) // stride
-        assert min_keep <= self.n_patches
+        if min_keep > self.n_patches:
+            raise ValueError(
+                f"min_keep(=={min_keep}) is larger than self.n_patches(=={self.n_patches}). Try smaller min_keep."
+            )
 
         self.mask_scale = mask_scale
         self.n_masks = n_masks
