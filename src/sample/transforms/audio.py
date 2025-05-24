@@ -103,23 +103,27 @@ class LengthCompletion(nn.Module):
 def create_transform(
     source_sample_rate: int,
     target_sample_rate: int,
+    target_frame_size: int,
 ) -> Callable[[AudioFrame], torch.Tensor]:
     """Create a composed transform for VRChat audio processing.
 
     Creates a transform pipeline that:
     1. Converts audio frame to tensor
     2. Resamples to target sample rate
-    3. Standardizes values (zero mean, unit variance)
+    3. Complete to target frame size
+    4. Standardizes values (zero mean, unit variance)
 
     Args:
         source_sample_rate: Original sample rate of audio in Hz.
         target_sample_rate: Target sample rate to resample to in Hz.
+        target_frame_size: Target frame size to output.
 
     Returns:
-        A callable that transforms AudioFrame to standardized tensor.
+        A callable that transforms AudioFrame to tensor.
     """
     return nn.Sequential(
         AudioFrameToTensor(),
         Resample(source_sample_rate, target_sample_rate),
+        LengthCompletion(target_frame_size),
         Standardize(),
     )
