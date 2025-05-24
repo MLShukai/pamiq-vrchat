@@ -7,7 +7,7 @@ import torch
 from sample.transforms.audio import (
     AudioFrameToTensor,
     LengthCompletion,
-    create_vrchat_transform,
+    create_transform,
 )
 
 
@@ -195,14 +195,14 @@ class TestLengthCompletion:
         assert output3.shape == (2, 15)
 
 
-class TestCreateVRChatTransform:
+class TestCreateTransform:
     @pytest.mark.parametrize(
         "source_rate,target_rate,frame_size,channels",
         [(16000, 8000, 1600, 1), (44100, 16000, 1024, 2)],
     )
     def test_full_pipeline(self, source_rate, target_rate, frame_size, channels):
         """Test the full audio transform pipeline."""
-        transform = create_vrchat_transform(source_rate, target_rate)
+        transform = create_transform(source_rate, target_rate)
         audio_frame = np.random.randn(frame_size, channels).astype(np.float32)
 
         output = transform(audio_frame)

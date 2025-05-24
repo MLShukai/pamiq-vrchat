@@ -100,7 +100,7 @@ class LengthCompletion(nn.Module):
         return self.buffer.clone()
 
 
-def create_vrchat_transform(
+def create_transform(
     source_sample_rate: int,
     target_sample_rate: int,
 ) -> Callable[[AudioFrame], torch.Tensor]:
