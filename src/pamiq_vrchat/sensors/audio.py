@@ -5,7 +5,6 @@ from typing import override
 import numpy as np
 import numpy.typing as npt
 from pamiq_core.interaction.modular_env import Sensor
-from pamiq_core.interaction.wrappers import Wrapper
 
 logger = logging.getLogger(__name__)
 
@@ -142,53 +141,3 @@ def get_device_name_vrchat_is_outputting_to_on_windows() -> str | None:
     out = subprocess.check_output([sys.executable, "-c", script], text=True).strip()
     if out:
         return out
-
-
-class AudioLengthCompletionWrapper(Wrapper[AudioFrame, AudioFrame]):
-    """Wrapper class that can complete audio length using audio output
-    previously."""
-
-    def __init__(self, frame_size: int, reset_buffer_on_pause: bool = True) -> None:
-        """Initialize.
-
-        Args:
-            frame_size: Target num of samples.
-            reset_buffer_on_pause: If True, make self._buffer empty when pause.
-        """
-        super().__init__()
-        self._frame_size = frame_size
-        self._reset_buffer_on_pause = reset_buffer_on_pause
-        self._buffer = None
-
-    @override
-    def wrap(self, value: AudioFrame) -> AudioFrame:
-        """Reads a frame from the Soundcard and outputs audio by adjusting
-        length.
-
-        Args:
-            value: Audio obtained from read() of AudioSensor (shape is [AudioSensor._frame_size, channels]).
-        Returns:
-            Audio adjusted it's length (shape is [min(AudioSensor._frame_size, self._frame_size), channels]).
-        Raises:
-            ValueError: If Input shape does not match the format as [frame_size, n_channels].
-        """
-        if value.ndim != 2:
-            raise ValueError(
-                f"Input shape {value.shape} does not match the format as [frame_size, n_channels]."
-            )
-        if value.shape[0] >= self._frame_size:
-            # no need to complete audio length
-            return value[-self._frame_size :]
-        if self._buffer is None:
-            self._buffer = np.zeros(
-                (self._frame_size, value.shape[1]), dtype=value.dtype
-            )
-        # complete audio length using audio output previously.
-        self._buffer = np.concatenate([self._buffer, value])[-self._frame_size :]
-        return self._buffer.copy()  # prevent self._buffer from broken.
-
-    @override
-    def on_paused(self) -> None:
-        """Reset buffer."""
-        if self._reset_buffer_on_pause:
-            self._buffer = None
