@@ -4,7 +4,7 @@ import torch
 
 from sample.transforms.image import (
     ResizeAndCenterCrop,
-    create_vrchat_transform,
+    create_transform,
 )
 
 
@@ -61,7 +61,7 @@ class TestCreateVRChatTransform:
         ],
     )
     def test_full_pipeline(self, size, dtype):
-        transform = create_vrchat_transform(size, dtype)
+        transform = create_transform(size, dtype)
         image = np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8)
 
         output = transform(image)
@@ -72,7 +72,7 @@ class TestCreateVRChatTransform:
         assert output.std().item() == pytest.approx(1.0, abs=1e-1)
 
     def test_preserves_content_structure(self):
-        transform = create_vrchat_transform((224, 224))
+        transform = create_transform((224, 224))
         image = np.zeros((480, 640, 3), dtype=np.uint8)
         image[200:280, 300:340, :] = 255
 
@@ -87,7 +87,7 @@ class TestCreateVRChatTransform:
         [(100, 100, 3), (800, 600, 3), (1920, 1080, 3)],
     )
     def test_different_input_sizes(self, input_shape):
-        transform = create_vrchat_transform((256, 256))
+        transform = create_transform((256, 256))
         image = np.random.randint(0, 255, input_shape, dtype=np.uint8)
 
         output = transform(image)

@@ -31,42 +31,19 @@ class TestImaginingForwardDynamicsTrainer:
     DROPOUT = 0.1
     DIM_OBS = 32
     DIM_ACTION = 8
-
-    @pytest.fixture
-    def core_model(self):
-        return QLSTM(self.DEPTH, self.DIM, self.DIM_FF_HIDDEN, self.DROPOUT)
-
-    @pytest.fixture
-    def observation_flatten(self):
-        return nn.Identity()
-
-    @pytest.fixture
-    def action_flatten(self):
-        return nn.Identity()
-
-    @pytest.fixture
-    def obs_action_projection(self):
-        return nn.Linear(self.DIM_OBS + self.DIM_ACTION, self.DIM)
-
-    @pytest.fixture
-    def obs_hat_dist_head(self):
-        return FCDeterministicNormalHead(self.DIM, self.DIM_OBS)
+    ACTION_CHOICES = [4, 9, 2]
 
     @pytest.fixture
     def forward_dynamics(
         self,
-        observation_flatten,
-        action_flatten,
-        obs_action_projection,
-        core_model,
-        obs_hat_dist_head,
     ):
         return ForwardDynamics(
-            observation_flatten,
-            action_flatten,
-            obs_action_projection,
-            core_model,
-            obs_hat_dist_head,
+            self.DIM_OBS,
+            self.ACTION_CHOICES,
+            self.DIM_ACTION,
+            self.DIM,
+            self.DEPTH,
+            self.DIM * 2,
         )
 
     @pytest.fixture
@@ -78,38 +55,27 @@ class TestImaginingForwardDynamicsTrainer:
         }
 
     @pytest.fixture
-    def partial_dataloader(self):
-        partial_dataloader = partial(DataLoader, batch_size=2)
-        return partial_dataloader
-
-    @pytest.fixture
-    def partial_sampler(self):
-        partial_sampler = partial(RandomTimeSeriesSampler, sequence_length=self.LEN_SEQ)
-        return partial_sampler
-
-    @pytest.fixture
-    def partial_optimizer(self):
-        partial_optimizer = partial(AdamW, lr=1e-4, weight_decay=0.04)
-        return partial_optimizer
-
-    @pytest.fixture
     def trainer(
         self,
-        partial_dataloader,
-        partial_sampler,
-        partial_optimizer,
         mocker: MockerFixture,
     ):
         mocker.patch("sample.trainers.forward_dynamics.mlflow")
         trainer = ImaginingForwardDynamicsTrainer(
-            partial_dataloader,
-            partial_sampler,
-            partial_optimizer,
+            partial(AdamW, lr=1e-4, weight_decay=0.04),
+            seq_len=self.LEN_SEQ,
+            max_samples=4,
+            batch_size=2,
             imagination_length=4,
-            min_buffer_size=8,
+            min_buffer_size=self.LEN,
             min_new_data_count=4,
         )
         return trainer
+
+    def create_action(self) -> torch.Tensor:
+        actions = []
+        for choice in self.ACTION_CHOICES:
+            actions.append(torch.randint(0, choice, ()))
+        return torch.stack(actions, dim=-1)
 
     @parametrize_device
     def test_run(self, device, data_buffers, forward_dynamics, trainer):
@@ -126,7 +92,7 @@ class TestImaginingForwardDynamicsTrainer:
             collector.collect(
                 {
                     DataKey.OBSERVATION: torch.randn(self.DIM_OBS),
-                    DataKey.ACTION: torch.randn(self.DIM_ACTION),
+                    DataKey.ACTION: self.create_action(),
                     DataKey.HIDDEN: torch.randn(self.DEPTH, self.DIM),
                 }
             )

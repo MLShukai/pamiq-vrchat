@@ -56,9 +56,10 @@ class TemporalEncoderTrainer(TorchTrainer):
     @override
     def __init__(
         self,
-        partial_dataloader: partial[DataLoader[Tensor]],
-        partial_sampler: partial[RandomTimeSeriesSampler],
-        partial_optimizer: partial[Optimizer],
+        partial_optimzier: partial[Optimizer],
+        seq_len: int = 1,
+        max_samples: int = 1,
+        batch_size: int = 1,
         max_epochs: int = 1,
         data_user_name: str = BufferName.TEMPORAL,
         min_buffer_size: int = 2,
@@ -67,23 +68,29 @@ class TemporalEncoderTrainer(TorchTrainer):
         """Initialize the TemporalEncoder trainer.
 
         Args:
-            partial_dataloader: Partially configured DataLoader to be used with
-                dynamically created datasets during training.
-            partial_sampler: Partially configured RandomTimeSeriesSampler for
-                time series data sampling.
-            partial_optimizer: Partially configured optimizer to be used with
-                the model parameters.
+            partial_optimizer: Partially initialized optimizer lacking with model parameters.
+            seq_len: Sequence length per batch.
+            max_samples: Number of samples from entire dataset.
+            batch_size: Data size of 1 batch.
             max_epochs: Maximum number of epochs to train per training session.
             data_user_name: Name of the data user providing training data.
             min_buffer_size: Minimum buffer size required before training starts.
             min_new_data_count: Minimum number of new data points required for training.
         """
+        seq_len += 1  # to sample future target.
+        if min_buffer_size < seq_len:
+            raise ValueError("min_buffer_size must be larger than seq_len")
+
         super().__init__(data_user_name, min_buffer_size, min_new_data_count)
 
+        self.partial_optimizer = partial_optimzier
+        self.partial_sampler = partial(
+            RandomTimeSeriesSampler, sequence_length=seq_len, max_samples=max_samples
+        )
+        self.partial_dataloader = partial(DataLoader, batch_size=batch_size)
+
         self.data_user_name = data_user_name
-        self.partial_optimizer = partial_optimizer
-        self.partial_dataloader = partial_dataloader
-        self.partial_sampler = partial_sampler
+
         self.max_epochs = max_epochs
         self.global_step = 0
 
@@ -151,7 +158,7 @@ class TemporalEncoderTrainer(TorchTrainer):
                 self.optimizers[OPTIMIZER_NAME].zero_grad()
 
                 # Forward pass
-                _, _, obs_hat_dists = self.temporal_encoder.model(observations, hiddens)
+                obs_hat_dists, _ = self.temporal_encoder.model(observations, hiddens)
 
                 # Calculate losses for each modality
                 total_loss = torch.tensor(0.0, device=device)

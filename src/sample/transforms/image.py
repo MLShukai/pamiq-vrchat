@@ -72,7 +72,7 @@ class ResizeAndCenterCrop(nn.Module):
         return input
 
 
-def create_vrchat_transform(
+def create_transform(
     size: tuple[int, int], dtype: torch.dtype = torch.float
 ) -> Callable[[ImageFrame], Tensor]:
     """Create a composed transform for VRChat image processing.

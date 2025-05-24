@@ -7,45 +7,26 @@ from pamiq_core.data.impls import SequentialBuffer
 from pamiq_core.testing import connect_components
 from pamiq_core.torch import TorchTrainingModel
 from pytest_mock import MockerFixture
-from torch.nn import Linear
 from torch.optim import AdamW
-from torch.utils.data import DataLoader
 
 from sample.data import BufferName, DataKey
 from sample.models import ModelName
-from sample.models.components.fc_scalar_head import FCScalarHead
-from sample.models.components.multi_discretes import FCMultiCategoricalHead
-from sample.models.components.qlstm import QLSTM
 from sample.models.policy import PolicyValueCommon
 from sample.trainers.ppo_policy import PPOPolicyTrainer
-from sample.trainers.sampler import RandomTimeSeriesSampler
 from tests.sample.helpers import parametrize_device
 
 
 class TestPPOPolicyTrainer:
-    HIDDEN_DEPTH = 2
-    HIDDEN_DIM = 8
+    DEPTH = 2
+    DIM = 8
     OBS_DIM = 16
-    ACTION_DIMS = [3, 4]  # Multiple discrete actions
+    ACTION_CHOICES = [3, 4]  # Multiple discrete actions
     SEQ_LEN = 10
 
     @pytest.fixture
     def policy_value_model(self):
-        observation_flatten = Linear(self.OBS_DIM, self.HIDDEN_DIM)
-        core_model = QLSTM(
-            depth=self.HIDDEN_DEPTH,
-            dim=self.HIDDEN_DIM,
-            dim_ff_hidden=self.HIDDEN_DIM * 2,
-            dropout=0.0,
-        )
-        policy_head = FCMultiCategoricalHead(self.HIDDEN_DIM, self.ACTION_DIMS)
-        value_head = FCScalarHead(self.HIDDEN_DIM, squeeze_scalar_dim=True)
-
         return PolicyValueCommon(
-            observation_flatten=observation_flatten,
-            core_model=core_model,
-            policy_head=policy_head,
-            value_head=value_head,
+            self.OBS_DIM, self.ACTION_CHOICES, self.DIM, self.DEPTH, self.DIM * 2
         )
 
     @pytest.fixture
@@ -69,30 +50,16 @@ class TestPPOPolicyTrainer:
         }
 
     @pytest.fixture
-    def partial_dataloader(self):
-        return partial(DataLoader, batch_size=4)
-
-    @pytest.fixture
-    def partial_sampler(self):
-        return partial(RandomTimeSeriesSampler, sequence_length=self.SEQ_LEN)
-
-    @pytest.fixture
-    def partial_optimizer(self):
-        return partial(AdamW, lr=3e-4)
-
-    @pytest.fixture
     def trainer(
         self,
-        partial_dataloader,
-        partial_sampler,
-        partial_optimizer,
         mocker: MockerFixture,
     ):
         mocker.patch("sample.trainers.ppo_policy.mlflow")
         return PPOPolicyTrainer(
-            partial_dataloader,
-            partial_sampler,
-            partial_optimizer,
+            partial_optimizer=partial(AdamW, lr=3e-4),
+            seq_len=self.SEQ_LEN,
+            max_samples=4,
+            batch_size=2,
             min_buffer_size=3,
             min_new_data_count=1,
         )
@@ -113,11 +80,11 @@ class TestPPOPolicyTrainer:
         # Collect policy data
         for _ in range(20):
             observations = torch.randn(self.OBS_DIM)
-            hidden = torch.randn(self.HIDDEN_DEPTH, self.HIDDEN_DIM)
+            hidden = torch.randn(self.DEPTH, self.DIM)
             actions = torch.stack(
-                [torch.randint(0, dim, ()) for dim in self.ACTION_DIMS], dim=-1
+                [torch.randint(0, dim, ()) for dim in self.ACTION_CHOICES], dim=-1
             )
-            action_log_probs = torch.randn(len(self.ACTION_DIMS))
+            action_log_probs = torch.randn(len(self.ACTION_CHOICES))
             rewards = torch.randn(())
             values = torch.randn(())
 

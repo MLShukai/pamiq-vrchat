@@ -24,9 +24,10 @@ class PPOPolicyTrainer(TorchTrainer):
     @override
     def __init__(
         self,
-        partial_dataloader: partial[DataLoader[Tensor]],
-        partial_sampler: partial[RandomTimeSeriesSampler],
         partial_optimizer: partial[Optimizer],
+        seq_len: int = 1,
+        max_samples: int = 1,
+        batch_size: int = 1,
         max_epochs: int = 1,
         norm_advantage: bool = True,
         clip_coef: float = 0.1,
@@ -39,12 +40,10 @@ class PPOPolicyTrainer(TorchTrainer):
         """Initialize the PPO Policy trainer.
 
         Args:
-            partial_dataloader: Partially configured DataLoader to be used with
-                dynamically created datasets during training.
-            partial_sampler: Partially configured RandomTimeSeriesSampler for
-                time series data sampling.
-            partial_optimizer: Partially configured optimizer to be used with
-                the model parameters.
+            partial_optimizer: Partially initialized optimizer lacking with model parameters.
+            seq_len: Sequence length per batch.
+            max_samples: Number of samples from entire dataset.
+            batch_size: Data size of 1 batch.
             max_epochs: Maximum number of epochs to train per training session.
             norm_advantage: Whether to normalize advantages.
             clip_coef: Clipping coefficient for PPO.
@@ -58,8 +57,10 @@ class PPOPolicyTrainer(TorchTrainer):
 
         self.data_user_name = data_user_name
         self.partial_optimizer = partial_optimizer
-        self.partial_dataloader = partial_dataloader
-        self.partial_sampler = partial_sampler
+        self.partial_sampler = partial(
+            RandomTimeSeriesSampler, sequence_length=seq_len, max_samples=max_samples
+        )
+        self.partial_dataloader = partial(DataLoader, batch_size=batch_size)
         self.max_epochs = max_epochs
         self.norm_advantage = norm_advantage
         self.clip_coef = clip_coef
