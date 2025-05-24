@@ -44,7 +44,7 @@ class AudioLengthCompletion(nn.Module):
         """Initialize the length completion module.
 
         Args:
-            frame_size: Target number of samples in the output audio.
+            frame_size: Number of output audio samples.
 
         Raises:
             ValueError: If frame_size is not positive.
