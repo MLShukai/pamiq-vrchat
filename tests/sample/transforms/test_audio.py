@@ -6,7 +6,7 @@ import torch
 
 from sample.transforms.audio import (
     AudioFrameToTensor,
-    LengthCompletion,
+    AudioLengthCompletion,
     create_transform,
 )
 
@@ -32,14 +32,14 @@ class TestAudioFrameToTensor:
         assert torch.allclose(output, torch.from_numpy(np_transposed))
 
 
-class TestLengthCompletion:
-    """Tests for the LengthCompletion class."""
+class TestAudioLengthCompletion:
+    """Tests for the AudioLengthCompletion class."""
 
     @pytest.mark.parametrize("invalid_frame_size", [0, -1, -10])
     def test_initialization_invalid_frame_size(self, invalid_frame_size: int):
         """Test that initialization fails with invalid frame sizes."""
         with pytest.raises(ValueError, match="frame_size must be positive"):
-            LengthCompletion(invalid_frame_size)
+            AudioLengthCompletion(invalid_frame_size)
 
     @pytest.mark.parametrize(
         "frame_size,n_channels,n_audios,audio_length",
@@ -63,7 +63,7 @@ class TestLengthCompletion:
         """
         assert audio_length < frame_size, "Test expects audio shorter than frame size"
 
-        completion = LengthCompletion(frame_size)
+        completion = AudioLengthCompletion(frame_size)
 
         # Generate sequence of audio chunks
         audio_chunks = [torch.randn(n_channels, audio_length) for _ in range(n_audios)]
@@ -99,7 +99,7 @@ class TestLengthCompletion:
         When input length equals frame size, the module should return
         the input unchanged without buffering.
         """
-        completion = LengthCompletion(frame_size)
+        completion = AudioLengthCompletion(frame_size)
 
         # Create audio with exact frame size
         audio = torch.randn(n_channels, frame_size)
@@ -133,7 +133,7 @@ class TestLengthCompletion:
         """
         assert audio_length > frame_size, "Test expects audio longer than frame size"
 
-        completion = LengthCompletion(frame_size)
+        completion = AudioLengthCompletion(frame_size)
 
         # Create audio longer than frame size
         audio = torch.randn(n_channels, audio_length)
@@ -153,7 +153,7 @@ class TestLengthCompletion:
         If the buffer exists and new input has incompatible dimensions,
         a clear error should be raised.
         """
-        completion = LengthCompletion(10)
+        completion = AudioLengthCompletion(10)
 
         # First input with stereo audio
         stereo_audio = torch.randn(2, 5)
@@ -178,7 +178,7 @@ class TestLengthCompletion:
         As long as all dimensions except the last match, different audio
         lengths should be processed correctly.
         """
-        completion = LengthCompletion(15)
+        completion = AudioLengthCompletion(15)
 
         # Process audio of different lengths but same channel count
         audio1 = torch.randn(2, 5)

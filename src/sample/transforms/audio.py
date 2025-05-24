@@ -31,7 +31,7 @@ class AudioFrameToTensor(nn.Module):
         return torch.from_numpy(frame).transpose(0, 1)
 
 
-class LengthCompletion(nn.Module):
+class AudioLengthCompletion(nn.Module):
     """Complete audio length using previously buffered audio data.
 
     This module maintains an internal buffer to handle cases where input
@@ -124,6 +124,6 @@ def create_transform(
     return nn.Sequential(
         AudioFrameToTensor(),
         Resample(source_sample_rate, target_sample_rate),
-        LengthCompletion(target_frame_size),
+        AudioLengthCompletion(target_frame_size),
         Standardize(),
     )
