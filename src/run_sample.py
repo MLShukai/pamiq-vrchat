@@ -171,9 +171,15 @@ class TrainerHParams:
 class DataBufferHParams:
     """DataBuffer hyper parameter namespace."""
 
-    class Image: ...
+    class Image:
+        max_size: int = (
+            TrainerHParams.ImageJEPA.batch_size * 24
+        )  # 24 is iteration count
 
-    class Audio: ...
+    class Audio:
+        max_size: int = (
+            TrainerHParams.AudioJEPA.batch_size * 24
+        )  # 24 is iteration count
 
     class Temporal:
         max_size = 1000
@@ -625,11 +631,27 @@ def main() -> None:
     # #########################################
 
     def create_data_buffers() -> dict[str, DataBuffer[Any]]:
-        from pamiq_core.data.impls import SequentialBuffer
+        from pamiq_core.data.impls import RandomReplacementBuffer, SequentialBuffer
 
         from sample.data import DataKey
 
-        # TODO: Write Data Buffer definition for Audio and Image.
+        # ----- Image Buffer -----
+        image = RandomReplacementBuffer(
+            collecting_data_names=[DataKey.OBSERVATION],
+            max_size=DataBufferHParams.Image.max_size,
+            expected_survival_length=int(
+                12 * 60 * 60 / InteractionHParams.frame_interval  # 12 hour
+            ),
+        )
+
+        # ----- Audio Buffer -----
+        audio = RandomReplacementBuffer(
+            collecting_data_names=[DataKey.OBSERVATION],
+            max_size=DataBufferHParams.Audio.max_size,
+            expected_survival_length=int(
+                12 * 60 * 60 / InteractionHParams.frame_interval  # 12 hour
+            ),
+        )
 
         # ----- Temporal Buffer -----
         temporal = SequentialBuffer(
@@ -657,6 +679,8 @@ def main() -> None:
         )
 
         return {
+            BufferName.IMAGE: image,
+            BufferName.AUDIO: audio,
             BufferName.TEMPORAL: temporal,
             BufferName.FORWARD_DYNAMICS: forward_dynamics,
             BufferName.POLICY: policy,
