@@ -301,7 +301,6 @@ class MultiBlockMaskCollator2d:
 
     def __init__(
         self,
-        input_size: size_2d,
         num_patches: size_2d,
         mask_scale: tuple[float, float] = (0.10, 0.25),
         n_masks: int = 4,
@@ -326,7 +325,6 @@ class MultiBlockMaskCollator2d:
         if mask_scale[1] > 1:
             raise ValueError("mask_scale[1] must be less than 1")
 
-        input_size = size_2d_to_int_tuple(input_size)
         num_patches = size_2d_to_int_tuple(num_patches)
 
         self.n_patches_height = num_patches[0]

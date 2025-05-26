@@ -97,7 +97,6 @@ class TestJEPATrainer:
     @pytest.fixture
     def collate_fn(self) -> MultiBlockMaskCollator2d:
         return MultiBlockMaskCollator2d(
-            input_size=self.IMAGE_SIZE,
             num_patches=self.N_PATCHES,
         )
 
@@ -174,7 +173,6 @@ class TestMultiBlockMaskCollator2d:
         """Test that the sampled mask rectangle has valid dimensions and
         follows constraints."""
         collator = MultiBlockMaskCollator2d(
-            input_size=image_size,
             num_patches=image_size // patch_size,
             mask_scale=mask_scale,
             min_keep=min_keep,
@@ -221,7 +219,6 @@ class TestMultiBlockMaskCollator2d:
 
         # Initialize collator
         collator = MultiBlockMaskCollator2d(
-            input_size=(image_size, image_size),
             num_patches=(image_size // patch_size, image_size // patch_size),
             n_masks=n_masks,
             min_keep=50,
@@ -292,7 +289,6 @@ class TestMultiBlockMaskCollator2d:
         and properties."""
         image_size, patch_size = 224, 16
         collator = MultiBlockMaskCollator2d(
-            input_size=(image_size, image_size),
             num_patches=(image_size // patch_size, image_size // patch_size),
             n_masks=4,
             min_keep=50,
@@ -324,7 +320,6 @@ class TestMultiBlockMaskCollator2d:
         """Test that the n_patches property returns the correct value."""
         image_size, patch_size = 224, 16
         collator = MultiBlockMaskCollator2d(
-            input_size=(image_size, image_size),
             num_patches=(image_size // patch_size, image_size // patch_size),
         )
 
@@ -334,7 +329,6 @@ class TestMultiBlockMaskCollator2d:
     def test_step_method(self):
         """Test that the step method increments the counter properly."""
         collator = MultiBlockMaskCollator2d(
-            input_size=224,
             num_patches=224 // 16,
         )
 
@@ -357,7 +351,6 @@ class TestMultiBlockMaskCollator2d:
         """Test error when mask_scale is invalid."""
         with pytest.raises(ValueError, match=expected_error):
             MultiBlockMaskCollator2d(
-                input_size=224,
                 num_patches=224 // 16,
                 mask_scale=mask_scale,
             )
@@ -368,7 +361,6 @@ class TestMultiBlockMaskCollator2d:
             ValueError, match="min_keep .* must be less than or equal to total patches"
         ):
             MultiBlockMaskCollator2d(
-                input_size=224,
                 num_patches=224 // 16,
                 min_keep=1000,  # Much larger than available patches
             )
