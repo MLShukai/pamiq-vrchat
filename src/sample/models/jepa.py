@@ -5,6 +5,7 @@ Architecture (JEPA) model.
 """
 
 import copy
+import math
 from collections.abc import Callable
 from typing import Literal, Self, override
 
@@ -12,7 +13,7 @@ import torch
 import torch.nn as nn
 from pamiq_core.torch import get_device
 
-from sample.utils import size_2d
+from sample.utils import size_2d, size_2d_to_int_tuple
 
 from .components.transformer import Transformer
 from .utils import init_weights
@@ -297,18 +298,14 @@ class AveragePoolInfer:
 
         self.ndim = ndim
 
-        def validate_and_normalize(obj: int | tuple[int, ...]) -> tuple[int, ...]:
-            if isinstance(obj, int):
-                return (obj,) * ndim
-            if len(obj) != ndim:
-                raise ValueError(f"Expected tuple of length {ndim}, got {len(obj)}")
-            return obj
-
         # Validate and normalize num_patches
-        self.num_patches = validate_and_normalize(num_patches)
-        kernel_size = validate_and_normalize(kernel_size)
+        self.num_patches = self._validate_and_normalize(ndim, num_patches)
+        kernel_size = self._validate_and_normalize(ndim, kernel_size)
         if stride is not None:
-            stride = validate_and_normalize(stride)
+            stride = self._validate_and_normalize(ndim, stride)
+
+        self.kernel_size = kernel_size
+        self.stride = stride if stride is not None else kernel_size
 
         # Create appropriate pooling layer
         match ndim:
@@ -316,6 +313,16 @@ class AveragePoolInfer:
                 self.pool = nn.AvgPool1d(kernel_size, stride)  # pyright: ignore[reportArgumentType, ]
             case 2:
                 self.pool = nn.AvgPool2d(kernel_size, stride)  # pyright: ignore[reportArgumentType, ]
+
+    @staticmethod
+    def _validate_and_normalize(
+        ndim: int, obj: int | tuple[int, ...]
+    ) -> tuple[int, ...]:
+        if isinstance(obj, int):
+            return (obj,) * ndim
+        if len(obj) != ndim:
+            raise ValueError(f"Expected tuple of length {ndim}, got {len(obj)}")
+        return obj
 
     def __call__(self, encoder: Encoder, data: torch.Tensor) -> torch.Tensor:
         """Process data through the encoder and apply average pooling to the
@@ -360,3 +367,172 @@ class AveragePoolInfer:
         if no_batch:
             x = x.squeeze(0)
         return x
+
+    @property
+    def output_patch_count(self) -> int:
+        """Computes the output patch count."""
+
+        def compute(input_size: int, kernel_size: int, stride: int) -> int:
+            return int((input_size - kernel_size) / stride + 1)
+
+        return math.prod(
+            compute(p, k, s)
+            for (p, k, s) in zip(
+                self.num_patches, self.kernel_size, self.stride, strict=True
+            )
+        )
+
+
+def create_image_jepa(
+    image_size: size_2d,
+    patch_size: size_2d,
+    in_channels: int = 3,
+    hidden_dim: int = 768,
+    embed_dim: int = 128,
+    depth: int = 6,
+    num_heads: int = 3,
+    output_downsample: size_2d = 1,
+) -> tuple[Encoder, Encoder, Predictor, AveragePoolInfer]:
+    """Create a complete Image JEPA (Joint Embedding Predictive Architecture)
+    model.
+
+    This factory function creates all components needed for Image JEPA training and inference,
+    including context encoder, target encoder, predictor, and inference pooling. The target
+    encoder is initialized as a clone of the context encoder for momentum-based updates.
+
+    Args:
+        image_size: Input image dimensions as (height, width) or single int for square images.
+        patch_size: Patch dimensions as (height, width) or single int for square patches.
+        in_channels: Number of input image channels (e.g., 3 for RGB).
+        hidden_dim: Hidden dimension for encoder transformers.
+        embed_dim: Output embedding dimension for encoders.
+        depth: Number of transformer layers in encoders.
+        num_heads: Number of attention heads in encoders.
+        output_downsample: Downsampling factor for inference pooling as (height, width) or single int.
+
+    Returns:
+        A tuple containing:
+            - context_encoder: Encoder for processing masked images
+            - target_encoder: Encoder clone for generating targets (updated via EMA)
+            - predictor: Predictor for reconstructing target patches from context
+            - infer: AveragePoolInfer for downsampled inference
+            - num_patches: Final patch dimensions after downsampling as (height, width)
+
+    NOTE:
+        The predictor uses half the hidden dimensions and attention heads of the encoders
+        for efficiency. The target encoder should be updated using exponential moving
+        average of the context encoder parameters during training.
+    """
+    from .components.image_patchifier import ImagePatchifier
+    from .components.positional_embeddings import get_2d_positional_embeddings
+
+    patchifier = ImagePatchifier(
+        patch_size,
+        in_channels=in_channels,
+        embed_dim=hidden_dim,
+    )
+    num_patches = ImagePatchifier.compute_num_patches(image_size, patch_size)
+
+    context_encoder = Encoder(
+        patchifier,
+        get_2d_positional_embeddings(hidden_dim, num_patches).reshape(-1, hidden_dim),
+        hidden_dim=hidden_dim,
+        embed_dim=embed_dim,
+        depth=depth,
+        num_heads=num_heads,
+    )
+
+    target_encoder = context_encoder.clone()
+
+    predictor = Predictor(
+        get_2d_positional_embeddings(hidden_dim // 2, num_patches).reshape(
+            -1, hidden_dim // 2
+        ),
+        embed_dim=embed_dim,
+        hidden_dim=hidden_dim // 2,
+        depth=depth,
+        num_heads=num_heads // 2,
+    )
+
+    output_downsample = size_2d_to_int_tuple(output_downsample)
+    infer = AveragePoolInfer(
+        2,
+        num_patches,
+        kernel_size=output_downsample,
+    )
+
+    return context_encoder, target_encoder, predictor, infer
+
+
+def create_audio_jepa(
+    sample_size: int,
+    in_channels: int = 2,
+    hidden_dim: int = 512,
+    embed_dim: int = 256,
+    depth: int = 6,
+    num_heads: int = 8,
+    output_downsample: int = 1,
+) -> tuple[Encoder, Encoder, Predictor, AveragePoolInfer]:
+    """Create a complete Audio JEPA (Joint Embedding Predictive Architecture)
+    model.
+
+    This factory function creates all components needed for Audio JEPA training and inference,
+    including context encoder, target encoder, predictor, and inference pooling. The target
+    encoder is initialized as a clone of the context encoder for momentum-based updates.
+
+    Args:
+        sample_size: Number of input audio samples.
+        in_channels: Number of input audio channels (e.g., 2 for stereo).
+        hidden_dim: Hidden dimension for encoder transformers.
+        embed_dim: Output embedding dimension for encoders.
+        depth: Number of transformer layers in encoders.
+        num_heads: Number of attention heads in encoders.
+        output_downsample: Downsampling factor for inference pooling.
+
+    Returns:
+        A tuple containing:
+            - context_encoder: Encoder for processing masked audio
+            - target_encoder: Encoder clone for generating targets (updated via EMA)
+            - predictor: Predictor for reconstructing target patches from context
+            - infer: AveragePoolInfer for downsampled inference
+
+    NOTE:
+        The predictor uses half the hidden dimensions and attention heads of the encoders
+        for efficiency. The target encoder should be updated using exponential moving
+        average of the context encoder parameters during training.
+    """
+    from .components.audio_patchifier import AudioPatchifier
+    from .components.positional_embeddings import get_1d_positional_embeddings
+
+    patchifier = AudioPatchifier(
+        in_channels=in_channels,
+        embed_dim=hidden_dim,
+    )
+    num_patches = AudioPatchifier.compute_num_patches(sample_size)
+
+    context_encoder = Encoder(
+        patchifier,
+        get_1d_positional_embeddings(hidden_dim, num_patches),
+        hidden_dim=hidden_dim,
+        embed_dim=embed_dim,
+        depth=depth,
+        num_heads=num_heads,
+    )
+
+    target_encoder = context_encoder.clone()
+
+    predictor = Predictor(
+        get_1d_positional_embeddings(hidden_dim // 2, num_patches),
+        embed_dim=embed_dim,
+        hidden_dim=hidden_dim // 2,
+        depth=depth,
+        num_heads=num_heads // 2,
+    )
+
+    infer = AveragePoolInfer(
+        1,
+        num_patches,
+        kernel_size=output_downsample,
+    )
+
+    return context_encoder, target_encoder, predictor, infer
