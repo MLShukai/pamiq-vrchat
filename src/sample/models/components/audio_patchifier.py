@@ -2,7 +2,7 @@
 # https://github.com/facebookresearch/fairseq/blob/main/fairseq/models/wav2vec/wav2vec2.py#L844
 # https://github.com/facebookresearch/fairseq/blob/main/examples/data2vec/models/modalities/audio.py#L29
 
-from typing import override
+from typing import ClassVar, override
 
 import torch
 import torch.nn as nn
@@ -61,6 +61,9 @@ class ConvBlock(nn.Module):
 class AudioPatchifier(nn.Module):
     """Convert input audios into patch embeddings."""
 
+    KERNEL_SIZES: ClassVar[tuple[int, ...]] = (10, 3, 3, 3, 3, 2, 2)
+    STRIDES: ClassVar[tuple[int, ...]] = (5, 2, 2, 2, 2, 2, 2)
+
     @override
     def __init__(self, in_channels: int, embed_dim: int = 512) -> None:
         """
@@ -72,12 +75,10 @@ class AudioPatchifier(nn.Module):
         super().__init__()
 
         # According to data2vec paper (https://arxiv.org/abs/2202.03555),
-        kernel_sizes = (10, 3, 3, 3, 3, 2, 2)
-        strides = (5, 2, 2, 2, 2, 2, 2)
         # results in window_size=400[samples] and hop_size=320[samples] as total.
 
         self.conv_layers = nn.Sequential()
-        for i, (k, s) in enumerate(zip(kernel_sizes, strides)):
+        for i, (k, s) in enumerate(zip(self.KERNEL_SIZES, self.STRIDES)):
             self.conv_layers.append(
                 ConvBlock(
                     in_channels=in_channels if i == 0 else embed_dim,
@@ -102,3 +103,28 @@ class AudioPatchifier(nn.Module):
             -1, -2
         )  # [batch_size, embed_dim, n_patches] -> [batch_size, n_patches, embed_dim]
         return x
+
+    @classmethod
+    def compute_num_patches(cls, sample_size: int) -> int:
+        """Compute the number of patches that will be produced from input
+        audio.
+
+        Args:
+            sample_size: Number of input audio samples.
+
+        Returns:
+            Number of patches that will be produced.
+
+        Raises:
+            ValueError: If sample_size is too small to produce any patches.
+        """
+        size = sample_size
+        for i, (kernel_size, stride) in enumerate(zip(cls.KERNEL_SIZES, cls.STRIDES)):
+            size = int((size - kernel_size) / stride + 1)
+            if size <= 0:
+                raise ValueError(
+                    f"Input sample_size {sample_size} is too small. "
+                    f"Failed at convolution layer {i} with kernel_size={kernel_size}, "
+                    f"stride={stride}. Resulting size would be {size}."
+                )
+        return size
