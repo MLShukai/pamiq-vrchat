@@ -2,13 +2,10 @@ import logging
 import sys
 from typing import override
 
-import numpy as np
-import numpy.typing as npt
 from pamiq_core.interaction.modular_env import Sensor
+from pamiq_io.audio import AudioFrame
 
 logger = logging.getLogger(__name__)
-
-type AudioFrame = npt.NDArray[np.float32]
 
 
 class AudioSensor(Sensor[AudioFrame]):
