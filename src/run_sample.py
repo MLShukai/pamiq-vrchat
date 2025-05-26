@@ -55,13 +55,20 @@ class ModelHParams:
     """
 
     @dataclass
-    class ImageJEPA: ...
+    class ImageJEPA:
+        patch_size: tuple[int, int] = (12, 12)
+        hidden_dim: int = 432
+        embed_dim: int = 128
+        depth: int = 6
+        num_heads: int = 3
+        output_downsample: int = 3
 
     @dataclass
     class AudioJEPA: ...
 
     @dataclass
     class TemporalEncoder:
+        image_dim: int = 2048
         dim: int = 1024
         depth: int = 8
         dim_ff_hidden: int = dim * 4
@@ -199,6 +206,7 @@ from pamiq_core import (
     launch,
 )
 
+from pamiq_vrchat import ActionType, ObservationType
 from sample.data import BufferName
 from sample.models import ModelName
 from sample.utils import average_exponentially
@@ -259,7 +267,7 @@ def main() -> None:
         )
         from pamiq_core.interaction.wrappers import ActuatorWrapper, SensorWrapper
 
-        from pamiq_vrchat import ActionType, ObservationType, actuators, sensors
+        from pamiq_vrchat import actuators, sensors
         from sample import transforms
         from sample.agents import (
             CuriosityAgent,
@@ -355,16 +363,58 @@ def main() -> None:
     def create_models() -> dict[str, TrainingModel[Any]]:
         from pamiq_core.torch import TorchTrainingModel
 
-        from sample.models import ForwardDynamics, PolicyValueCommon, TemporalEncoder
+        from sample.models import (
+            ForwardDynamics,
+            PolicyValueCommon,
+            TemporalEncoder,
+            create_image_jepa,
+        )
+        from sample.models.temporal_encoder import ObsInfo as TemporalEncoderObsInfo
         from sample.transforms.action import ACTION_CHOICES
 
-        # TODO: create JEPA and assign obs infos
+        temporal_encoder_obs_infos: dict[str, TemporalEncoderObsInfo] = {}
+
+        # ----- Image JEPA -----
+        hparams = model_hparams.image_jepa
+        context_encoder, target_encoder, predictor, infer = create_image_jepa(
+            image_size=InteractionHParams.Env.Obs.Image.size,
+            patch_size=hparams.patch_size,
+            in_channels=InteractionHParams.Env.Obs.Image.channels,
+            hidden_dim=hparams.hidden_dim,
+            embed_dim=hparams.embed_dim,
+            depth=hparams.depth,
+            num_heads=hparams.num_heads,
+            output_downsample=hparams.output_downsample,
+        )
+        image_jepa_context_encoder = TorchTrainingModel(
+            context_encoder,
+            has_inference_model=False,
+            device=device,
+        )
+
+        image_jepa_target_encoder = TorchTrainingModel(
+            target_encoder,
+            has_inference_model=True,
+            inference_procedure=infer,
+            device=device,
+        )
+        image_jepa_predictor = TorchTrainingModel(
+            predictor,
+            has_inference_model=False,
+            device=device,
+        )
+
+        temporal_encoder_obs_infos[ObservationType.IMAGE] = TemporalEncoderObsInfo(
+            dim=hparams.embed_dim,
+            dim_hidden=ModelHParams.TemporalEncoder.image_dim,
+            num_tokens=infer.output_patch_count,
+        )
 
         # ----- Temporal Encoder -----
         hparams = model_hparams.temporal_encoder
         temporal_encoder = TorchTrainingModel(
             TemporalEncoder(
-                obs_infos={},
+                obs_infos=temporal_encoder_obs_infos,
                 dim=hparams.dim,
                 depth=hparams.depth,
                 dim_ff_hidden=hparams.dim_ff_hidden,
@@ -405,6 +455,9 @@ def main() -> None:
         )
 
         return {
+            ModelName.IMAGE_JEPA_CONTEXT_ENCODER: image_jepa_context_encoder,
+            ModelName.IMAGE_JEPA_TARGET_ENCODER: image_jepa_target_encoder,
+            ModelName.IMAGE_JEPA_PREDICTOR: image_jepa_predictor,
             ModelName.TEMPORAL_ENCODER: temporal_encoder,
             ModelName.FORWARD_DYNAMICS: forward_dynamics,
             ModelName.POLICY_VALUE: policy,
