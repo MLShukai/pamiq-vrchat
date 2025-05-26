@@ -130,7 +130,13 @@ class TrainerHParams:
         num_masks: int = 4
         min_mask_keep: int = 7
 
-    class AudioJEPA: ...
+    class AudioJEPA:
+        lr: float = 0.0001
+        batch_size: int = 32
+        min_new_data_count: int = 128
+        mask_scale: tuple[float, float] = (0.1, 0.25)
+        num_masks: int = 4
+        min_mask_keep: int = 5
 
     class TemporalEncoder:
         lr: float = 0.0001
@@ -524,6 +530,8 @@ def main() -> None:
 
         from torch.optim import AdamW
 
+        # ----- Image JEPA Trainer -----
+        from sample.models.components.image_patchifier import ImagePatchifier
         from sample.trainers import (
             ImaginingForwardDynamicsTrainer,
             PPOPolicyTrainer,
@@ -531,16 +539,36 @@ def main() -> None:
             jepa,
         )
 
-        # ----- Image JEPA Trainer -----
         hparams = TrainerHParams.ImageJEPA
-        image_jepa_trainer = jepa.JEPATrainer(
+        image_jepa = jepa.JEPATrainer(
             partial_optimizer=partial(AdamW, lr=hparams.lr),
             batch_size=hparams.batch_size,
             min_new_data_count=hparams.min_new_data_count,
             **jepa.IMAGE_CONFIG,
             collate_fn=jepa.MultiBlockMaskCollator2d(
-                input_size=InteractionHParams.Env.Obs.Image.size,
-                patch_size=model_hparams.image_jepa.patch_size,
+                num_patches=ImagePatchifier.compute_num_patches(
+                    InteractionHParams.Env.Obs.Image.size,
+                    model_hparams.image_jepa.patch_size,
+                ),
+                mask_scale=hparams.mask_scale,
+                n_masks=hparams.num_masks,
+                min_keep=hparams.min_mask_keep,
+            ),
+        )
+
+        # ----- Audio JEPA Trainer -----
+        from sample.models.components.audio_patchifier import AudioPatchifier
+
+        hparams = TrainerHParams.AudioJEPA
+        audio_jepa = jepa.JEPATrainer(
+            partial_optimizer=partial(AdamW, lr=hparams.lr),
+            batch_size=hparams.batch_size,
+            min_new_data_count=hparams.min_new_data_count,
+            **jepa.AUDIO_CONFIG,
+            collate_fn=jepa.MultiBlockMaskCollator1d(
+                num_patches=AudioPatchifier.compute_num_patches(
+                    InteractionHParams.Env.Obs.Audio.frame_size
+                ),
                 mask_scale=hparams.mask_scale,
                 n_masks=hparams.num_masks,
                 min_keep=hparams.min_mask_keep,
@@ -585,7 +613,8 @@ def main() -> None:
         )
 
         return {
-            "image_jepa": image_jepa_trainer,
+            "image_jepa": image_jepa,
+            "audio_jepa": audio_jepa,
             "temporal_encoder": temporal_encoder,
             "forward_dynamics": forward_dynamics,
             "policy": policy,
