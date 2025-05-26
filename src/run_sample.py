@@ -1,4 +1,3 @@
-import logging.handlers
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, Self
@@ -215,6 +214,7 @@ class CliArgs:
 # #############################################
 
 import logging
+import logging.handlers
 from datetime import datetime
 
 import colorlog
