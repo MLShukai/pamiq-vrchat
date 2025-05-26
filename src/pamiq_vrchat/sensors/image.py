@@ -18,12 +18,10 @@ import sys
 from typing import override
 
 import cv2
-import numpy as np
-import numpy.typing as npt
 from pamiq_core.interaction.modular_env import Sensor
-from pamiq_io.video import OpenCVVideoInput
+from pamiq_io.video import OpenCVVideoInput, VideoFrame
 
-type ImageFrame = npt.NDArray[np.uint8]
+type ImageFrame = VideoFrame
 
 
 class ImageSensor(Sensor[ImageFrame]):
