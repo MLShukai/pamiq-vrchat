@@ -12,6 +12,8 @@ import torch
 import torch.nn as nn
 from pamiq_core.torch import get_device
 
+from sample.utils import size_2d
+
 from .components.transformer import Transformer
 from .utils import init_weights
 
@@ -22,7 +24,7 @@ class Encoder(nn.Module):
 
     def __init__(
         self,
-        patchfier: Callable[[torch.Tensor], torch.Tensor],
+        patchifier: Callable[[torch.Tensor], torch.Tensor],
         positional_encodings: torch.Tensor,
         hidden_dim: int = 768,
         embed_dim: int = 384,
@@ -38,7 +40,7 @@ class Encoder(nn.Module):
         """Initialize the JEPAEncoder.
 
         Args:
-            patchfier: Patchfy input data to patch sequence.
+            patchifier: Patchfy input data to patch sequence.
             positional_encodings: Positional encoding tensors to be added to patchfied input data.
             hidden_dim: Hidden dimension per patch.
             embed_dim: Output dimension per patch.
@@ -61,7 +63,7 @@ class Encoder(nn.Module):
                 "positional_encodings channel dimension must be hidden_dim."
             )
 
-        self.patchfier = patchfier
+        self.patchfier = patchifier
 
         # define mask token_vector
         self.mask_token_vector = nn.Parameter(torch.empty(hidden_dim))
