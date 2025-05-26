@@ -97,8 +97,7 @@ class TestJEPATrainer:
     @pytest.fixture
     def collate_fn(self) -> MultiBlockMaskCollator2d:
         return MultiBlockMaskCollator2d(
-            input_size=self.IMAGE_SIZE,
-            patch_size=self.PATCH_SIZE,
+            num_patches=self.N_PATCHES,
         )
 
     @pytest.fixture
@@ -174,8 +173,7 @@ class TestMultiBlockMaskCollator2d:
         """Test that the sampled mask rectangle has valid dimensions and
         follows constraints."""
         collator = MultiBlockMaskCollator2d(
-            input_size=image_size,
-            patch_size=patch_size,
+            num_patches=image_size // patch_size,
             mask_scale=mask_scale,
             min_keep=min_keep,
         )
@@ -221,8 +219,7 @@ class TestMultiBlockMaskCollator2d:
 
         # Initialize collator
         collator = MultiBlockMaskCollator2d(
-            input_size=(image_size, image_size),
-            patch_size=(patch_size, patch_size),
+            num_patches=(image_size // patch_size, image_size // patch_size),
             n_masks=n_masks,
             min_keep=50,
         )
@@ -292,8 +289,7 @@ class TestMultiBlockMaskCollator2d:
         and properties."""
         image_size, patch_size = 224, 16
         collator = MultiBlockMaskCollator2d(
-            input_size=(image_size, image_size),
-            patch_size=(patch_size, patch_size),
+            num_patches=(image_size // patch_size, image_size // patch_size),
             n_masks=4,
             min_keep=50,
         )
@@ -324,8 +320,7 @@ class TestMultiBlockMaskCollator2d:
         """Test that the n_patches property returns the correct value."""
         image_size, patch_size = 224, 16
         collator = MultiBlockMaskCollator2d(
-            input_size=(image_size, image_size),
-            patch_size=(patch_size, patch_size),
+            num_patches=(image_size // patch_size, image_size // patch_size),
         )
 
         expected_patches = (image_size // patch_size) ** 2
@@ -334,8 +329,7 @@ class TestMultiBlockMaskCollator2d:
     def test_step_method(self):
         """Test that the step method increments the counter properly."""
         collator = MultiBlockMaskCollator2d(
-            input_size=224,
-            patch_size=16,
+            num_patches=224 // 16,
         )
 
         # Get initial value
@@ -344,21 +338,6 @@ class TestMultiBlockMaskCollator2d:
         # Check that step increments
         assert collator.step() == initial_value + 1
         assert collator.step() == initial_value + 2
-
-    @pytest.mark.parametrize(
-        "input_size,patch_size,expected_error",
-        [
-            (223, 16, "Input height 223 must be divisible by patch height 16"),
-            (224, 15, "Input height 224 must be divisible by patch height 15"),
-        ],
-    )
-    def test_invalid_dimensions(self, input_size, patch_size, expected_error):
-        """Test error when dimensions are invalid."""
-        with pytest.raises(ValueError, match=expected_error):
-            MultiBlockMaskCollator2d(
-                input_size=input_size,
-                patch_size=patch_size,
-            )
 
     @pytest.mark.parametrize(
         "mask_scale,expected_error",
@@ -372,8 +351,7 @@ class TestMultiBlockMaskCollator2d:
         """Test error when mask_scale is invalid."""
         with pytest.raises(ValueError, match=expected_error):
             MultiBlockMaskCollator2d(
-                input_size=224,
-                patch_size=16,
+                num_patches=224 // 16,
                 mask_scale=mask_scale,
             )
 
@@ -383,63 +361,52 @@ class TestMultiBlockMaskCollator2d:
             ValueError, match="min_keep .* must be less than or equal to total patches"
         ):
             MultiBlockMaskCollator2d(
-                input_size=224,
-                patch_size=16,
+                num_patches=224 // 16,
                 min_keep=1000,  # Much larger than available patches
             )
 
 
 @pytest.mark.parametrize(
     [
-        "input_size",
-        "patch_size",
-        "stride",
+        "num_patches",
         "mask_scale",
         "n_masks",
         "min_keep",
     ],
     [
-        [16080, 400, 320, (0.1, 0.25), 4, 10],
+        [50, (0.1, 0.25), 4, 10],
     ],
 )
 class TestMultiBlockMaskCollator1d:
     def test_sample_mask(
         self,
-        input_size: int,
-        patch_size: int,
-        stride: int,
+        num_patches: int,
         mask_scale: tuple[float, float],
         n_masks: int,
         min_keep: int,
     ):
-        assert patch_size <= input_size
-        assert stride <= input_size
-        assert (input_size - (patch_size - stride)) % stride == 0
         # define MultiBlockMaskCollator1d
         collator = MultiBlockMaskCollator1d(
-            input_size=input_size,
-            patch_size=patch_size,
-            stride=stride,
+            num_patches=num_patches,
             mask_scale=mask_scale,
             n_masks=n_masks,
             min_keep=min_keep,
         )
         g = torch.Generator()
         # calc num of patches
-        n_patches = (input_size - (patch_size - stride)) / stride
         for _ in range(100):
             start, end = collator._sample_mask(g)
             assert start < end
             assert start >= 0
-            assert end <= input_size
+            assert end <= num_patches
 
             mask_sample_size = end - start
             # test mask scale
             mask_scale_min, mask_scale_max = mask_scale
-            assert mask_sample_size <= mask_scale_max * n_patches
-            assert mask_sample_size >= mask_scale_min * n_patches
+            assert mask_sample_size <= mask_scale_max * num_patches
+            assert mask_sample_size >= mask_scale_min * num_patches
             # test min keep
-            assert (n_patches - mask_sample_size) >= min_keep
+            assert (num_patches - mask_sample_size) >= min_keep
 
     # test input params
     @pytest.mark.parametrize("batch_size", [1, 4])
@@ -448,29 +415,22 @@ class TestMultiBlockMaskCollator1d:
     )  # monoral and stereo audio respectively
     def test_bool_i_jepa_mask_collator(
         self,
-        input_size: int,
-        patch_size: int,
-        stride: int,
+        num_patches: int,
         mask_scale: tuple[float, float],
         n_masks: int,
         min_keep: int,
         batch_size: int,
         n_channels: int,
     ):
-        assert patch_size <= input_size
-        assert stride <= input_size
-        assert (input_size - (patch_size - stride)) % stride == 0
         # define MultiBlockMaskCollator1d
         collator = MultiBlockMaskCollator1d(
-            input_size=input_size,
-            patch_size=patch_size,
-            stride=stride,
+            num_patches=num_patches,
             mask_scale=mask_scale,
             n_masks=n_masks,
             min_keep=min_keep,
         )
         # define sample inputs
-        audios = [(torch.randn([n_channels, input_size]),) for _ in range(batch_size)]
+        audios = [(torch.randn([n_channels, 16080]),) for _ in range(batch_size)]
         # collate batch and create masks
         (
             collated_audios,
@@ -482,11 +442,10 @@ class TestMultiBlockMaskCollator1d:
         assert collated_audios.size(0) == batch_size, "batch_size mismatch"
         assert collated_audios.size(1) == n_channels, "channels mismatch"
         assert (
-            collated_audios.size(2) == input_size
+            collated_audios.size(2) == 16080
         ), "collated_audios num of samples mismatch"
 
         # calc num of patches
-        n_patches = (input_size - (patch_size - stride)) // stride
 
         # check masks for context encoder
         assert collated_encoder_masks.dim() == 2
@@ -494,7 +453,7 @@ class TestMultiBlockMaskCollator1d:
             collated_encoder_masks.size(0) == batch_size
         ), "batch_size mismatch (collated_encoder_masks)"
         assert (
-            collated_encoder_masks.size(1) == n_patches
+            collated_encoder_masks.size(1) == num_patches
         ), "patch count mismatch (collated_encoder_masks)"
         assert (
             collated_encoder_masks.dtype == torch.bool
@@ -506,7 +465,7 @@ class TestMultiBlockMaskCollator1d:
             collated_predictor_targets.size(0) == batch_size
         ), "batch_size mismatch (collated_predictor_targets)"
         assert (
-            collated_predictor_targets.size(1) == n_patches
+            collated_predictor_targets.size(1) == num_patches
         ), "patch count mismatch (collated_predictor_targets)"
         assert (
             collated_predictor_targets.dtype == torch.bool
@@ -529,21 +488,14 @@ class TestMultiBlockMaskCollator1d:
 
     def test_sample_masks_and_target(
         self,
-        input_size: int,
-        patch_size: int,
-        stride: int,
+        num_patches: int,
         mask_scale: tuple[float, float],
         n_masks: int,
         min_keep: int,
     ):
-        assert patch_size <= input_size
-        assert stride <= input_size
-        assert (input_size - (patch_size - stride)) % stride == 0
         # define MultiBlockMaskCollator1d
         collator = MultiBlockMaskCollator1d(
-            input_size=input_size,
-            patch_size=patch_size,
-            stride=stride,
+            num_patches=num_patches,
             mask_scale=mask_scale,
             n_masks=n_masks,
             min_keep=min_keep,
@@ -552,10 +504,9 @@ class TestMultiBlockMaskCollator1d:
         encoder_mask, predictor_target = collator.sample_masks_and_target(g)
 
         # calc num of patches
-        n_patches = (input_size - (patch_size - stride)) // stride
 
-        assert encoder_mask.shape == (n_patches,)
-        assert predictor_target.shape == (n_patches,)
+        assert encoder_mask.shape == (num_patches,)
+        assert predictor_target.shape == (num_patches,)
         assert encoder_mask.dtype == torch.bool
         assert predictor_target.dtype == torch.bool
 
