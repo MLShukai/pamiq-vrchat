@@ -312,7 +312,7 @@ class MultiBlockMaskCollator2d:
 
         Args:
             input_size: Size of the input image.
-            patch_size: Size of each patch.
+            num_patches: Height and width for patched image.
             mask_scale: Range of mask scale (min, max).
             n_masks: Number of mask candidates to generate.
             aspect_ratio: Range of aspect ratios for masks.
