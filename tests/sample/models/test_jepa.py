@@ -7,7 +7,13 @@ from sample.models.components.positional_embeddings import (
     get_1d_positional_embeddings,
     get_2d_positional_embeddings,
 )
-from sample.models.jepa import AveragePoolInfer, Encoder, Predictor, create_image_jepa
+from sample.models.jepa import (
+    AveragePoolInfer,
+    Encoder,
+    Predictor,
+    create_audio_jepa,
+    create_image_jepa,
+)
 
 
 class TestEncoder:
@@ -586,3 +592,89 @@ class TestCreateImageJEPA:
 
         # Check that actual output matches expected patch dimensions
         assert output.shape[1] == infer.output_patch_count
+
+
+class TestCreateAudioJEPA:
+    @pytest.mark.parametrize(
+        "sample_size,in_channels,output_downsample",
+        [
+            (1600, 1, 2),
+            (16000, 2, 4),
+            (32000, 1, 8),
+            (8000, 2, 2),
+        ],
+    )
+    def test_create_audio_jepa_objects(
+        self,
+        sample_size,
+        in_channels,
+        output_downsample,
+    ):
+        """Test that create_audio_jepa creates objects of correct types."""
+        (
+            context_encoder,
+            target_encoder,
+            predictor,
+            infer,
+        ) = create_audio_jepa(
+            sample_size=sample_size,
+            in_channels=in_channels,
+            hidden_dim=256,
+            embed_dim=128,
+            depth=2,
+            num_heads=4,
+            output_downsample=output_downsample,
+        )
+
+        # Check object types
+        assert isinstance(context_encoder, Encoder)
+        assert isinstance(target_encoder, Encoder)
+        assert isinstance(predictor, Predictor)
+        assert isinstance(infer, AveragePoolInfer)
+
+        # Check that target encoder is a separate instance (cloned)
+        assert context_encoder is not target_encoder
+
+        # Check that parameters are initially identical (cloned properly)
+        for ctx_param, tgt_param in zip(
+            context_encoder.parameters(), target_encoder.parameters()
+        ):
+            assert torch.equal(ctx_param, tgt_param)
+
+    @pytest.mark.parametrize(
+        "sample_size,in_channels,output_downsample",
+        [
+            (1600, 1, 2),
+            (16000, 2, 4),
+            (32000, 1, 8),
+            (8000, 2, 1),
+        ],
+    )
+    def test_patch_size_consistency(self, sample_size, in_channels, output_downsample):
+        """Test that final patch size matches actual encoder+infer output."""
+        (
+            context_encoder,
+            _,
+            _,
+            infer,
+        ) = create_audio_jepa(
+            sample_size=sample_size,
+            in_channels=in_channels,
+            hidden_dim=256,
+            embed_dim=128,
+            depth=2,
+            num_heads=4,
+            output_downsample=output_downsample,
+        )
+
+        # Create test audio
+        test_audio = torch.randn(1, in_channels, sample_size)
+
+        # Test actual forward pass through encoder + infer
+        with torch.no_grad():
+            output = infer(context_encoder, test_audio)
+
+        # Check that output has expected dimensions
+        assert output.ndim == 3  # [batch, patches, embed_dim]
+        assert output.shape[0] == 1  # batch size
+        assert output.shape[2] == 128  # embed_dim

@@ -462,3 +462,77 @@ def create_image_jepa(
     )
 
     return context_encoder, target_encoder, predictor, infer
+
+
+def create_audio_jepa(
+    sample_size: int,
+    in_channels: int = 2,
+    hidden_dim: int = 512,
+    embed_dim: int = 256,
+    depth: int = 6,
+    num_heads: int = 8,
+    output_downsample: int = 1,
+) -> tuple[Encoder, Encoder, Predictor, AveragePoolInfer]:
+    """Create a complete Audio JEPA (Joint Embedding Predictive Architecture)
+    model.
+
+    This factory function creates all components needed for Audio JEPA training and inference,
+    including context encoder, target encoder, predictor, and inference pooling. The target
+    encoder is initialized as a clone of the context encoder for momentum-based updates.
+
+    Args:
+        sample_size: Number of input audio samples.
+        in_channels: Number of input audio channels (e.g., 2 for stereo).
+        hidden_dim: Hidden dimension for encoder transformers.
+        embed_dim: Output embedding dimension for encoders.
+        depth: Number of transformer layers in encoders.
+        num_heads: Number of attention heads in encoders.
+        output_downsample: Downsampling factor for inference pooling.
+
+    Returns:
+        A tuple containing:
+            - context_encoder: Encoder for processing masked audio
+            - target_encoder: Encoder clone for generating targets (updated via EMA)
+            - predictor: Predictor for reconstructing target patches from context
+            - infer: AveragePoolInfer for downsampled inference
+
+    NOTE:
+        The predictor uses half the hidden dimensions and attention heads of the encoders
+        for efficiency. The target encoder should be updated using exponential moving
+        average of the context encoder parameters during training.
+    """
+    from .components.audio_patchifier import AudioPatchifier
+    from .components.positional_embeddings import get_1d_positional_embeddings
+
+    patchifier = AudioPatchifier(
+        in_channels=in_channels,
+        embed_dim=hidden_dim,
+    )
+    num_patches = AudioPatchifier.compute_num_patches(sample_size)
+
+    context_encoder = Encoder(
+        patchifier,
+        get_1d_positional_embeddings(hidden_dim, num_patches),
+        hidden_dim=hidden_dim,
+        embed_dim=embed_dim,
+        depth=depth,
+        num_heads=num_heads,
+    )
+
+    target_encoder = context_encoder.clone()
+
+    predictor = Predictor(
+        get_1d_positional_embeddings(hidden_dim // 2, num_patches),
+        embed_dim=embed_dim,
+        hidden_dim=hidden_dim // 2,
+        depth=depth,
+        num_heads=num_heads // 2,
+    )
+
+    infer = AveragePoolInfer(
+        1,
+        num_patches,
+        kernel_size=output_downsample,
+    )
+
+    return context_encoder, target_encoder, predictor, infer
