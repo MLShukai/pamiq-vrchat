@@ -23,7 +23,7 @@ class TestMouseActuator:
         if sys.platform == "linux":
             return mocker.patch("pamiq_io.mouse.InputtinoMouseOutput")
         elif sys.platform == "win32":
-            return mocker.patch("pamiq_io.mouse.DirectInputMouseOutput")
+            return mocker.patch("pamiq_io.mouse.WindowsMouseOutput")
 
     def test_init(self, mock_mouse_output):
         """Test the initialization of MouseActuator."""
@@ -115,7 +115,7 @@ class TestSmoothMouseActuator:
         if sys.platform == "linux":
             return mocker.patch("pamiq_io.mouse.InputtinoMouseOutput")
         elif sys.platform == "win32":
-            return mocker.patch("pamiq_io.mouse.DirectInputMouseOutput")
+            return mocker.patch("pamiq_io.mouse.WindowsMouseOutput")
 
     def test_init(self, mock_mouse_output):
         """Test the initialization of SmoothMouseActuator."""
