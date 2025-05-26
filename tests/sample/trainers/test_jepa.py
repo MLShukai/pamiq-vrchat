@@ -33,7 +33,7 @@ class TestJEPATrainer:
     N_PATCHES = IMAGE_SIZE // PATCH_SIZE
 
     @pytest.fixture
-    def patchfier(self):
+    def patchifier(self):
         return ImagePatchifier(self.PATCH_SIZE, self.CHANNELS, self.HIDDEN_DIM)
 
     @pytest.fixture
@@ -43,9 +43,9 @@ class TestJEPATrainer:
         ).reshape(-1, self.HIDDEN_DIM)
 
     @pytest.fixture
-    def context_encoder(self, patchfier, positional_encodings):
+    def context_encoder(self, patchifier, positional_encodings):
         return Encoder(
-            patchfier=patchfier,
+            patchifier=patchifier,
             positional_encodings=positional_encodings,
             hidden_dim=self.HIDDEN_DIM,
             embed_dim=self.EMBED_DIM,
