@@ -308,7 +308,7 @@ def main() -> None:
                 {
                     ObservationType.IMAGE: SensorWrapper(
                         sensors.ImageSensor(),
-                        transforms.image.create_vrchat_transform(
+                        transforms.image.create_transform(
                             hparams.Obs.Image.size,
                         ),
                     )
