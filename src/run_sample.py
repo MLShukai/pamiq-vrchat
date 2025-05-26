@@ -27,7 +27,7 @@ class InteractionHParams:
             class Audio:
                 sample_rate: int = 16000
                 channel_size: int = 2
-                sample_size: int = 16080
+                frame_size: int = 16080
 
         class Action:
             class Mouse:
@@ -311,7 +311,19 @@ def main() -> None:
                         transforms.image.create_transform(
                             hparams.Obs.Image.size,
                         ),
-                    )
+                    ),
+                    ObservationType.AUDIO: SensorWrapper(
+                        sensors.AudioSensor(
+                            frame_size=int(44100 * InteractionHParams.frame_interval),
+                            sample_rate=44100,
+                            channels=2,
+                        ),
+                        transforms.audio.create_transform(
+                            source_sample_rate=44100,
+                            target_sample_rate=hparams.Obs.Audio.sample_rate,
+                            target_frame_size=hparams.Obs.Audio.frame_size,
+                        ),
+                    ),
                 }
             ),
             actuator=ActuatorWrapper(
