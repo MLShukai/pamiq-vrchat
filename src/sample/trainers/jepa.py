@@ -510,9 +510,7 @@ class MultiBlockMaskCollator1d:
 
     def __init__(
         self,
-        input_size: int,
-        patch_size: int,
-        stride: int,
+        num_patches: int,
         mask_scale: tuple[float, float] = (0.10, 0.25),  # masking 1/10 ~ 1/4 region
         n_masks: int = 4,
         min_keep: int = 10,
@@ -520,9 +518,7 @@ class MultiBlockMaskCollator1d:
         """Initialize the BoolMultiBlockMaskCollator1d.
 
         Args:
-            input_size: Num of samples in the input audio.
-            patch_size: Size of each patch. It can also be regarded as window_size.
-            stride: Stride during making patches from audio. It can also be regarded as hop_size.
+            num_patches: Number of patches of patched audio data.
             mask_scale: Range of mask scale (min, max).
             n_masks: Number of mask candidates to generate.
             min_keep: Minimum number of patches to keep unmasked.
@@ -533,15 +529,7 @@ class MultiBlockMaskCollator1d:
         if mask_scale[0] <= 0 or mask_scale[1] >= 1:
             raise ValueError("mask_scale must be in range (0, 1).")
 
-        if not (stride <= patch_size <= input_size):
-            raise ValueError("stride <= patch_size <= input_size.")
-        if not ((input_size - (patch_size - stride)) % stride == 0):
-            raise ValueError("(input_size - (patch_size - stride)) % stride) must be 0")
-
-        self.input_size = input_size
-        self.patch_size = patch_size
-
-        self.n_patches = (input_size - (self.patch_size - stride)) // stride
+        self.n_patches = num_patches
         if min_keep > self.n_patches:
             raise ValueError(
                 f"min_keep(=={min_keep}) is larger than self.n_patches(=={self.n_patches}). Try smaller min_keep."
@@ -655,7 +643,6 @@ class MultiBlockMaskCollator1d:
                 Boolean masks representing predictor targets (shape: [batch_size, n_patches])
         """
         collated_audios: Tensor = default_collate(audios)[0]
-        assert collated_audios.size(-1) == self.input_size
 
         seed = self.step()
         g = torch.Generator()
