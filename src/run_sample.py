@@ -122,7 +122,13 @@ class ModelHParams:
 class TrainerHParams:
     """Trainer hyper parameter name space."""
 
-    class ImageJEPA: ...
+    class ImageJEPA:
+        lr: float = 0.0001
+        batch_size: int = 32
+        min_new_data_count: int = 128
+        mask_scale: tuple[float, float] = (0.025, 0.125)
+        num_masks: int = 4
+        min_mask_keep: int = 7
 
     class AudioJEPA: ...
 
@@ -522,6 +528,23 @@ def main() -> None:
             ImaginingForwardDynamicsTrainer,
             PPOPolicyTrainer,
             TemporalEncoderTrainer,
+            jepa,
+        )
+
+        # ----- Image JEPA Trainer
+        hparams = TrainerHParams.ImageJEPA
+        image_jepa_trainer = jepa.JEPATrainer(
+            partial_optimizer=partial(AdamW, lr=hparams.lr),
+            batch_size=hparams.batch_size,
+            min_new_data_count=hparams.min_new_data_count,
+            **jepa.IMAGE_CONFIG,
+            collate_fn=jepa.MultiBlockMaskCollator2d(
+                input_size=InteractionHParams.Env.Obs.Image.size,
+                patch_size=model_hparams.image_jepa.patch_size,
+                mask_scale=hparams.mask_scale,
+                n_masks=hparams.num_masks,
+                min_keep=hparams.min_mask_keep,
+            ),
         )
 
         # ----- Temporal Encoder Trainer -----
@@ -562,6 +585,7 @@ def main() -> None:
         )
 
         return {
+            "image_jepa": image_jepa_trainer,
             "temporal_encoder": temporal_encoder,
             "forward_dynamics": forward_dynamics,
             "policy": policy,
