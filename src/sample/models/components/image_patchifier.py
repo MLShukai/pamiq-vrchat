@@ -8,7 +8,7 @@ from sample.utils import size_2d
 from ..utils import init_weights
 
 
-class PatchEmbedding(nn.Module):
+class ImagePatchifier(nn.Module):
     """Convert input images into patch embeddings."""
 
     @override
@@ -19,7 +19,7 @@ class PatchEmbedding(nn.Module):
         embed_dim: int = 768,
         init_std: float = 0.02,
     ) -> None:
-        """Initializes the PatchEmbedding.
+        """Initializes the ImagePatchifier.
 
         Args:
             patch_size: Pixel size per a patch.

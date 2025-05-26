@@ -9,8 +9,8 @@ requires-python = ">=3.12"
 dependencies = [
     "cv2-enumerate-cameras>=1.1.18.3",
     "inputtino-python;sys_platform=='linux'",
-    "pamiq-core>=0.2.2",
-    "pamiq-io[directinput,inputtino,opencv,osc,soundcard]>=0.5.0",
+    "pamiq-core>=0.3.0",
+    "pamiq-io[windows,inputtino,opencv,osc,soundcard]>=0.6.0",
     "pycaw>=20240210;sys_platform=='win32'",
 ]
 keywords = [
@@ -53,6 +53,7 @@ sample = [
     "pamiq-core[torch]>=0.2.0",
     "rootutils>=1.0.7",
     "tensordict>=0.8.2",
+    "torchaudio>=2.7.0",
     "torchvision>=0.22.0",
     "tyro>=0.9.20",
 ]

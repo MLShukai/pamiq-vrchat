@@ -1190,7 +1190,7 @@ wheels = [
 
 [[package]]
 name = "pamiq-core"
-version = "0.2.2"
+version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -1198,9 +1198,9 @@ dependencies = [
     { name = "starlette" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5a/63/d4457ece2d77ae69f3e28685bba758fa60c841d7e442820af11493df5b94/pamiq_core-0.2.2.tar.gz", hash = "sha256:52c0b27bfbdbf287a27ec46274cc283bc8bc5335ff82d929fa359a005426fb0c", size = 421091, upload-time = "2025-05-17T09:17:41.74Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/84/91/f29aad8eda73604771a6db7c778bff0101027a05205f7e0cfa163b42948d/pamiq_core-0.3.0.tar.gz", hash = "sha256:77c8d02ac6455f011fbb1c5e7231807f9d5849cd14f47956da7e17d750a5264f", size = 432183, upload-time = "2025-05-25T23:26:32.378Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2e/ac/51500f1c78d96a8b7ea3a7db488622f791508f08ac010965602e446047b5/pamiq_core-0.2.2-py3-none-any.whl", hash = "sha256:7dc71e07483c4db16790ab12fa4faf449f582498d0dee8f2508edeffb6c38085", size = 60737, upload-time = "2025-05-17T09:17:40.132Z" },
+    { url = "https://files.pythonhosted.org/packages/bb/de/5864751c91b12ecc463c3276d31e5fca1e8938a8cf74d114bd3649823471/pamiq_core-0.3.0-py3-none-any.whl", hash = "sha256:c5a6ad11c5927e7aa4d40654fd47539a33d632600e7344b28aaaeb6ef4e37000", size = 64058, upload-time = "2025-05-25T23:26:30.49Z" },
 ]
 
 [package.optional-dependencies]
@@ -1210,17 +1210,14 @@ torch = [
 
 [[package]]
 name = "pamiq-io"
-version = "0.5.0"
+version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/43/0b/306e00acdf91ec423fdc529b17dcd4085e4c6d3e45a706eacdb9954f134a/pamiq_io-0.5.0.tar.gz", hash = "sha256:3078d6715b95892bacbf63fb4eaae6f9923cb128e4c33516c0bdcf62cb1c782e", size = 63824, upload-time = "2025-05-17T06:49:01.467Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c9/f6/0ec21afc317273a03a382eef3badfb92f7e196f1958ca7d0e05f60ef1811/pamiq_io-0.6.0.tar.gz", hash = "sha256:41d44b757952cc7bb78d72f4718fbc1e3a2deffe3e74fff77e86ab9b917f6ffa", size = 65830, upload-time = "2025-05-26T00:01:49.509Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fe/1f/f9723dc9e87f1e9a863a46eaec88b8232913f524acc3ce49c1839c2cf515/pamiq_io-0.5.0-py3-none-any.whl", hash = "sha256:b2d9640f97a62427d371fe5eec49af3f6070833029d944dd16c496157266d07b", size = 27424, upload-time = "2025-05-17T06:48:59.819Z" },
+    { url = "https://files.pythonhosted.org/packages/4e/6d/12fbcecf531fbcb3699855d3ae639a2954d503b538ef9eeb85599b77bfb0/pamiq_io-0.6.0-py3-none-any.whl", hash = "sha256:d4c0f62ca9e1f8cf1ae5346ea73570095ac3e661d9b7388509a74c7594c9ecb1", size = 27829, upload-time = "2025-05-26T00:01:47.824Z" },
 ]
 
 [package.optional-dependencies]
-directinput = [
-    { name = "pydirectinput", marker = "sys_platform == 'win32'" },
-]
 inputtino = [
     { name = "inputtino-python", marker = "sys_platform == 'linux'" },
 ]
@@ -1233,6 +1230,9 @@ osc = [
 soundcard = [
     { name = "soundcard" },
 ]
+windows = [
+    { name = "pydirectinput", marker = "sys_platform == 'win32'" },
+]
 
 [[package]]
 name = "pamiq-vrchat"
@@ -1242,7 +1242,7 @@ dependencies = [
     { name = "cv2-enumerate-cameras" },
     { name = "inputtino-python", marker = "sys_platform == 'linux'" },
     { name = "pamiq-core" },
-    { name = "pamiq-io", extra = ["directinput", "inputtino", "opencv", "osc", "soundcard"] },
+    { name = "pamiq-io", extra = ["inputtino", "opencv", "osc", "soundcard", "windows"] },
     { name = "pycaw", marker = "sys_platform == 'win32'" },
 ]
 
@@ -1253,6 +1253,7 @@ sample = [
     { name = "pamiq-core", extra = ["torch"] },
     { name = "rootutils" },
     { name = "tensordict" },
+    { name = "torchaudio" },
     { name = "torchvision" },
     { name = "tyro" },
 ]
@@ -1273,12 +1274,13 @@ requires-dist = [
     { name = "cv2-enumerate-cameras", specifier = ">=1.1.18.3" },
     { name = "inputtino-python", marker = "sys_platform == 'linux'", git = "https://github.com/games-on-whales/inputtino.git?subdirectory=bindings%2Fpython" },
     { name = "mlflow", marker = "extra == 'sample'", specifier = ">=2.22.0" },
-    { name = "pamiq-core", specifier = ">=0.2.2" },
+    { name = "pamiq-core", specifier = ">=0.3.0" },
     { name = "pamiq-core", extras = ["torch"], marker = "extra == 'sample'", specifier = ">=0.2.0" },
-    { name = "pamiq-io", extras = ["directinput", "inputtino", "opencv", "osc", "soundcard"], specifier = ">=0.5.0" },
+    { name = "pamiq-io", extras = ["windows", "inputtino", "opencv", "osc", "soundcard"], specifier = ">=0.6.0" },
     { name = "pycaw", marker = "sys_platform == 'win32'", specifier = ">=20240210" },
     { name = "rootutils", marker = "extra == 'sample'", specifier = ">=1.0.7" },
     { name = "tensordict", marker = "extra == 'sample'", specifier = ">=0.8.2" },
+    { name = "torchaudio", marker = "extra == 'sample'", specifier = ">=2.7.0" },
     { name = "torchvision", marker = "extra == 'sample'", specifier = ">=0.22.0" },
     { name = "tyro", marker = "extra == 'sample'", specifier = ">=0.9.20" },
 ]
@@ -2044,6 +2046,28 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/9d/f5/0bd30e9da04c3036614aa1b935a9f7e505a9e4f1f731b15e165faf8a4c74/torch-2.7.0-cp313-cp313t-manylinux_2_28_x86_64.whl", hash = "sha256:176300ff5bc11a5f5b0784e40bde9e10a35c4ae9609beed96b4aeb46a27f5fae", size = 865104023, upload-time = "2025-04-23T14:30:40.537Z" },
     { url = "https://files.pythonhosted.org/packages/d1/b7/2235d0c3012c596df1c8d39a3f4afc1ee1b6e318d469eda4c8bb68566448/torch-2.7.0-cp313-cp313t-win_amd64.whl", hash = "sha256:d0ca446a93f474985d81dc866fcc8dccefb9460a29a456f79d99c29a78a66993", size = 212750916, upload-time = "2025-04-23T14:32:22.91Z" },
     { url = "https://files.pythonhosted.org/packages/90/48/7e6477cf40d48cc0a61fa0d41ee9582b9a316b12772fcac17bc1a40178e7/torch-2.7.0-cp313-none-macosx_11_0_arm64.whl", hash = "sha256:27f5007bdf45f7bb7af7f11d1828d5c2487e030690afb3d89a651fd7036a390e", size = 68575074, upload-time = "2025-04-23T14:32:38.136Z" },
+]
+
+[[package]]
+name = "torchaudio"
+version = "2.7.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "torch" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dd/b9/66dd7c4e16e8e6dcc52b4702ba7bbace589972b3597627d39d9dc3aa5fdd/torchaudio-2.7.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:65b4fc9b7f28367f918b02ae4db4290457bc4fdd160f22b7d684e93ab8dcb956", size = 1846733, upload-time = "2025-04-23T14:47:01.068Z" },
+    { url = "https://files.pythonhosted.org/packages/47/48/850edf788c674494a7e148eee6f5563cae34c9a3e3e0962dcfce66c1dae7/torchaudio-2.7.0-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:33004ed47f18f00044c97ee8cd9e3f5e1c2e26ef23d4f72b5f1ae33e6182587b", size = 1686687, upload-time = "2025-04-23T14:47:02.136Z" },
+    { url = "https://files.pythonhosted.org/packages/78/98/ec8c7aba67b44cdc59717d4b43d02023ded5da180d33c6469d20bf5bfa3c/torchaudio-2.7.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:a6f03494075bcdd62e7fade7baf50a0ef107aa809d02b5e1786391adced451a3", size = 3454437, upload-time = "2025-04-23T14:46:57.557Z" },
+    { url = "https://files.pythonhosted.org/packages/5e/23/b73163ac06e5a724375df61a5b6c853861a825fe98e64388f277514153dd/torchaudio-2.7.0-cp312-cp312-win_amd64.whl", hash = "sha256:275931c8a38ff84b5692df990506b41f18d0a0706574d96bc8456ad9e5fa85c8", size = 2493451, upload-time = "2025-04-23T14:46:46.456Z" },
+    { url = "https://files.pythonhosted.org/packages/c1/a5/bc4bb6b254d3d77e9fa4d219f29d3bff8db92acc9004c27e875f32d4724a/torchaudio-2.7.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:150fbde41da60296effed772b7a170f563cd44967555abb0603fc573f39ce245", size = 1847033, upload-time = "2025-04-23T14:46:58.774Z" },
+    { url = "https://files.pythonhosted.org/packages/96/af/4c8d4e781ea5924590cccf8595a09081eb07a577c03fbf4bf04a2f5f7134/torchaudio-2.7.0-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:9d921eeb036512a87efde007977b27bd326320cd7cd5f43195824173fe82e888", size = 1686308, upload-time = "2025-04-23T14:46:56.378Z" },
+    { url = "https://files.pythonhosted.org/packages/12/02/ad1083f6ce534989c704c3efcd615bdd160934229882aa0a3ea95cd24a9a/torchaudio-2.7.0-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:30675a5f99551e036974a7476729eb5d31f453cf792ae6e0a0d449960f84f464", size = 3455266, upload-time = "2025-04-23T14:46:50.327Z" },
+    { url = "https://files.pythonhosted.org/packages/88/49/923ebb2603156dd5c5ae6d845bf51a078e05f27432cd26f13ecdcc8713cd/torchaudio-2.7.0-cp313-cp313-win_amd64.whl", hash = "sha256:ce8cfc07a4e59c835404583e7d3e171208b332b61bb92643f8723f6f192da8bf", size = 2493639, upload-time = "2025-04-23T14:46:40.909Z" },
+    { url = "https://files.pythonhosted.org/packages/bf/85/dd4cd1202483e85c208e1ca3d31cc42c2972f1d955d11b742fa098a38a1b/torchaudio-2.7.0-cp313-cp313t-macosx_11_0_arm64.whl", hash = "sha256:9e08138cac75cde2064c8b5bbd12f27bdeb3d36f4b8c2285fc9c42eaa97c0676", size = 1929989, upload-time = "2025-04-23T14:46:54.144Z" },
+    { url = "https://files.pythonhosted.org/packages/ef/3a/8a1045f2b00c6300827c1e6a3e661e9d219b5406ef103dc2824604548b8c/torchaudio-2.7.0-cp313-cp313t-manylinux_2_28_aarch64.whl", hash = "sha256:1d928aeff495a0807b4da3b0dd46e15eae8070da5e7ed6d35c1dcfd9fdfe2b74", size = 1700439, upload-time = "2025-04-23T14:46:55.249Z" },
+    { url = "https://files.pythonhosted.org/packages/72/53/21d589a5a41702b5d37bae224286986cb707500d5ecdbfdcfdbac9381a08/torchaudio-2.7.0-cp313-cp313t-manylinux_2_28_x86_64.whl", hash = "sha256:ee4add33f24e9cb959bd9de89f36de5ebf844eda040d1d0b38f08617d67dedc3", size = 3466356, upload-time = "2025-04-23T14:46:49.131Z" },
+    { url = "https://files.pythonhosted.org/packages/00/0b/5ef81aaacce5e9c316659ddc61a2b1e4f984a504d4a06fe61bab04cc75f1/torchaudio-2.7.0-cp313-cp313t-win_amd64.whl", hash = "sha256:725dbbcc9e744ca62de8856262c6f472ca26b1cd5db062b062a2d6b66a336cc0", size = 2544970, upload-time = "2025-04-23T14:46:44.837Z" },
 ]
 
 [[package]]

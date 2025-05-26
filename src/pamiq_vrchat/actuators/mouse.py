@@ -41,9 +41,9 @@ class MouseActuator(Actuator[MouseAction]):
 
             self._mouse = InputtinoMouseOutput()
         elif sys.platform == "win32":
-            from pamiq_io.mouse import DirectInputMouseOutput
+            from pamiq_io.mouse import WindowsMouseOutput
 
-            self._mouse = DirectInputMouseOutput()
+            self._mouse = WindowsMouseOutput()
         else:
             raise RuntimeError(f"Your platform {sys.platform} is not supported.")
 
