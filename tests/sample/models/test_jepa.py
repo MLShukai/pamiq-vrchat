@@ -21,13 +21,13 @@ class TestEncoder:
     ):
         """Test Encoder's forward pass without mask."""
         n_patches = (img_size // patch_size) ** 2
-        patchfier = ImagePatchifier(patch_size, 3, hidden_dim)
+        patchifier = ImagePatchifier(patch_size, 3, hidden_dim)
         positional_encodings = get_2d_positional_embeddings(
             hidden_dim, (img_size // patch_size, img_size // patch_size)
         ).reshape(n_patches, hidden_dim)
 
         encoder = Encoder(
-            patchfier=patchfier,
+            patchifier=patchifier,
             positional_encodings=positional_encodings,
             hidden_dim=hidden_dim,
             embed_dim=embed_dim,
@@ -47,13 +47,13 @@ class TestEncoder:
     def test_forward_with_mask(self, batch_size, img_size, patch_size, mask_ratio):
         """Test Encoder's forward pass with mask."""
         n_patches = (img_size // patch_size) ** 2
-        patchfier = ImagePatchifier(patch_size, 3, 64)
+        patchifier = ImagePatchifier(patch_size, 3, 64)
         positional_encodings = get_2d_positional_embeddings(
             64, (img_size // patch_size, img_size // patch_size)
         ).reshape(n_patches, 64)
 
         encoder = Encoder(
-            patchfier=patchfier,
+            patchifier=patchifier,
             positional_encodings=positional_encodings,
             hidden_dim=64,
             embed_dim=32,
@@ -77,14 +77,14 @@ class TestEncoder:
     def test_invalid_positional_encoding_shape(self):
         """Test error when positional encoding shape doesn't match expected
         shape."""
-        patchfier = ImagePatchifier(8, 3, 64)
+        patchifier = ImagePatchifier(8, 3, 64)
 
         with pytest.raises(
             ValueError,
             match="positional_encodings channel dimension must be hidden_dim.",
         ):
             Encoder(
-                patchfier=patchfier,
+                patchifier=patchifier,
                 positional_encodings=torch.zeros(64, 32),  # Wrong channel size
                 hidden_dim=64,
                 embed_dim=32,
@@ -94,7 +94,7 @@ class TestEncoder:
 
         with pytest.raises(ValueError, match="positional_encodings must be 2d tensor!"):
             Encoder(
-                patchfier=patchfier,
+                patchifier=patchifier,
                 positional_encodings=torch.zeros(
                     64,
                 ),  # Wrong dims size
@@ -107,13 +107,13 @@ class TestEncoder:
     def test_invalid_mask_shape(self):
         """Test error when mask shape doesn't match encoded image shape."""
         n_patches = 64
-        patchfier = ImagePatchifier(8, 3, 64)
+        patchifier = ImagePatchifier(8, 3, 64)
         positional_encodings = get_2d_positional_embeddings(64, (8, 8)).reshape(
             n_patches, 64
         )
 
         encoder = Encoder(
-            patchfier=patchfier,
+            patchifier=patchifier,
             positional_encodings=positional_encodings,
             hidden_dim=64,
             embed_dim=64,
@@ -131,13 +131,13 @@ class TestEncoder:
     def test_non_bool_mask(self):
         """Test error when mask tensor is not boolean."""
         n_patches = 64
-        patchfier = ImagePatchifier(8, 3, 64)
+        patchifier = ImagePatchifier(8, 3, 64)
         positional_encodings = get_2d_positional_embeddings(64, (8, 8)).reshape(
             n_patches, 64
         )
 
         encoder = Encoder(
-            patchfier=patchfier,
+            patchifier=patchifier,
             positional_encodings=positional_encodings,
             hidden_dim=64,
             embed_dim=64,
@@ -154,13 +154,13 @@ class TestEncoder:
 
     def test_clone(self):
         n_patches = 64
-        patchfier = ImagePatchifier(8, 3, 64)
+        patchifier = ImagePatchifier(8, 3, 64)
         positional_encodings = get_2d_positional_embeddings(64, (8, 8)).reshape(
             n_patches, 64
         )
 
         encoder = Encoder(
-            patchfier=patchfier,
+            patchifier=patchifier,
             positional_encodings=positional_encodings,
             hidden_dim=64,
             embed_dim=64,
@@ -298,13 +298,13 @@ class TestJEPAIntegration:
         n_patches = n_patches_h * n_patches_w
 
         # Initialize models with reduced complexity
-        patchfier = ImagePatchifier(patch_size, 3, hidden_dim)
+        patchifier = ImagePatchifier(patch_size, 3, hidden_dim)
         positional_encodings = get_2d_positional_embeddings(
             hidden_dim, (n_patches_h, n_patches_w)
         ).reshape(n_patches, hidden_dim)
 
         encoder = Encoder(
-            patchfier=patchfier,
+            patchifier=patchifier,
             positional_encodings=positional_encodings,
             hidden_dim=hidden_dim,
             embed_dim=embed_dim,
@@ -349,14 +349,14 @@ class TestAveragePoolInfer:
         n_patches = 16
         conv = nn.Conv1d(2, 64, kernel_size=8, stride=8)
 
-        def patchfier(audio: torch.Tensor) -> torch.Tensor:
+        def patchifier(audio: torch.Tensor) -> torch.Tensor:
             out = conv(audio)
             return out.transpose(-1, -2)
 
         positional_encodings = get_1d_positional_embeddings(64, n_patches)
 
         return Encoder(
-            patchfier=patchfier,
+            patchifier=patchifier,
             positional_encodings=positional_encodings,
             hidden_dim=64,
             embed_dim=32,
@@ -368,13 +368,13 @@ class TestAveragePoolInfer:
     def encoder_2d(self):
         """Create encoder for 2D data."""
         n_patches = 64
-        patchfier = ImagePatchifier(8, 3, 64)
+        patchifier = ImagePatchifier(8, 3, 64)
         positional_encodings = get_2d_positional_embeddings(64, (8, 8)).reshape(
             n_patches, 64
         )
 
         return Encoder(
-            patchfier=patchfier,
+            patchifier=patchifier,
             positional_encodings=positional_encodings,
             hidden_dim=64,
             embed_dim=32,
