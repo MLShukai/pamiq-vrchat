@@ -7,7 +7,7 @@ from sample.models.components.positional_embeddings import (
     get_1d_positional_embeddings,
     get_2d_positional_embeddings,
 )
-from sample.models.jepa import AveragePoolInfer, Encoder, Predictor
+from sample.models.jepa import AveragePoolInfer, Encoder, Predictor, create_image_jepa
 
 
 class TestEncoder:
@@ -484,3 +484,100 @@ class TestAveragePoolInfer:
         image = torch.randn(1, 3, 64, 64)
         result = pooler(encoder_2d, image)
         assert result.shape == (1, 32, 32)  # 8x4 = 32
+
+
+class TestCreateImageJEPA:
+    @pytest.mark.parametrize(
+        "image_size,patch_size,output_downsample",
+        [
+            (64, 8, 2),
+            (224, 16, 4),
+            ((96, 128), (12, 16), (2, 4)),
+            (512, 32, 8),
+        ],
+    )
+    def test_create_image_jepa_objects(
+        self,
+        image_size,
+        patch_size,
+        output_downsample,
+    ):
+        """Test that create_image_jepa creates objects of correct types."""
+        (
+            context_encoder,
+            target_encoder,
+            predictor,
+            infer,
+            num_patches,
+        ) = create_image_jepa(
+            image_size=image_size,
+            patch_size=patch_size,
+            in_channels=3,
+            hidden_dim=256,
+            embed_dim=128,
+            depth=2,
+            num_heads=2,
+            output_downsample=output_downsample,
+        )
+
+        # Check object types
+        assert isinstance(context_encoder, Encoder)
+        assert isinstance(target_encoder, Encoder)
+        assert isinstance(predictor, Predictor)
+        assert isinstance(infer, AveragePoolInfer)
+        assert isinstance(num_patches, tuple)
+        assert len(num_patches) == 2
+        assert all(isinstance(p, int) for p in num_patches)
+
+        # Check that target encoder is a separate instance (cloned)
+        assert context_encoder is not target_encoder
+
+        # Check that parameters are initially identical (cloned properly)
+        for ctx_param, tgt_param in zip(
+            context_encoder.parameters(), target_encoder.parameters()
+        ):
+            assert torch.equal(ctx_param, tgt_param)
+
+    @pytest.mark.parametrize(
+        "image_size,patch_size,output_downsample",
+        [
+            (64, 8, 2),
+            (224, 16, 4),
+            (96, 12, 2),
+            ((128, 256), (16, 32), (2, 4)),
+        ],
+    )
+    def test_patch_size_consistency(self, image_size, patch_size, output_downsample):
+        """Test that final patch size matches actual encoder+infer output."""
+        (
+            context_encoder,
+            _,
+            _,
+            infer,
+            num_patches,
+        ) = create_image_jepa(
+            image_size=image_size,
+            patch_size=patch_size,
+            in_channels=3,
+            hidden_dim=128,
+            embed_dim=32,
+            depth=2,
+            num_heads=2,
+            output_downsample=output_downsample,
+        )
+
+        # Create test image
+        if isinstance(image_size, tuple):
+            height, width = image_size
+        else:
+            height = width = image_size
+
+        test_image = torch.randn(1, 3, height, width)
+
+        # Test actual forward pass through encoder + infer
+        with torch.no_grad():
+            output = infer(context_encoder, test_image)
+
+        # Check that actual output matches expected patch dimensions
+        expected_total_patches = num_patches[0] * num_patches[1]
+        assert output.shape[1] == expected_total_patches

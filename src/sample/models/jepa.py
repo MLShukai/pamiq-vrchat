@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 from pamiq_core.torch import get_device
 
-from sample.utils import size_2d
+from sample.utils import size_2d, size_2d_to_int_tuple
 
 from .components.transformer import Transformer
 from .utils import init_weights
@@ -360,3 +360,92 @@ class AveragePoolInfer:
         if no_batch:
             x = x.squeeze(0)
         return x
+
+
+def create_image_jepa(
+    image_size: size_2d,
+    patch_size: size_2d,
+    in_channels: int = 3,
+    hidden_dim: int = 768,
+    embed_dim: int = 128,
+    depth: int = 6,
+    num_heads: int = 3,
+    output_downsample: size_2d = 1,
+) -> tuple[Encoder, Encoder, Predictor, AveragePoolInfer, tuple[int, int]]:
+    """Create a complete Image JEPA (Joint Embedding Predictive Architecture)
+    model.
+
+    This factory function creates all components needed for Image JEPA training and inference,
+    including context encoder, target encoder, predictor, and inference pooling. The target
+    encoder is initialized as a clone of the context encoder for momentum-based updates.
+
+    Args:
+        image_size: Input image dimensions as (height, width) or single int for square images.
+        patch_size: Patch dimensions as (height, width) or single int for square patches.
+        in_channels: Number of input image channels (e.g., 3 for RGB).
+        hidden_dim: Hidden dimension for encoder transformers.
+        embed_dim: Output embedding dimension for encoders.
+        depth: Number of transformer layers in encoders.
+        num_heads: Number of attention heads in encoders.
+        output_downsample: Downsampling factor for inference pooling as (height, width) or single int.
+
+    Returns:
+        A tuple containing:
+            - context_encoder: Encoder for processing masked images
+            - target_encoder: Encoder clone for generating targets (updated via EMA)
+            - predictor: Predictor for reconstructing target patches from context
+            - infer: AveragePoolInfer for downsampled inference
+            - num_patches: Final patch dimensions after downsampling as (height, width)
+
+    NOTE:
+        The predictor uses half the hidden dimensions and attention heads of the encoders
+        for efficiency. The target encoder should be updated using exponential moving
+        average of the context encoder parameters during training.
+    """
+    from .components.image_patchifier import ImagePatchifier
+    from .components.positional_embeddings import get_2d_positional_embeddings
+
+    patchifier = ImagePatchifier(
+        patch_size,
+        in_channels=in_channels,
+        embed_dim=hidden_dim,
+    )
+    num_patches = ImagePatchifier.compute_num_patches(image_size, patch_size)
+
+    context_encoder = Encoder(
+        patchifier,
+        get_2d_positional_embeddings(hidden_dim, num_patches).reshape(-1, hidden_dim),
+        hidden_dim=hidden_dim,
+        embed_dim=embed_dim,
+        depth=depth,
+        num_heads=num_heads,
+    )
+
+    target_encoder = context_encoder.clone()
+
+    predictor = Predictor(
+        get_2d_positional_embeddings(hidden_dim // 2, num_patches).reshape(
+            -1, hidden_dim // 2
+        ),
+        embed_dim=embed_dim,
+        hidden_dim=hidden_dim // 2,
+        depth=depth,
+        num_heads=num_heads // 2,
+    )
+
+    output_downsample = size_2d_to_int_tuple(output_downsample)
+    infer = AveragePoolInfer(
+        2,
+        num_patches,
+        kernel_size=output_downsample,
+    )
+
+    def compute(input_size: int, kernel_size: int) -> int:
+        return int((input_size - kernel_size) / kernel_size + 1)
+
+    num_patches = (
+        compute(num_patches[0], output_downsample[0]),
+        compute(num_patches[1], output_downsample[1]),
+    )
+
+    return context_encoder, target_encoder, predictor, infer, num_patches
