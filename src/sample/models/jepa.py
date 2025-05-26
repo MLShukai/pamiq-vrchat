@@ -5,6 +5,7 @@ Architecture (JEPA) model.
 """
 
 import copy
+import math
 from collections.abc import Callable
 from typing import Literal, Self, override
 
@@ -297,18 +298,14 @@ class AveragePoolInfer:
 
         self.ndim = ndim
 
-        def validate_and_normalize(obj: int | tuple[int, ...]) -> tuple[int, ...]:
-            if isinstance(obj, int):
-                return (obj,) * ndim
-            if len(obj) != ndim:
-                raise ValueError(f"Expected tuple of length {ndim}, got {len(obj)}")
-            return obj
-
         # Validate and normalize num_patches
-        self.num_patches = validate_and_normalize(num_patches)
-        kernel_size = validate_and_normalize(kernel_size)
+        self.num_patches = self._validate_and_normalize(ndim, num_patches)
+        kernel_size = self._validate_and_normalize(ndim, kernel_size)
         if stride is not None:
-            stride = validate_and_normalize(stride)
+            stride = self._validate_and_normalize(ndim, stride)
+
+        self.kernel_size = kernel_size
+        self.stride = stride if stride is not None else kernel_size
 
         # Create appropriate pooling layer
         match ndim:
@@ -316,6 +313,16 @@ class AveragePoolInfer:
                 self.pool = nn.AvgPool1d(kernel_size, stride)  # pyright: ignore[reportArgumentType, ]
             case 2:
                 self.pool = nn.AvgPool2d(kernel_size, stride)  # pyright: ignore[reportArgumentType, ]
+
+    @staticmethod
+    def _validate_and_normalize(
+        ndim: int, obj: int | tuple[int, ...]
+    ) -> tuple[int, ...]:
+        if isinstance(obj, int):
+            return (obj,) * ndim
+        if len(obj) != ndim:
+            raise ValueError(f"Expected tuple of length {ndim}, got {len(obj)}")
+        return obj
 
     def __call__(self, encoder: Encoder, data: torch.Tensor) -> torch.Tensor:
         """Process data through the encoder and apply average pooling to the
@@ -361,6 +368,20 @@ class AveragePoolInfer:
             x = x.squeeze(0)
         return x
 
+    @property
+    def output_patch_count(self) -> int:
+        """Computes the output patch count."""
+
+        def compute(input_size: int, kernel_size: int, stride: int) -> int:
+            return int((input_size - kernel_size) / stride + 1)
+
+        return math.prod(
+            compute(p, k, s)
+            for (p, k, s) in zip(
+                self.num_patches, self.kernel_size, self.stride, strict=True
+            )
+        )
+
 
 def create_image_jepa(
     image_size: size_2d,
@@ -371,7 +392,7 @@ def create_image_jepa(
     depth: int = 6,
     num_heads: int = 3,
     output_downsample: size_2d = 1,
-) -> tuple[Encoder, Encoder, Predictor, AveragePoolInfer, tuple[int, int]]:
+) -> tuple[Encoder, Encoder, Predictor, AveragePoolInfer]:
     """Create a complete Image JEPA (Joint Embedding Predictive Architecture)
     model.
 
@@ -440,12 +461,4 @@ def create_image_jepa(
         kernel_size=output_downsample,
     )
 
-    def compute(input_size: int, kernel_size: int) -> int:
-        return int((input_size - kernel_size) / kernel_size + 1)
-
-    num_patches = (
-        compute(num_patches[0], output_downsample[0]),
-        compute(num_patches[1], output_downsample[1]),
-    )
-
-    return context_encoder, target_encoder, predictor, infer, num_patches
+    return context_encoder, target_encoder, predictor, infer

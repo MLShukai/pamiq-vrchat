@@ -485,6 +485,17 @@ class TestAveragePoolInfer:
         result = pooler(encoder_2d, image)
         assert result.shape == (1, 32, 32)  # 8x4 = 32
 
+    def test_compute_output_patch_count(self):
+        pooler = AveragePoolInfer(
+            ndim=2, num_patches=(8, 8), kernel_size=(1, 2), stride=(1, 2)
+        )
+
+        assert pooler.output_patch_count == 8 * 4
+
+        pooler = AveragePoolInfer(ndim=1, num_patches=8, kernel_size=2, stride=2)
+
+        assert pooler.output_patch_count == 4
+
 
 class TestCreateImageJEPA:
     @pytest.mark.parametrize(
@@ -508,7 +519,6 @@ class TestCreateImageJEPA:
             target_encoder,
             predictor,
             infer,
-            num_patches,
         ) = create_image_jepa(
             image_size=image_size,
             patch_size=patch_size,
@@ -525,9 +535,6 @@ class TestCreateImageJEPA:
         assert isinstance(target_encoder, Encoder)
         assert isinstance(predictor, Predictor)
         assert isinstance(infer, AveragePoolInfer)
-        assert isinstance(num_patches, tuple)
-        assert len(num_patches) == 2
-        assert all(isinstance(p, int) for p in num_patches)
 
         # Check that target encoder is a separate instance (cloned)
         assert context_encoder is not target_encoder
@@ -554,7 +561,6 @@ class TestCreateImageJEPA:
             _,
             _,
             infer,
-            num_patches,
         ) = create_image_jepa(
             image_size=image_size,
             patch_size=patch_size,
@@ -579,5 +585,4 @@ class TestCreateImageJEPA:
             output = infer(context_encoder, test_image)
 
         # Check that actual output matches expected patch dimensions
-        expected_total_patches = num_patches[0] * num_patches[1]
-        assert output.shape[1] == expected_total_patches
+        assert output.shape[1] == infer.output_patch_count
