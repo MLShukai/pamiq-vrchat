@@ -531,7 +531,7 @@ def main() -> None:
             jepa,
         )
 
-        # ----- Image JEPA Trainer
+        # ----- Image JEPA Trainer -----
         hparams = TrainerHParams.ImageJEPA
         image_jepa_trainer = jepa.JEPATrainer(
             partial_optimizer=partial(AdamW, lr=hparams.lr),
