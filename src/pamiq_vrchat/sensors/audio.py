@@ -3,7 +3,7 @@ import sys
 from typing import override
 
 from pamiq_core.interaction.modular_env import Sensor
-from pamiq_io.audio import AudioFrame
+from pamiq_io.audio.utils import AudioFrame
 
 logger = logging.getLogger(__name__)
 

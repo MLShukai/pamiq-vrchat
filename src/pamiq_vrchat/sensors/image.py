@@ -19,7 +19,8 @@ from typing import override
 
 import cv2
 from pamiq_core.interaction.modular_env import Sensor
-from pamiq_io.video import OpenCVVideoInput, VideoFrame
+from pamiq_io.video import OpenCVVideoInput
+from pamiq_io.video.utils import VideoFrame
 
 type ImageFrame = VideoFrame
 
