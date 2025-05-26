@@ -64,11 +64,17 @@ class ModelHParams:
         output_downsample: int = 3
 
     @dataclass
-    class AudioJEPA: ...
+    class AudioJEPA:
+        hidden_dim: int = 320
+        embed_dim: int = 64
+        depth: int = 6
+        num_heads: int = 2
+        output_downsample: int = 2
 
     @dataclass
     class TemporalEncoder:
         image_dim: int = 2048
+        audio_dim: int = 1024
         dim: int = 1024
         depth: int = 8
         dim_ff_hidden: int = dim * 4
@@ -367,6 +373,7 @@ def main() -> None:
             ForwardDynamics,
             PolicyValueCommon,
             TemporalEncoder,
+            create_audio_jepa,
             create_image_jepa,
         )
         from sample.models.temporal_encoder import ObsInfo as TemporalEncoderObsInfo
@@ -407,6 +414,42 @@ def main() -> None:
         temporal_encoder_obs_infos[ObservationType.IMAGE] = TemporalEncoderObsInfo(
             dim=hparams.embed_dim,
             dim_hidden=ModelHParams.TemporalEncoder.image_dim,
+            num_tokens=infer.output_patch_count,
+        )
+
+        # ----- Audio JEPA -----
+        hparams = model_hparams.audio_jepa
+        context_encoder, target_encoder, predictor, infer = create_audio_jepa(
+            sample_size=InteractionHParams.Env.Obs.Audio.sample_rate,
+            in_channels=InteractionHParams.Env.Obs.Audio.channel_size,
+            hidden_dim=hparams.hidden_dim,
+            embed_dim=hparams.embed_dim,
+            depth=hparams.depth,
+            num_heads=hparams.num_heads,
+            output_downsample=hparams.output_downsample,
+        )
+
+        audio_jepa_context_encoder = TorchTrainingModel(
+            context_encoder,
+            has_inference_model=False,
+            device=device,
+        )
+
+        audio_jepa_target_encoder = TorchTrainingModel(
+            target_encoder,
+            has_inference_model=True,
+            inference_procedure=infer,
+            device=device,
+        )
+        audio_jepa_predictor = TorchTrainingModel(
+            predictor,
+            has_inference_model=False,
+            device=device,
+        )
+
+        temporal_encoder_obs_infos[ObservationType.AUDIO] = TemporalEncoderObsInfo(
+            dim=hparams.embed_dim,
+            dim_hidden=model_hparams.temporal_encoder.audio_dim,
             num_tokens=infer.output_patch_count,
         )
 
@@ -458,6 +501,9 @@ def main() -> None:
             ModelName.IMAGE_JEPA_CONTEXT_ENCODER: image_jepa_context_encoder,
             ModelName.IMAGE_JEPA_TARGET_ENCODER: image_jepa_target_encoder,
             ModelName.IMAGE_JEPA_PREDICTOR: image_jepa_predictor,
+            ModelName.AUDIO_JEPA_CONTEXT_ENCODER: audio_jepa_context_encoder,
+            ModelName.AUDIO_JEPA_TARGET_ENCODER: audio_jepa_target_encoder,
+            ModelName.AUDIO_JEPA_PREDICTOR: audio_jepa_predictor,
             ModelName.TEMPORAL_ENCODER: temporal_encoder,
             ModelName.FORWARD_DYNAMICS: forward_dynamics,
             ModelName.POLICY_VALUE: policy,
