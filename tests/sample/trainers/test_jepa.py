@@ -98,7 +98,7 @@ class TestJEPATrainer:
     def collate_fn(self) -> MultiBlockMaskCollator2d:
         return MultiBlockMaskCollator2d(
             input_size=self.IMAGE_SIZE,
-            patch_size=self.PATCH_SIZE,
+            num_patches=self.N_PATCHES,
         )
 
     @pytest.fixture
@@ -175,7 +175,7 @@ class TestMultiBlockMaskCollator2d:
         follows constraints."""
         collator = MultiBlockMaskCollator2d(
             input_size=image_size,
-            patch_size=patch_size,
+            num_patches=image_size // patch_size,
             mask_scale=mask_scale,
             min_keep=min_keep,
         )
@@ -222,7 +222,7 @@ class TestMultiBlockMaskCollator2d:
         # Initialize collator
         collator = MultiBlockMaskCollator2d(
             input_size=(image_size, image_size),
-            patch_size=(patch_size, patch_size),
+            num_patches=(image_size // patch_size, image_size // patch_size),
             n_masks=n_masks,
             min_keep=50,
         )
@@ -293,7 +293,7 @@ class TestMultiBlockMaskCollator2d:
         image_size, patch_size = 224, 16
         collator = MultiBlockMaskCollator2d(
             input_size=(image_size, image_size),
-            patch_size=(patch_size, patch_size),
+            num_patches=(image_size // patch_size, image_size // patch_size),
             n_masks=4,
             min_keep=50,
         )
@@ -325,7 +325,7 @@ class TestMultiBlockMaskCollator2d:
         image_size, patch_size = 224, 16
         collator = MultiBlockMaskCollator2d(
             input_size=(image_size, image_size),
-            patch_size=(patch_size, patch_size),
+            num_patches=(image_size // patch_size, image_size // patch_size),
         )
 
         expected_patches = (image_size // patch_size) ** 2
@@ -335,7 +335,7 @@ class TestMultiBlockMaskCollator2d:
         """Test that the step method increments the counter properly."""
         collator = MultiBlockMaskCollator2d(
             input_size=224,
-            patch_size=16,
+            num_patches=224 // 16,
         )
 
         # Get initial value
@@ -344,21 +344,6 @@ class TestMultiBlockMaskCollator2d:
         # Check that step increments
         assert collator.step() == initial_value + 1
         assert collator.step() == initial_value + 2
-
-    @pytest.mark.parametrize(
-        "input_size,patch_size,expected_error",
-        [
-            (223, 16, "Input height 223 must be divisible by patch height 16"),
-            (224, 15, "Input height 224 must be divisible by patch height 15"),
-        ],
-    )
-    def test_invalid_dimensions(self, input_size, patch_size, expected_error):
-        """Test error when dimensions are invalid."""
-        with pytest.raises(ValueError, match=expected_error):
-            MultiBlockMaskCollator2d(
-                input_size=input_size,
-                patch_size=patch_size,
-            )
 
     @pytest.mark.parametrize(
         "mask_scale,expected_error",
@@ -373,7 +358,7 @@ class TestMultiBlockMaskCollator2d:
         with pytest.raises(ValueError, match=expected_error):
             MultiBlockMaskCollator2d(
                 input_size=224,
-                patch_size=16,
+                num_patches=224 // 16,
                 mask_scale=mask_scale,
             )
 
@@ -384,7 +369,7 @@ class TestMultiBlockMaskCollator2d:
         ):
             MultiBlockMaskCollator2d(
                 input_size=224,
-                patch_size=16,
+                num_patches=224 // 16,
                 min_keep=1000,  # Much larger than available patches
             )
 
