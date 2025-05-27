@@ -40,9 +40,9 @@ import rootutils
 PROJECT_ROOT = rootutils.setup_root(__file__)
 
 
-# ===========================================================================================
+# ======================================================================================
 #                               INTERACTION HYPERPARAMETERS
-# ===========================================================================================
+# ======================================================================================
 # These parameters control the real-time interaction between agent and environment.
 # They are carefully tuned to balance responsiveness with computational constraints.
 
@@ -87,9 +87,9 @@ class InteractionHParams:
     # fmt: on
 
 
-# ===========================================================================================
-#                                  MODEL HYPERPARAMETERS
-# ===========================================================================================
+# ======================================================================================
+#                              MODEL HYPERPARAMETERS
+# ======================================================================================
 # These parameters define the neural architecture configurations for each component.
 # Different model sizes (tiny/small/medium/large) trade off between performance and
 # computational requirements, allowing deployment across various hardware configurations.
@@ -252,9 +252,9 @@ class ModelHParams:
         )
 
 
-# ===========================================================================================
+# ======================================================================================
 #                                TRAINER HYPERPARAMETERS
-# ===========================================================================================
+# ======================================================================================
 # Training parameters control the learning dynamics, batch sizes, and optimization schedules.
 # These are carefully tuned to balance with computational cost.
 
@@ -309,9 +309,9 @@ class TrainerHParams:
     # fmt: on
 
 
-# ===========================================================================================
-#                               DATA BUFFER HYPERPARAMETERS
-# ===========================================================================================
+# ======================================================================================
+#                             DATA BUFFER HYPERPARAMETERS
+# ======================================================================================
 # Buffer sizes determine how much experience data is retained for training.
 # These are calculated based on trainer requirements and expected data generation rates.
 
@@ -342,9 +342,9 @@ class DataBufferHParams:
         max_size = 1000  # ~100 seconds
 
 
-# ===========================================================================================
-#                                    LAUNCH ARGUMENTS
-# ===========================================================================================
+# ======================================================================================
+#                                  LAUNCH ARGUMENTS
+# ======================================================================================
 # Command-line interface for configuring system deployment and resource allocation.
 
 
@@ -368,9 +368,9 @@ class CliArgs:
     """Root directory to store states and logs."""
 
 
-# ===========================================================================================
-#                                  MAIN TRAINING PIPELINE
-# ===========================================================================================
+# ======================================================================================
+#                                MAIN TRAINING PIPELINE
+# ======================================================================================
 # The main function orchestrates the complete training system, from component initialization
 # to continuous learning execution. Each section builds upon previous components in a
 # carefully designed dependency hierarchy.
@@ -422,18 +422,18 @@ def main() -> None:
     # This setting uses TensorFloat-32 (TF32) on Ampere GPUs for faster computation
     torch.set_float32_matmul_precision("high")
 
-    # ===========================================================================================
+    # ==================================================================================
     #                              SYSTEM CONFIGURATION
-    # ===========================================================================================
+    # ==================================================================================
     args = tyro.cli(CliArgs)
 
     device = torch.device(args.device)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    # ===========================================================================================
+    # ==================================================================================
     #                              LOGGING INFRASTRUCTURE
-    # ===========================================================================================
+    # ==================================================================================
     stream_handler = colorlog.StreamHandler()
     stream_handler.setFormatter(
         colorlog.ColoredFormatter(
@@ -451,9 +451,9 @@ def main() -> None:
     )
     logging.basicConfig(level=logging.INFO, handlers=[stream_handler, file_handler])
 
-    # ===========================================================================================
-    #                            HYPERPARAMETER RESOLUTION
-    # ===========================================================================================
+    # ==================================================================================
+    #                          HYPERPARAMETER RESOLUTION
+    # ==================================================================================
     match args.model_size:
         case "large":
             model_hparams = ModelHParams.create_large()
@@ -464,9 +464,9 @@ def main() -> None:
         case "tiny":
             model_hparams = ModelHParams.create_tiny()
 
-    # ===========================================================================================
-    #                           INTERACTION SYSTEM CREATION
-    # ===========================================================================================
+    # ==================================================================================
+    #                         NTERACTION SYSTEM CREATION
+    # ==================================================================================
     def create_interaction() -> Interaction:
         from pamiq_core import FixedIntervalInteraction
         from pamiq_core.interaction.modular_env import (
@@ -574,9 +574,9 @@ def main() -> None:
         logger.info("Initialized Interaction Components.")
         return interaction
 
-    # ===========================================================================================
-    #                              MODEL CREATION AND CONFIGURATION
-    # ===========================================================================================
+    # ==================================================================================
+    #                         MODEL CREATION AND CONFIGURATION
+    # ==================================================================================
     def create_models() -> dict[str, TrainingModel[Any]]:
         from pamiq_core.torch import TorchTrainingModel
 
@@ -732,9 +732,9 @@ def main() -> None:
             ModelName.POLICY_VALUE: policy,
         }
 
-    # ===========================================================================================
-    #                               TRAINER CREATION AND CONFIGURATION
-    # ===========================================================================================
+    # ==================================================================================
+    #                        TRAINER CREATION AND CONFIGURATION
+    # ==================================================================================
     def create_trainers() -> dict[str, Trainer]:
         from functools import partial
 
@@ -840,9 +840,9 @@ def main() -> None:
             "policy": policy,
         }
 
-    # ===========================================================================================
+    # ==================================================================================
     #                              DATA BUFFER CREATION
-    # ===========================================================================================
+    # ==================================================================================
     def create_data_buffers() -> dict[str, DataBuffer[Any]]:
         from pamiq_core.data.impls import RandomReplacementBuffer, SequentialBuffer
 
@@ -897,9 +897,9 @@ def main() -> None:
             BufferName.POLICY: policy,
         }
 
-    # ===========================================================================================
-    #                           EXPERIMENT TRACKING AND SYSTEM LAUNCH
-    # ===========================================================================================
+    # ==================================================================================
+    #                      EXPERIMENT TRACKING AND SYSTEM LAUNCH
+    # ==================================================================================
 
     mlflow.set_tracking_uri(args.output_dir / "mlflow")
 
