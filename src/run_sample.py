@@ -1,99 +1,147 @@
+"""
+PAMIQ System on VRChat
+======================
+
+This script implements a complete pipeline for training autonomous agents that can interact
+with VRChat environments through vision, audio, and action. The system uses a multi-modal
+curiosity-driven learning approach.
+
+Architecture Overview:
+---------------------
+The system consists of four main learning components working in a hierarchical manner:
+
+1. **Unimodal Encoders (Image/Audio JEPA)**: Learn rich representations from raw sensory data
+   using Joint Embedding Predictive Architecture, enabling the agent to understand visual
+   and auditory patterns.
+
+2. **Temporal Encoder**: Integrates multimodal features across time, capturing temporal
+   dependencies and cross-modal relationships essential for understanding dynamic environments.
+
+3. **Forward Dynamics Model**: Predicts future observations given current state and actions.
+
+4. **Policy Network**: Selects actions based on current observations and intrinsic motivation
+   derived from prediction errors, driving exploration.
+
+Data Flow:
+---------
+Raw Sensors → JEPA Encoders → Temporal Integration → Forward Dynamics + Policy → Actions
+
+The system operates in real-time at 10Hz, balancing computational efficiency with responsive
+interaction capabilities.
+"""
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, Self
 
 import rootutils
 
-PROJECT_ROOT = rootutils.setup_root(__file__)  # Retrieve project root directory
+# Retrieve project root directory
+PROJECT_ROOT = rootutils.setup_root(__file__)
 
 
-# #########################################
-#      Environment Hyper parameters
-# #########################################
+# ===========================================================================================
+#                               INTERACTION HYPERPARAMETERS
+# ===========================================================================================
+# These parameters control the real-time interaction between agent and environment.
+# They are carefully tuned to balance responsiveness with computational constraints.
 
 
 class InteractionHParams:
-    """Environment hyper parameter name space."""
+    """Interaction hyperparameter namespace controlling real-time agent-
+    environment dynamics.
 
-    frame_interval: float = 0.1  # seconds
+    These parameters directly impact the agent's ability to perceive and
+    respond to the VRChat environment in real-time. The frame interval
+    determines the temporal resolution of the interaction loop,
+    affecting both learning dynamics and computational load.
+    """
+
+    # fmt: off
+    frame_interval: float = 0.1  # seconds (10 FPS)
 
     class Env:
         class Obs:
             class Image:
                 size: tuple[int, int] = (144, 144)  # (height, width)
-                channels: int = 3
+                channels: int = 3  # RGB
 
             class Audio:
-                sample_rate: int = 16000
-                channel_size: int = 2
-                frame_size: int = 16080
+                sample_rate: int = 16000    # Hz
+                channel_size: int = 2       # Stereo
+                frame_size: int = 16080     # ~1 second at 16kHz, adjusted for patchification
 
         class Action:
             class Mouse:
-                time_constant: float = 0.2
-                max_velocity: int = 1000
+                time_constant: float = 0.2  # Smoothing for natural mouse movement
+                max_velocity: int = 1000    # pixels/second - Prevents excessive movement
 
             class Osc:
-                host: str = "127.0.0.1"
-                port: int = 9000
-                time_constant: float = 0.2
+                host: str = "127.0.0.1"     # VRChat OSC endpoint
+                port: int = 9000            # Standard VRChat OSC port
+                time_constant: float = 0.2  # Smoothing for natural locomotion movement
 
     class Agent:
-        imagination_length: int = 7
+        imagination_length: int = 7 # Steps ahead for imagination.
+
+    # fmt: on
 
 
-# #########################################
-#          Model Hyper Parameters
-# #########################################
+# ===========================================================================================
+#                                  MODEL HYPERPARAMETERS
+# ===========================================================================================
+# These parameters define the neural architecture configurations for each component.
+# Different model sizes (tiny/small/medium/large) trade off between performance and
+# computational requirements, allowing deployment across various hardware configurations.
 
 
 @dataclass
 class ModelHParams:
-    """Model hyper parameter name space.
+    """Model hyperparameter namespace defining neural architecture
+    configurations."""
 
-    Default values are large size model
-    """
-
+    # fmt: off
     @dataclass
     class ImageJEPA:
-        patch_size: tuple[int, int] = (12, 12)
-        hidden_dim: int = 768
-        embed_dim: int = 128
-        depth: int = 6
-        num_heads: int = 4
-        output_downsample: int = 3
+        patch_size: tuple[int, int] = (12, 12)  # Patch size for image tokenization
+        hidden_dim: int = 768                   # Internal representation dimensionality
+        embed_dim: int = 128                    # Output embedding size (compressed representation)
+        depth: int = 6                          # Number of transformer layers
+        num_heads: int = 4                      # Multi-head attention heads
+        output_downsample: int = 3              # Spatial compression factor for efficiency
 
     @dataclass
     class AudioJEPA:
-        hidden_dim: int = 480
-        embed_dim: int = 64
-        depth: int = 6
-        num_heads: int = 3
-        output_downsample: int = 2
+        hidden_dim: int = 480                   # Smaller than image due to 1D nature of audio
+        embed_dim: int = 64                     # Internal representation dimensionality
+        depth: int = 6                          # Output embedding size (compressed representation)
+        num_heads: int = 3                      # Multi-head attention heads
+        output_downsample: int = 2              # Spatial compression factor for efficiency
 
     @dataclass
     class TemporalEncoder:
-        image_dim: int = 1024
-        audio_dim: int = 512
-        dim: int = 1024
-        depth: int = 6
-        dim_ff_hidden: int = dim * 2
-        dropout: float = 0.1
+        image_dim: int = 1024                   # Projected image feature dimension (internal)
+        audio_dim: int = 512                    # Projected audio feature dimension (internal)
+        dim: int = 1024                         # Unified multimodal representation size (internal)
+        depth: int = 6                          # Layer depth
+        dim_ff_expansion_factor: int = 2        # Feed-forward expansion factor (scales `dim`)
+        dropout: float = 0.1                    # Regularization to prevent overfitting
 
     @dataclass
     class ForwardDynamics:
-        action_dim: int = 8
-        dim: int = 1536
-        depth: int = 8
-        dim_ff_hidden: int = dim * 4
-        dropout: float = 0.1
+        action_dim: int = 8                     # Action embedding dimensionality
+        dim: int = 1536                         # Large capacity for complex dynamics
+        depth: int = 8                          # Layer depth
+        dim_ff_expansion_factor: int = 4        # Feed-forward expansion factor (scales `dim`)
+        dropout: float = 0.1                    # Regularization to prevent overfitting
 
     @dataclass
     class Policy:
-        dim: int = 1536
-        depth: int = 8
-        dim_ff_hidden: int = dim * 4
-        dropout: float = 0.1
+        dim: int = 1536                         # Large capacity for complex dynamics
+        depth: int = 8                          # Layer depth
+        dim_ff_expansion_factor: int = 4        # Feed-forward expansion factor (scales `dim`)
+        dropout: float = 0.1                    # Regularization to prevent overfitting
+    # fmt: on
 
     image_jepa: ImageJEPA
     audio_jepa: AudioJEPA
@@ -103,7 +151,10 @@ class ModelHParams:
 
     @classmethod
     def create_large(cls) -> Self:
-        """Create large size model hyper parameters."""
+        """Create large model configuration.
+
+        VRAM usage is ~22GiB.
+        """
         return cls(
             image_jepa=cls.ImageJEPA(),
             audio_jepa=cls.AudioJEPA(),
@@ -114,7 +165,10 @@ class ModelHParams:
 
     @classmethod
     def create_medium(cls) -> Self:
-        """Create medium size model hyper parameters."""
+        """Create medium model configuration.
+
+        VRAM usage is ~12GiB.
+        """
         return cls(
             image_jepa=cls.ImageJEPA(
                 hidden_dim=432,
@@ -129,17 +183,18 @@ class ModelHParams:
             temporal_encoder=cls.TemporalEncoder(),
             forward_dynamics=cls.ForwardDynamics(
                 dim=1024,
-                dim_ff_hidden=1024 * 4,
             ),
             policy=cls.Policy(
                 dim=1024,
-                dim_ff_hidden=1024 * 4,
             ),
         )
 
     @classmethod
     def create_small(cls) -> Self:
-        """Create small size model hyper parameters."""
+        """Create small model configuration.
+
+        VRAM usage is ~7GiB.
+        """
         return cls(
             image_jepa=cls.ImageJEPA(
                 hidden_dim=320,
@@ -154,23 +209,23 @@ class ModelHParams:
             temporal_encoder=cls.TemporalEncoder(
                 dim=768,
                 depth=4,
-                dim_ff_hidden=768 * 2,
             ),
             forward_dynamics=cls.ForwardDynamics(
                 dim=768,
-                dim_ff_hidden=768 * 4,
                 depth=6,
             ),
             policy=cls.Policy(
                 dim=768,
-                dim_ff_hidden=768 * 4,
                 depth=6,
             ),
         )
 
     @classmethod
     def create_tiny(cls) -> Self:
-        """Create tiny size model hyper parameters."""
+        """Create tiny model configuration.
+
+        VRAM usage is ~4GiB.
+        """
         return cls(
             image_jepa=cls.ImageJEPA(
                 hidden_dim=256,
@@ -185,111 +240,123 @@ class ModelHParams:
             temporal_encoder=cls.TemporalEncoder(
                 dim=512,
                 depth=2,
-                dim_ff_hidden=512 * 2,
             ),
             forward_dynamics=cls.ForwardDynamics(
                 dim=512,
-                dim_ff_hidden=512 * 4,
                 depth=4,
             ),
             policy=cls.Policy(
                 dim=512,
-                dim_ff_hidden=512 * 4,
                 depth=4,
             ),
         )
 
 
-# #########################################
-#         Trainer Hyper Parameters
-# #########################################
+# ===========================================================================================
+#                                TRAINER HYPERPARAMETERS
+# ===========================================================================================
+# Training parameters control the learning dynamics, batch sizes, and optimization schedules.
+# These are carefully tuned to balance with computational cost.
 
 
-@dataclass
 class TrainerHParams:
-    """Trainer hyper parameter name space."""
+    """Trainer hyperparameter namespace controlling learning dynamics and
+    optimization."""
 
+    # fmt: off
     class ImageJEPA:
-        lr: float = 0.0001
-        batch_size: int = 32
-        min_new_data_count: int = 128
-        mask_scale: tuple[float, float] = (0.025, 0.125)
-        num_masks: int = 4
-        min_mask_keep: int = 7
-        iteration_count: int = 16
+        lr: float = 0.0001                          # Conservative learning rate for stability
+        batch_size: int = 32                        # Balance between gradient quality and memory
+        min_new_data_count: int = 128               # Ensure sufficient fresh data before training
+        mask_scale: tuple[float, float] = (0.025, 0.125)  # 2.5%-12.5% of patches masked per mask.
+        num_masks: int = 4                          # Number of masks for multi-block masking.
+        min_unmask_keep: int = 7                    # Minimum unmasked patches for context
+        iteration_count: int = 16                   # Training iterations per trigger
 
     class AudioJEPA:
-        lr: float = 0.0001
-        batch_size: int = 32
-        min_new_data_count: int = 128
-        mask_scale: tuple[float, float] = (0.1, 0.25)
-        num_masks: int = 4
-        min_mask_keep: int = 5
-        iteration_count: int = 16
+        lr: float = 0.0001                          # Conservative learning rate for stability
+        batch_size: int = 32                        # Balance between gradient quality and memory
+        min_new_data_count: int = 128               # Ensure sufficient fresh data before training
+        mask_scale: tuple[float, float] = (0.1, 0.25)  # 10%-25% of patches masked per mask.
+        num_masks: int = 4                          # Number of masks for multi-block masking.
+        min_unmask_keep: int = 5                    # Minimum unmasked patches for context
+        iteration_count: int = 16                   # Training iterations per trigger
 
     class TemporalEncoder:
-        lr: float = 0.0001
-        seq_len: int = 32
+        lr: float = 0.0001                          # Conservative for stable sequence learning
+        seq_len: int = 32                           # Learning sequence length
         # Iteration count is max_samples / batch_size
-        max_samples: int = 256
-        batch_size: int = 8
-        min_new_data_count: int = 128
+        max_samples: int = 256                      # Total samples per training session
+        batch_size: int = 8                         # Smaller batches due to sequence length
+        min_new_data_count: int = 128               # Ensure sufficient fresh data before training
 
     class ForwardDynamics:
-        lr: float = 0.0001
-        seq_len: int = 256
+        lr: float = 0.0001                          # Learning rate.
+        seq_len: int = 256                          # Long sequences for dynamics learning
         # Iteration count is max_samples / batch_size
-        max_samples: int = 32
-        batch_size: int = 1
-        min_new_data_count: int = 256
+        max_samples: int = 32                       # Iteration count
+        batch_size: int = 1                         # Single sequences for memory efficiency
+        min_new_data_count: int = 256               # Ensure sufficient fresh data before training
 
     class PPOPolicy:
-        lr: float = 0.0001
-        seq_len: int = 256
+        lr: float = 0.0001                          # Learning rate.
+        seq_len: int = 256                          #  Long sequences consistent with forward dynamics
         # Iteration count is max_samples / batch_size
-        max_samples: int = 32
-        batch_size: int = 1
-        min_new_data_count: int = 128
+        max_samples: int = 32                       # Iteration count
+        batch_size: int = 1                         # Single sequences for memory efficiency
+        min_new_data_count: int = 128               # Ensure sufficient fresh data before training
+
+    # fmt: on
 
 
-# #############################################
-#          Data Buffer Hyper Parameters
-# #############################################
+# ===========================================================================================
+#                               DATA BUFFER HYPERPARAMETERS
+# ===========================================================================================
+# Buffer sizes determine how much experience data is retained for training.
+# These are calculated based on trainer requirements and expected data generation rates.
 
 
 class DataBufferHParams:
-    """DataBuffer hyper parameter namespace."""
+    """Data buffer hyperparameter namespace controlling experience storage and
+    retention."""
 
     class Image:
         max_size: int = (
             TrainerHParams.ImageJEPA.batch_size
             * TrainerHParams.AudioJEPA.iteration_count
-        )
+        )  # Adjusting to training iteration count.
 
     class Audio:
         max_size: int = (
             TrainerHParams.AudioJEPA.batch_size
             * TrainerHParams.AudioJEPA.iteration_count
-        )
+        )  # Adjusting to training iteration count.
 
     class Temporal:
-        max_size = 1000
+        max_size = 1000  # ~100 seconds
 
     class ForwardDynamics:
-        max_size = 1000
+        max_size = 1000  # ~100 seconds
 
     class Policy:
-        max_size = 1000
+        max_size = 1000  # ~100 seconds
 
 
-# #############################################
-#               Launch Arguments
-# #############################################
+# ===========================================================================================
+#                                    LAUNCH ARGUMENTS
+# ===========================================================================================
+# Command-line interface for configuring system deployment and resource allocation.
 
 
 @dataclass
 class CliArgs:
-    """Arguments for launch."""
+    """Command-line arguments for system configuration and deployment.
+
+    These arguments allow flexible deployment across different hardware
+    configurations and experimental setups without modifying code. The
+    model size selection enables scaling from tiny (consumer pc) to
+    large (workstation) configurations.
+    """
 
     model_size: Literal["tiny", "small", "medium", "large"] = "tiny"
     """Model size selection."""
@@ -301,9 +368,12 @@ class CliArgs:
     """Root directory to store states and logs."""
 
 
-# #############################################
-#                Main procedure
-# #############################################
+# ===========================================================================================
+#                                  MAIN TRAINING PIPELINE
+# ===========================================================================================
+# The main function orchestrates the complete training system, from component initialization
+# to continuous learning execution. Each section builds upon previous components in a
+# carefully designed dependency hierarchy.
 
 import logging
 import logging.handlers
@@ -327,23 +397,43 @@ from sample.data import BufferName
 from sample.models import ModelName
 from sample.utils import average_exponentially
 
+logger = logging.getLogger(__name__)
+
 
 def main() -> None:
-    torch.set_float32_matmul_precision("high")
-    # #########################################
-    #              Read Cli Args
-    # #########################################
+    """Main training pipeline orchestrating the complete autonomous agent
+    learning system.
 
+    This function implements a carefully designed initialization sequence that builds
+    complex learning components from foundational elements. The order of operations
+    is critical - components have dependencies that must be satisfied before they
+    can be properly configured.
+
+    Pipeline Overview:
+    1. System Configuration: Parse arguments and configure computational resources
+    2. Logging Infrastructure: Set up comprehensive logging for debugging and monitoring
+    3. Hyperparameter Resolution: Select appropriate model configuration for target hardware
+    4. Component Creation: Build learning system components in dependency order
+    5. Experiment Tracking: Initialize MLflow for experiment management and reproducibility
+    6. System Launch: Start the continuous learning process with state persistence
+    """
+
+    # Enable optimized matrix operations for improved training performance
+    # This setting uses TensorFloat-32 (TF32) on Ampere GPUs for faster computation
+    torch.set_float32_matmul_precision("high")
+
+    # ===========================================================================================
+    #                              SYSTEM CONFIGURATION
+    # ===========================================================================================
     args = tyro.cli(CliArgs)
 
     device = torch.device(args.device)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    # #########################################
-    #               Setup Logging
-    # #########################################
-
+    # ===========================================================================================
+    #                              LOGGING INFRASTRUCTURE
+    # ===========================================================================================
     stream_handler = colorlog.StreamHandler()
     stream_handler.setFormatter(
         colorlog.ColoredFormatter(
@@ -352,7 +442,7 @@ def main() -> None:
     )
     file_handler = logging.handlers.TimedRotatingFileHandler(
         args.output_dir / datetime.now().strftime("%Y-%m-%d_%H-%M-%S.log"),
-        when="D",
+        when="D",  # Daily rotation
         backupCount=6,  # 7 days logs
         encoding="utf-8",
     )
@@ -361,10 +451,9 @@ def main() -> None:
     )
     logging.basicConfig(level=logging.INFO, handlers=[stream_handler, file_handler])
 
-    # #########################################
-    #         Create Hparams Objects
-    # #########################################
-
+    # ===========================================================================================
+    #                            HYPERPARAMETER RESOLUTION
+    # ===========================================================================================
     match args.model_size:
         case "large":
             model_hparams = ModelHParams.create_large()
@@ -375,10 +464,9 @@ def main() -> None:
         case "tiny":
             model_hparams = ModelHParams.create_tiny()
 
-    # #########################################
-    #       Create Interaction Components
-    # #########################################
-
+    # ===========================================================================================
+    #                           INTERACTION SYSTEM CREATION
+    # ===========================================================================================
     def create_interaction() -> Interaction:
         from pamiq_core import FixedIntervalInteraction
         from pamiq_core.interaction.modular_env import (
@@ -397,7 +485,9 @@ def main() -> None:
             UnimodalEncodingAgent,
         )
 
-        # ----- Agent -----
+        # ======================================================
+        #                 AGENT ARCHITECTURE
+        # ======================================================
         agent = IntegratedCuriosityFramework(
             unimodal_agents={
                 ObservationType.IMAGE: UnimodalEncodingAgent(
@@ -430,7 +520,9 @@ def main() -> None:
             ),
         )
 
-        # ----- Environment -----
+        # ======================================================
+        #              ENVIRONMENT CONFIGURATION
+        # ======================================================
         hparams = InteractionHParams.Env
         environment = ModularEnvironment(
             sensor=SensorsDict(
@@ -476,14 +568,15 @@ def main() -> None:
                 ),
             ),
         )
-        return FixedIntervalInteraction.with_sleep_adjustor(
+        interaction = FixedIntervalInteraction.with_sleep_adjustor(
             agent, environment, InteractionHParams.frame_interval
         )
+        logger.info("Initialized Interaction Components.")
+        return interaction
 
-    # #########################################
-    #          Create Model Components
-    # #########################################
-
+    # ===========================================================================================
+    #                              MODEL CREATION AND CONFIGURATION
+    # ===========================================================================================
     def create_models() -> dict[str, TrainingModel[Any]]:
         from pamiq_core.torch import TorchTrainingModel
 
@@ -499,7 +592,9 @@ def main() -> None:
 
         temporal_encoder_obs_infos: dict[str, TemporalEncoderObsInfo] = {}
 
-        # ----- Image JEPA -----
+        # ======================================================
+        #                  IMAGE JEPA MODELS
+        # ======================================================
         hparams = model_hparams.image_jepa
         context_encoder, target_encoder, predictor, infer = create_image_jepa(
             image_size=InteractionHParams.Env.Obs.Image.size,
@@ -535,7 +630,9 @@ def main() -> None:
             num_tokens=infer.output_patch_count,
         )
 
-        # ----- Audio JEPA -----
+        # ======================================================
+        #                  AUDIO JEPA MODELS
+        # ======================================================
         hparams = model_hparams.audio_jepa
         context_encoder, target_encoder, predictor, infer = create_audio_jepa(
             sample_size=InteractionHParams.Env.Obs.Audio.frame_size,
@@ -571,14 +668,16 @@ def main() -> None:
             num_tokens=infer.output_patch_count,
         )
 
-        # ----- Temporal Encoder -----
+        # ======================================================
+        #                TEMPORAL ENCODER MODEL
+        # ======================================================
         hparams = model_hparams.temporal_encoder
         temporal_encoder = TorchTrainingModel(
             TemporalEncoder(
                 obs_infos=temporal_encoder_obs_infos,
                 dim=hparams.dim,
                 depth=hparams.depth,
-                dim_ff_hidden=hparams.dim_ff_hidden,
+                dim_ff_hidden=hparams.dim * hparams.dim_ff_expansion_factor,
                 dropout=hparams.dropout,
             ),
             has_inference_model=True,
@@ -586,7 +685,9 @@ def main() -> None:
             inference_procedure=TemporalEncoder.infer,
         )
 
-        # ----- Forward Dynamics -----
+        # ======================================================
+        #                 FORWARD DYNAMICS MODEL
+        # ======================================================
         hparams = model_hparams.forward_dynamics
         forward_dynamics = TorchTrainingModel(
             ForwardDynamics(
@@ -595,14 +696,16 @@ def main() -> None:
                 action_dim=hparams.action_dim,
                 dim=hparams.dim,
                 depth=hparams.depth,
-                dim_ff_hidden=hparams.dim_ff_hidden,
+                dim_ff_hidden=hparams.dim * hparams.dim_ff_expansion_factor,
                 dropout=hparams.dropout,
             ),
             has_inference_model=True,
             device=device,
         )
 
-        # ----- Policy -----
+        # ======================================================
+        #                     POLICY MODEL
+        # ======================================================
         hparams = model_hparams.policy
         policy = TorchTrainingModel(
             PolicyValueCommon(
@@ -610,12 +713,13 @@ def main() -> None:
                 action_choices=list(ACTION_CHOICES),
                 dim=hparams.dim,
                 depth=hparams.depth,
-                dim_ff_hidden=hparams.dim_ff_hidden,
+                dim_ff_hidden=hparams.dim * hparams.dim_ff_expansion_factor,
                 dropout=hparams.dropout,
             ),
             device=device,
         )
 
+        logger.info("Initialized Models.")
         return {
             ModelName.IMAGE_JEPA_CONTEXT_ENCODER: image_jepa_context_encoder,
             ModelName.IMAGE_JEPA_TARGET_ENCODER: image_jepa_target_encoder,
@@ -628,16 +732,15 @@ def main() -> None:
             ModelName.POLICY_VALUE: policy,
         }
 
-    # #########################################
-    #             Create Trainers
-    # #########################################
-
+    # ===========================================================================================
+    #                               TRAINER CREATION AND CONFIGURATION
+    # ===========================================================================================
     def create_trainers() -> dict[str, Trainer]:
         from functools import partial
 
         from torch.optim import AdamW
 
-        # ----- Image JEPA Trainer -----
+        from sample.models.components.audio_patchifier import AudioPatchifier
         from sample.models.components.image_patchifier import ImagePatchifier
         from sample.trainers import (
             ImaginingForwardDynamicsTrainer,
@@ -646,6 +749,9 @@ def main() -> None:
             jepa,
         )
 
+        # ======================================================
+        #                  IMAGE JEPA TRAINER
+        # ======================================================
         hparams = TrainerHParams.ImageJEPA
         image_jepa = jepa.JEPATrainer(
             partial_optimizer=partial(AdamW, lr=hparams.lr),
@@ -659,13 +765,13 @@ def main() -> None:
                 ),
                 mask_scale=hparams.mask_scale,
                 n_masks=hparams.num_masks,
-                min_keep=hparams.min_mask_keep,
+                min_keep=hparams.min_unmask_keep,
             ),
         )
 
-        # ----- Audio JEPA Trainer -----
-        from sample.models.components.audio_patchifier import AudioPatchifier
-
+        # ======================================================
+        #                  AUDIO JEPA TRAINER
+        # ======================================================
         hparams = TrainerHParams.AudioJEPA
         audio_jepa = jepa.JEPATrainer(
             partial_optimizer=partial(AdamW, lr=hparams.lr),
@@ -678,11 +784,13 @@ def main() -> None:
                 ),
                 mask_scale=hparams.mask_scale,
                 n_masks=hparams.num_masks,
-                min_keep=hparams.min_mask_keep,
+                min_keep=hparams.min_unmask_keep,
             ),
         )
 
-        # ----- Temporal Encoder Trainer -----
+        # ======================================================
+        #                TEMPORAL ENCODER TRAINER
+        # ======================================================
         hparams = TrainerHParams.TemporalEncoder
         temporal_encoder = TemporalEncoderTrainer(
             partial_optimzier=partial(AdamW, lr=hparams.lr),
@@ -693,7 +801,9 @@ def main() -> None:
             min_buffer_size=hparams.seq_len + 1,
         )
 
-        # ----- Forward Dynamics Trainer -----
+        # ======================================================
+        #                FORWARD DYNAMICS TRAINER
+        # ======================================================
         hparams = TrainerHParams.ForwardDynamics
         forward_dynamics = ImaginingForwardDynamicsTrainer(
             partial_optimizer=partial(AdamW, lr=hparams.lr),
@@ -708,7 +818,9 @@ def main() -> None:
             imagination_average_method=average_exponentially,
         )
 
-        # ----- PPO Policy Trainer -----
+        # ======================================================
+        #                PPO POLICY TRAINER
+        # ======================================================
         hparams = TrainerHParams.PPOPolicy
         policy = PPOPolicyTrainer(
             partial_optimizer=partial(AdamW, lr=hparams.lr),
@@ -719,6 +831,7 @@ def main() -> None:
             min_new_data_count=hparams.min_new_data_count,
         )
 
+        logger.info("Initialized Trainers.")
         return {
             "image_jepa": image_jepa,
             "audio_jepa": audio_jepa,
@@ -727,46 +840,42 @@ def main() -> None:
             "policy": policy,
         }
 
-    # #########################################
-    #            Create Data Buffers
-    # #########################################
-
+    # ===========================================================================================
+    #                              DATA BUFFER CREATION
+    # ===========================================================================================
     def create_data_buffers() -> dict[str, DataBuffer[Any]]:
         from pamiq_core.data.impls import RandomReplacementBuffer, SequentialBuffer
 
         from sample.data import DataKey
 
-        # ----- Image Buffer -----
         image = RandomReplacementBuffer(
             collecting_data_names=[DataKey.OBSERVATION],
             max_size=DataBufferHParams.Image.max_size,
             expected_survival_length=int(
-                12 * 60 * 60 / InteractionHParams.frame_interval  # 12 hour
+                # 12 hours of experience
+                12 * 60 * 60 / InteractionHParams.frame_interval
             ),
         )
 
-        # ----- Audio Buffer -----
         audio = RandomReplacementBuffer(
             collecting_data_names=[DataKey.OBSERVATION],
             max_size=DataBufferHParams.Audio.max_size,
             expected_survival_length=int(
-                12 * 60 * 60 / InteractionHParams.frame_interval  # 12 hour
+                # 12 hours of experience
+                12 * 60 * 60 / InteractionHParams.frame_interval
             ),
         )
 
-        # ----- Temporal Buffer -----
         temporal = SequentialBuffer(
             collecting_data_names=[DataKey.OBSERVATION, DataKey.HIDDEN],
             max_size=DataBufferHParams.Temporal.max_size,
         )
 
-        # ----- Forward Dynamics Buffer -----
         forward_dynamics = SequentialBuffer(
             collecting_data_names=[DataKey.OBSERVATION, DataKey.ACTION, DataKey.HIDDEN],
             max_size=DataBufferHParams.ForwardDynamics.max_size,
         )
 
-        # ----- Policy Buffer -----
         policy = SequentialBuffer(
             collecting_data_names=[
                 DataKey.OBSERVATION,
@@ -779,6 +888,7 @@ def main() -> None:
             max_size=DataBufferHParams.Policy.max_size,
         )
 
+        logger.info("Initialized DataBuffers.")
         return {
             BufferName.IMAGE: image,
             BufferName.AUDIO: audio,
@@ -787,9 +897,9 @@ def main() -> None:
             BufferName.POLICY: policy,
         }
 
-    # #########################################
-    #                 Launch
-    # #########################################
+    # ===========================================================================================
+    #                           EXPERIMENT TRACKING AND SYSTEM LAUNCH
+    # ===========================================================================================
 
     mlflow.set_tracking_uri(args.output_dir / "mlflow")
 
@@ -801,11 +911,16 @@ def main() -> None:
             trainers=create_trainers(),
             config=LaunchConfig(
                 states_dir=args.output_dir / "states",
-                save_state_interval=24 * 60 * 60,  # 1 day.
-                max_keep_states=3,
+                save_state_interval=24 * 60 * 60,  # Daily checkpoints (24 hours)
+                max_keep_states=3,  # Retain 3 most recent checkpoints
             ),
         )
 
 
 if __name__ == "__main__":
+    """Entry point for the VRChat autonomous agent training system.
+
+    Example usage:
+        python main.py --model_size large --device cuda --output_dir ./experiments/run_001
+    """
     main()
