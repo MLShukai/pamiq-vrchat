@@ -9,6 +9,7 @@ from sample.transforms.audio import (
     AudioLengthCompletion,
     create_transform,
 )
+from tests.sample.helpers import parametrize_device
 
 
 class TestAudioFrameToTensor:
@@ -25,11 +26,51 @@ class TestAudioFrameToTensor:
 
         assert isinstance(output, torch.Tensor)
         assert output.shape == (channels, frame_size)
-        assert output.dtype == torch.float32
+        assert output.dtype == torch.get_default_dtype()
+        assert output.device == torch.get_default_device()
 
         # Check transposition was done correctly
         np_transposed = audio_frame.transpose(1, 0)
         assert torch.allclose(output, torch.from_numpy(np_transposed))
+
+    @pytest.mark.parametrize("dtype", [torch.float16, torch.float32, torch.float64])
+    def test_conversion_with_dtype(self, dtype):
+        """Test conversion with specified dtype."""
+        transform = AudioFrameToTensor(dtype=dtype)
+        audio_frame = np.random.randn(16080, 2)
+
+        output = transform(audio_frame)
+        assert isinstance(output, torch.Tensor)
+        assert transform.dtype == dtype
+
+    @parametrize_device
+    def test_conversion_with_device(self, device):
+        """Test conversion with specified device."""
+        transform = AudioFrameToTensor(device=device)
+        audio_frame = np.random.randn(16080, 2)
+        output = transform(audio_frame)
+        assert isinstance(output, torch.Tensor)
+        assert transform.device == device
+
+    @pytest.mark.parametrize("dtype", [torch.float16, torch.float32, torch.float64])
+    @parametrize_device
+    def test_conversion_with_torch_default(self, device, dtype):
+        original_device, original_dtype = (
+            torch.get_default_device(),
+            torch.get_default_dtype(),
+        )
+        try:
+            torch.set_default_device(device)
+            torch.set_default_dtype(dtype)
+            transform = AudioFrameToTensor()
+            audio_frame = np.random.randn(16080, 2)
+            output = transform(audio_frame)
+            assert isinstance(output, torch.Tensor)
+            assert transform.device == device
+            assert transform.dtype == dtype
+        finally:
+            torch.set_default_device(original_device)
+            torch.set_default_dtype(original_dtype)
 
 
 class TestAudioLengthCompletion:
