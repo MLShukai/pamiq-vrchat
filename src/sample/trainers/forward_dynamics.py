@@ -150,7 +150,7 @@ class ImaginingForwardDynamicsTrainer(TorchTrainer):
             torch.stack(list(data[DataKey.HIDDEN])),
         )
         sampler = self.partial_sampler(dataset=dataset)
-        dataloader = DataLoader(dataset=dataset, sampler=sampler)
+        dataloader = self.partial_dataloader(dataset=dataset, sampler=sampler)
         device = get_device(self.forward_dynamics.model)
 
         for _ in range(self.max_epochs):
