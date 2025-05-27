@@ -3,7 +3,7 @@ from typing import cast, override
 
 import torch
 import torch.nn as nn
-from torch.distributions import Categorical, Distribution
+from torch.distributions import Categorical, Distribution, constraints
 
 
 class MultiCategoricals(Distribution):
@@ -16,6 +16,12 @@ class MultiCategoricals(Distribution):
     action dimensions, like game controllers with different buttons or
     modes.
     """
+
+    @property
+    @override
+    def arg_constraints(self) -> dict[str, constraints.Constraint]:
+        """Returns empty constraints."""
+        return {}
 
     def __init__(self, categoricals: Iterable[Categorical]) -> None:
         """Constructs Multi Categorical distribution from a collection of
