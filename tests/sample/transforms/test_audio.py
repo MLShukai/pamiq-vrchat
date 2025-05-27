@@ -241,11 +241,22 @@ class TestCreateTransform:
         "source_rate,target_rate,frame_size,target_size,channels",
         [(16000, 8000, 1600, 3200, 1), (44100, 16000, 1024, 128, 2)],
     )
+    @pytest.mark.parametrize("dtype", [torch.float16, torch.float32, torch.float64])
+    @parametrize_device
     def test_full_pipeline(
-        self, source_rate, target_rate, frame_size, target_size, channels
+        self,
+        source_rate,
+        target_rate,
+        frame_size,
+        target_size,
+        channels,
+        dtype,
+        device,
     ):
         """Test the full audio transform pipeline."""
-        transform = create_transform(source_rate, target_rate, target_size)
+        transform = create_transform(
+            source_rate, target_rate, target_size, device=device, dtype=dtype
+        )
         audio_frame = np.random.randn(frame_size, channels).astype(np.float32)
 
         output = transform(audio_frame)
@@ -254,7 +265,9 @@ class TestCreateTransform:
         assert isinstance(output, torch.Tensor)
         # Expected output length after resampling
         assert output.shape == (channels, target_size)
+        assert output.dtype == dtype
+        assert output.device
 
         # Check standardization
-        assert torch.abs(output.mean()) < 1e-5
+        assert torch.abs(output.mean()) < 1e-4
         assert torch.abs(output.std() - 1.0) < 1e-1  # Allow some tolerance

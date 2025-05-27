@@ -145,7 +145,7 @@ def create_transform(
     """
     return nn.Sequential(
         AudioFrameToTensor(device, dtype),
-        Resample(source_sample_rate, target_sample_rate),
+        Resample(source_sample_rate, target_sample_rate, dtype=dtype).to(device),
         AudioLengthCompletion(target_frame_size),
         Standardize(),
     )
