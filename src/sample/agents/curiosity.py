@@ -175,8 +175,8 @@ class CuriosityAgent(Agent[Tensor, Tensor]):
 
         obs_dist_imaginations, hidden_imaginations = self.forward_dynamics(
             obs_imaginations,
-            hidden_imaginations,
             action.expand((len(obs_imaginations), *action.shape)),
+            hidden_imaginations,
         )
         obs_imaginations = obs_dist_imaginations.sample()
 
