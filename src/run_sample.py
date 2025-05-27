@@ -31,6 +31,7 @@ class InteractionHParams:
         class Action:
             class Mouse:
                 time_constant: float = 0.2
+                max_velocity: int = 1000
 
             class Osc:
                 host: str = "127.0.0.1"
@@ -373,7 +374,10 @@ def main() -> None:
                         ),
                     }
                 ),
-                transforms.action.ActionTransform(),
+                transforms.action.ActionTransform(
+                    hparams.Action.Mouse.max_velocity,
+                    hparams.Action.Mouse.max_velocity,
+                ),
             ),
         )
         return FixedIntervalInteraction.with_sleep_adjustor(
