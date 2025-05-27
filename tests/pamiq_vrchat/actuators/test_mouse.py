@@ -102,6 +102,13 @@ class TestMouseActuator:
         # Verify operate was called with the current action
         operate_spy.assert_not_called()
 
+    def test_teardown(self, mock_mouse_output):
+        mock_instance = mock_mouse_output.return_value
+        actuator = MouseActuator()
+        actuator.teardown()
+        mock_instance.move.assert_called_once_with(0, 0)
+        mock_instance.release.assert_called()
+
 
 class TestSmoothMouseActuator:
     """Tests for the SmoothMouseActuator class."""

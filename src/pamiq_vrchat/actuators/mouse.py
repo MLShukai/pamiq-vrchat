@@ -84,6 +84,17 @@ class MouseActuator(Actuator[MouseAction]):
             self._mouse.release(button)
 
     @override
+    def teardown(self) -> None:
+        """Handle teardown event.
+
+        stop mouse and release all buttons.
+        """
+        super().teardown()
+        self._mouse.move(0, 0)
+        for button in MouseButton:
+            self._mouse.release(button)
+
+    @override
     def on_resumed(self) -> None:
         """Handle system resume event.
 
@@ -101,9 +112,7 @@ class MouseActuator(Actuator[MouseAction]):
         released.
         """
         if hasattr(self, "_mouse"):
-            self._mouse.move(0, 0)
-            for button in MouseButton:
-                self._mouse.release(button)
+            self.teardown()
 
 
 class SmoothMouseActuator(MouseActuator):
