@@ -199,7 +199,7 @@ class DataBufferHParams:
 class CliArgs:
     """Arguments for launch."""
 
-    model_size: Literal["tiny", "small", "medium", "large"]
+    model_size: Literal["tiny", "small", "medium", "large"] = "large"
     """Model size selection."""
 
     device: str = "cuda"
@@ -438,7 +438,7 @@ def main() -> None:
         # ----- Audio JEPA -----
         hparams = model_hparams.audio_jepa
         context_encoder, target_encoder, predictor, infer = create_audio_jepa(
-            sample_size=InteractionHParams.Env.Obs.Audio.sample_rate,
+            sample_size=InteractionHParams.Env.Obs.Audio.frame_size,
             in_channels=InteractionHParams.Env.Obs.Audio.channel_size,
             hidden_dim=hparams.hidden_dim,
             embed_dim=hparams.embed_dim,
