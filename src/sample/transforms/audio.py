@@ -143,6 +143,10 @@ def create_transform(
     Returns:
         A callable that transforms AudioFrame to tensor.
     """
+    if device is None:
+        device = torch.get_default_device()
+    if dtype is None:
+        dtype = torch.get_default_dtype()
     return nn.Sequential(
         AudioFrameToTensor(device, dtype),
         Resample(source_sample_rate, target_sample_rate, dtype=dtype).to(device),
