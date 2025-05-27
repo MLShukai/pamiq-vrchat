@@ -73,29 +73,41 @@ class ResizeAndCenterCrop(nn.Module):
 
 
 def create_transform(
-    size: tuple[int, int], dtype: torch.dtype = torch.float
+    size: tuple[int, int],
+    device: torch.device | None = None,
+    dtype: torch.dtype | None = None,
 ) -> Callable[[ImageFrame], Tensor]:
     """Create a composed transform for VRChat image processing.
 
     Creates a transform pipeline that:
     1. Converts image to tensor
-    2. Converts dtype as specified
-    3. Resizes and center crops to target size
+    2. Resizes and center crops to target size
+    3. Converts dtype as specified
     4. Standardizes values
     5. Removes any image metadata
 
     Args:
         size: Target size as (height, width) tuple.
-        dtype: Target dtype for the tensor. Defaults to torch.float.
+        device: Target device for the tensor. If None, `torch.get_default_device` is used.
+        dtype: Target dtype for the tensor. If None, `torch.get_default_dtype` is used
 
     Returns:
         A callable that transforms ImageFrame to standardized Tensor.
     """
+    if dtype is None:
+        dtype = torch.get_default_dtype()
+    if device is None:
+        device = torch.get_default_device()
+
+    def to_device(tensor: Tensor) -> Tensor:
+        return tensor.to(device)
+
     transform = Compose(
         [
             ToImage(),
-            ToDtype(dtype, scale=True),
+            to_device,
             ResizeAndCenterCrop(size),
+            ToDtype(dtype, scale=True),
             Standardize(),
             ToPureTensor(),
         ]
