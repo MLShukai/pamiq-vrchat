@@ -516,7 +516,8 @@ def main() -> None:
                 depth=hparams.depth,
                 dim_ff_hidden=hparams.dim_ff_hidden,
                 dropout=hparams.dropout,
-            )
+            ),
+            device=device,
         )
 
         return {
