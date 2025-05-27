@@ -18,6 +18,23 @@ class AudioFrameToTensor(nn.Module):
     torchaudio transforms.
     """
 
+    def __init__(
+        self, device: torch.device | None = None, dtype: torch.dtype | None = None
+    ) -> None:
+        """Initialize AudioFrameToTensor.
+
+        Args:
+            device: Device for converted tensor. If None, `torch.get_default_device` is used.
+            dtype: Dtype for converted tensor. If None, `torch.get_default_dtype` is used.
+        """
+        super().__init__()
+        if device is None:
+            device = torch.get_default_device()
+        if dtype is None:
+            dtype = torch.get_default_dtype()
+        self.device = device
+        self.dtype = dtype
+
     @override
     def forward(self, frame: AudioFrame) -> torch.Tensor:
         """Convert audio frame to tensor.
@@ -28,7 +45,8 @@ class AudioFrameToTensor(nn.Module):
         Returns:
             Audio tensor with shape (channels, frame_size).
         """
-        return torch.from_numpy(frame).transpose(0, 1)
+        tensor = torch.from_numpy(frame).transpose(0, 1)
+        return tensor.to(device=self.device, dtype=self.dtype)
 
 
 class AudioLengthCompletion(nn.Module):
@@ -104,6 +122,8 @@ def create_transform(
     source_sample_rate: int,
     target_sample_rate: int,
     target_frame_size: int,
+    device: torch.device | None = None,
+    dtype: torch.dtype | None = None,
 ) -> Callable[[AudioFrame], torch.Tensor]:
     """Create a composed transform for VRChat audio processing.
 
@@ -117,12 +137,14 @@ def create_transform(
         source_sample_rate: Original sample rate of audio in Hz.
         target_sample_rate: Target sample rate to resample to in Hz.
         target_frame_size: Target frame size to output.
+        device: Target device for the tensor. If None, `torch.get_default_device` is used.
+        dtype: Target dtype for the tensor. If None, `torch.get_default_dtype` is used
 
     Returns:
         A callable that transforms AudioFrame to tensor.
     """
     return nn.Sequential(
-        AudioFrameToTensor(),
+        AudioFrameToTensor(device, dtype),
         Resample(source_sample_rate, target_sample_rate),
         AudioLengthCompletion(target_frame_size),
         Standardize(),

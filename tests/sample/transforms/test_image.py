@@ -6,6 +6,7 @@ from sample.transforms.image import (
     ResizeAndCenterCrop,
     create_transform,
 )
+from tests.sample.helpers import parametrize_device
 
 
 class TestResizeAndCenterCrop:
@@ -60,14 +61,16 @@ class TestCreateVRChatTransform:
             ((512, 512), torch.float16),
         ],
     )
-    def test_full_pipeline(self, size, dtype):
-        transform = create_transform(size, dtype)
+    @parametrize_device
+    def test_full_pipeline(self, size, dtype, device):
+        transform = create_transform(size, device, dtype)
         image = np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8)
 
         output = transform(image)
 
         assert output.shape == (3, *size)
         assert output.dtype == dtype
+        assert output.device == device
         assert output.mean().item() == pytest.approx(0.0, abs=1e-3)
         assert output.std().item() == pytest.approx(1.0, abs=1e-1)
 
