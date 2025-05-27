@@ -347,7 +347,7 @@ def main() -> None:
     stream_handler = colorlog.StreamHandler()
     stream_handler.setFormatter(
         colorlog.ColoredFormatter(
-            "%(log_color)s%(asctime)s %(levelname)s [%(name)s] %(message)s"
+            "%(blue)s%(asctime)s %(log_color)s%(levelname)s %(cyan)s[%(name)s] %(reset)s%(message)s",
         )
     )
     file_handler = logging.handlers.TimedRotatingFileHandler(
