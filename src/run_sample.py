@@ -112,6 +112,31 @@ class ModelHParams:
             policy=cls.Policy(),
         )
 
+    @classmethod
+    def create_medium(cls) -> Self:
+        """Create medium size model hyper parameters."""
+        return cls(
+            image_jepa=cls.ImageJEPA(
+                hidden_dim=432,
+                depth=6,
+                num_heads=3,
+            ),
+            audio_jepa=cls.AudioJEPA(
+                hidden_dim=320,
+                depth=6,
+                num_heads=2,
+            ),
+            temporal_encoder=cls.TemporalEncoder(),
+            forward_dynamics=cls.ForwardDynamics(
+                dim=1024,
+                dim_ff_hidden=1024 * 4,
+            ),
+            policy=cls.Policy(
+                dim=1024,
+                dim_ff_hidden=1024 * 4,
+            ),
+        )
+
 
 # #########################################
 #         Trainer Hyper Parameters
@@ -204,7 +229,7 @@ class DataBufferHParams:
 class CliArgs:
     """Arguments for launch."""
 
-    model_size: Literal["tiny", "small", "medium", "large"] = "large"
+    model_size: Literal["tiny", "small", "medium", "large"] = "medium"
     """Model size selection."""
 
     device: str = "cuda"
@@ -281,8 +306,8 @@ def main() -> None:
     match args.model_size:
         case "large":
             model_hparams = ModelHParams.create_large()
-        case _:
-            raise
+        case "medium":
+            model_hparams = ModelHParams.create_medium()
 
     # #########################################
     #       Create Interaction Components
