@@ -57,40 +57,40 @@ class ModelHParams:
     @dataclass
     class ImageJEPA:
         patch_size: tuple[int, int] = (12, 12)
-        hidden_dim: int = 432
+        hidden_dim: int = 768
         embed_dim: int = 128
         depth: int = 6
-        num_heads: int = 3
+        num_heads: int = 4
         output_downsample: int = 3
 
     @dataclass
     class AudioJEPA:
-        hidden_dim: int = 320
+        hidden_dim: int = 480
         embed_dim: int = 64
         depth: int = 6
-        num_heads: int = 2
+        num_heads: int = 3
         output_downsample: int = 2
 
     @dataclass
     class TemporalEncoder:
-        image_dim: int = 2048
-        audio_dim: int = 1024
+        image_dim: int = 1024
+        audio_dim: int = 512
         dim: int = 1024
-        depth: int = 8
-        dim_ff_hidden: int = dim * 4
+        depth: int = 6
+        dim_ff_hidden: int = dim * 2
         dropout: float = 0.1
 
     @dataclass
     class ForwardDynamics:
         action_dim: int = 8
-        dim: int = 1024
+        dim: int = 1536
         depth: int = 8
         dim_ff_hidden: int = dim * 4
         dropout: float = 0.1
 
     @dataclass
     class Policy:
-        dim: int = 1024
+        dim: int = 1536
         depth: int = 8
         dim_ff_hidden: int = dim * 4
         dropout: float = 0.1
@@ -129,6 +129,7 @@ class TrainerHParams:
         mask_scale: tuple[float, float] = (0.025, 0.125)
         num_masks: int = 4
         min_mask_keep: int = 7
+        iteration_count: int = 16
 
     class AudioJEPA:
         lr: float = 0.0001
@@ -137,28 +138,29 @@ class TrainerHParams:
         mask_scale: tuple[float, float] = (0.1, 0.25)
         num_masks: int = 4
         min_mask_keep: int = 5
+        iteration_count: int = 16
 
     class TemporalEncoder:
         lr: float = 0.0001
-        seq_len: int = 256
+        seq_len: int = 32
         # Iteration count is max_samples / batch_size
-        max_samples: int = 64
-        batch_size: int = 1
+        max_samples: int = 256
+        batch_size: int = 8
         min_new_data_count: int = 128
 
     class ForwardDynamics:
         lr: float = 0.0001
         seq_len: int = 256
         # Iteration count is max_samples / batch_size
-        max_samples: int = 64
+        max_samples: int = 32
         batch_size: int = 1
-        min_new_data_count: int = 128
+        min_new_data_count: int = 256
 
     class PPOPolicy:
         lr: float = 0.0001
         seq_len: int = 256
         # Iteration count is max_samples / batch_size
-        max_samples: int = 64
+        max_samples: int = 32
         batch_size: int = 1
         min_new_data_count: int = 128
 
@@ -173,13 +175,15 @@ class DataBufferHParams:
 
     class Image:
         max_size: int = (
-            TrainerHParams.ImageJEPA.batch_size * 24
-        )  # 24 is iteration count
+            TrainerHParams.ImageJEPA.batch_size
+            * TrainerHParams.AudioJEPA.iteration_count
+        )
 
     class Audio:
         max_size: int = (
-            TrainerHParams.AudioJEPA.batch_size * 24
-        )  # 24 is iteration count
+            TrainerHParams.AudioJEPA.batch_size
+            * TrainerHParams.AudioJEPA.iteration_count
+        )
 
     class Temporal:
         max_size = 1000
@@ -238,6 +242,7 @@ from sample.utils import average_exponentially
 
 
 def main() -> None:
+    torch.set_float32_matmul_precision("high")
     # #########################################
     #              Read Cli Args
     # #########################################
@@ -591,7 +596,7 @@ def main() -> None:
         temporal_encoder = TemporalEncoderTrainer(
             partial_optimzier=partial(AdamW, lr=hparams.lr),
             seq_len=hparams.seq_len,
-            max_samples=hparams.seq_len,
+            max_samples=hparams.max_samples,
             batch_size=hparams.batch_size,
             min_new_data_count=hparams.min_new_data_count,
             min_buffer_size=hparams.seq_len + 1,
