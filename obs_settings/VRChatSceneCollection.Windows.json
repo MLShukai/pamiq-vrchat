@@ -60,6 +60,12 @@
             "active": false,
             "switches": []
         },
+        "captions": {
+            "source": "",
+            "enabled": false,
+            "lang_id": 1041,
+            "provider": "mssapi"
+        },
         "output-timer": {
             "streamTimerHours": 0,
             "streamTimerMinutes": 0,
@@ -71,13 +77,7 @@
             "autoStartRecordTimer": false,
             "pauseRecordTimer": true
         },
-        "scripts-tool": [],
-        "captions": {
-            "source": "",
-            "enabled": false,
-            "lang_id": 1041,
-            "provider": "mssapi"
-        }
+        "scripts-tool": []
     },
     "resolution": {
         "x": 1920,
@@ -159,16 +159,16 @@
                             "y": -1.0
                         },
                         "scale": {
-                            "x": 2.0,
-                            "y": 2.0
+                            "x": 1.0,
+                            "y": 1.0
                         },
                         "scale_rel": {
                             "x": 1.0,
                             "y": 1.0
                         },
                         "bounds": {
-                            "x": 3840.0,
-                            "y": 2160.0
+                            "x": 1920.0,
+                            "y": 1080.0
                         },
                         "bounds_rel": {
                             "x": 3.5555555820465088,
@@ -214,8 +214,8 @@
                             "y": -1.0
                         },
                         "scale": {
-                            "x": 2.0,
-                            "y": 2.0
+                            "x": 1.0,
+                            "y": 1.0
                         },
                         "scale_rel": {
                             "x": 1.0,
@@ -274,7 +274,8 @@
             "settings": {
                 "capture_window": "134217731\r\nVRChat\r\nsteam_app_438100",
                 "show_cursor": false,
-                "window": "VRChat:UnityWndClass:VRChat.exe"
+                "window": "VRChat:UnityWndClass:VRChat.exe",
+                "method": 2
             },
             "mixers": 0,
             "sync": 0,
