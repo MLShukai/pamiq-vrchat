@@ -9,7 +9,7 @@ requires-python = ">=3.12"
 dependencies = [
     "cv2-enumerate-cameras>=1.1.18.3",
     "inputtino-python;sys_platform=='linux'",
-    "pamiq-core>=0.3.0",
+    "pamiq-core>=0.3.1",
     "pamiq-io[windows,inputtino,opencv,osc,soundcard]>=0.6.0",
     "pycaw>=20240210;sys_platform=='win32'",
 ]
