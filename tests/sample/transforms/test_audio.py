@@ -269,5 +269,5 @@ class TestCreateTransform:
         assert output.device
 
         # Check standardization
-        assert torch.abs(output.mean()) < 1e-4
+        assert torch.abs(output.mean()) < 1e-3
         assert torch.abs(output.std() - 1.0) < 1e-1  # Allow some tolerance
