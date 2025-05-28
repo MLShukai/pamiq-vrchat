@@ -97,12 +97,13 @@ class CuriosityAgent(Agent[Tensor, Tensor]):
         """
         super().setup()
         self.step_data_fd, self.step_data_policy = {}, {}
-        self.forward_dynamics_hidden_imaginations = torch.empty(0).type_as(
-            self.head_forward_dynamics_hidden_state
+
+        device = self.head_forward_dynamics_hidden_state.device
+        dtype = self.head_forward_dynamics_hidden_state.dtype
+        self.forward_dynamics_hidden_imaginations = torch.empty(
+            0, device=device, dtype=dtype
         )
-        self.obs_imaginations = torch.empty(
-            0, device=self.forward_dynamics_hidden_imaginations.device
-        )
+        self.obs_imaginations = torch.empty(0, device=device, dtype=dtype)
         self.initial_step = True
 
     @override
