@@ -134,10 +134,13 @@ class CuriosityAgent(Agent[Tensor, Tensor]):
         Returns:
             Selected action to be executed in the environment
         """
-        observation = observation.type_as(
-            self.obs_imaginations
+        observation = observation.to(
+            device=self.obs_imaginations.device, dtype=self.obs_imaginations.dtype
         )  # convert type and send to device
 
+        # ==============================================================================
+        #                             Reward Computation
+        # ==============================================================================
         if not initial_step:
             target_obses = observation.expand_as(self.obs_imaginations)
             reward_imaginations = (
@@ -150,26 +153,35 @@ class CuriosityAgent(Agent[Tensor, Tensor]):
             self.step_data_policy[DataKey.REWARD] = reward
             self.collector_policy.collect(self.step_data_policy)
 
-        obs_imaginations = torch.cat([observation[None], self.obs_imaginations])[
-            : self.max_imagination_steps
-        ]  # (imaginations, dim)
-        hidden_imaginations = torch.cat(
-            [
-                self.head_forward_dynamics_hidden_state[None],
-                self.forward_dynamics_hidden_imaginations,
-            ]
-        )[: self.max_imagination_steps]  # (imaginations, depth, dim)
+        # ==============================================================================
+        #                               Policy Process
+        # ==============================================================================
 
-        self.step_data_policy[DataKey.HIDDEN] = self.policy_hidden_state.cpu()
+        self.step_data_policy[DataKey.HIDDEN] = (
+            self.policy_hidden_state.cpu()
+        )  # Store before update
         action_dist: Distribution
         value: Tensor
-        action_dist, value, policy_hidden_state = self.policy_value(
-            obs_imaginations[0], hidden_imaginations[0]
+        action_dist, value, self.policy_hidden_state = self.policy_value(
+            observation, self.policy_hidden_state
         )
         action = action_dist.sample()
         action_log_prob = action_dist.log_prob(action)
 
-        self.step_data_fd[DataKey.HIDDEN] = (
+        # ==============================================================================
+        #                           Forward Dynamics Process
+        # ==============================================================================
+        obs_imaginations = torch.cat(
+            [observation[torch.newaxis], self.obs_imaginations]
+        )[: self.max_imagination_steps]  # (imaginations, dim)
+        hidden_imaginations = torch.cat(
+            [
+                self.head_forward_dynamics_hidden_state[torch.newaxis],
+                self.forward_dynamics_hidden_imaginations,
+            ]
+        )[: self.max_imagination_steps]  # (imaginations, depth, dim)
+
+        self.step_data_fd[DataKey.HIDDEN] = (  # Store before update
             self.head_forward_dynamics_hidden_state.cpu()
         )
 
@@ -180,6 +192,10 @@ class CuriosityAgent(Agent[Tensor, Tensor]):
         )
         obs_imaginations = obs_dist_imaginations.sample()
 
+        # ==============================================================================
+        #                               Data Collection
+        # ==============================================================================
+
         self.step_data_fd[DataKey.OBSERVATION] = self.step_data_policy[
             DataKey.OBSERVATION
         ] = observation.cpu()
@@ -188,6 +204,7 @@ class CuriosityAgent(Agent[Tensor, Tensor]):
         )
         self.collector_forward_dynamics.collect(self.step_data_fd)
 
+        # Store for next loop
         self.step_data_policy[DataKey.ACTION_LOG_PROB] = action_log_prob.cpu()
         self.step_data_policy[DataKey.VALUE] = value.cpu()
         self.metrics["value"] = value.cpu().item()
@@ -196,7 +213,6 @@ class CuriosityAgent(Agent[Tensor, Tensor]):
         self.obs_imaginations = obs_imaginations
         self.forward_dynamics_hidden_imaginations = hidden_imaginations
         self.head_forward_dynamics_hidden_state = hidden_imaginations[0]
-        self.policy_hidden_state = policy_hidden_state
 
         self.scheduler.update()
         self.global_step += 1
