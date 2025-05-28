@@ -2,20 +2,21 @@
 PAMIQ System on VRChat
 ======================
 
-This script implements a complete pipeline for training autonomous agents that can interact
-with VRChat environments through vision, audio, and action. The system uses a multi-modal
-curiosity-driven learning approach.
+This implementation trains an agent that interacts with VRChat environments through
+vision, audio, and action. The system uses a multi-modal curiosity-driven learning approach.
+
+Example usage:
+    python run_sample.py --model_size large --device cuda --output_dir ./experiments/run_001
 
 Architecture Overview:
 ---------------------
-The system consists of four main learning components working in a hierarchical manner:
+The system consists of four main learning components.
 
-1. **Unimodal Encoders (Image/Audio JEPA)**: Learn rich representations from raw sensory data
-   using Joint Embedding Predictive Architecture, enabling the agent to understand visual
-   and auditory patterns.
+1. **Unimodal Encoders (Image/Audio JEPA)**: Encode raw observations (e.g. images and audio)
+   using Joint Embedding Predictive Architecture (https://arxiv.org/abs/2301.08243).
 
 2. **Temporal Encoder**: Integrates multimodal features across time, capturing temporal
-   dependencies and cross-modal relationships essential for understanding dynamic environments.
+   dependencies and cross-modal relationships.
 
 3. **Forward Dynamics Model**: Predicts future observations given current state and actions.
 
@@ -962,9 +963,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    """Entry point for the VRChat autonomous agent training system.
+    """Entry point.
 
     Example usage:
-        python main.py --model_size large --device cuda --output_dir ./experiments/run_001
+        python run_sample.py --model_size large --device cuda --output_dir ./experiments/run_001
     """
     main()
