@@ -219,7 +219,7 @@ These scripts will:
 > \[!TIP\]
 > The scripts offer multiple model sizes (tiny to huge) to match your GPU memory. Start with "tiny" for most systems.
 
-For detailed implementation, see [`src/run_sample.py`](src/run_sample.py) which contains the complete learning pipeline architecture and hyperparameters.
+For detailed implementation, see [`src/run_sample.py`](src/run_sample.py) which contains the architecture, hyperparameters and training procedure.
 
 ## 🤝 Contributing
 
