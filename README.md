@@ -189,7 +189,7 @@ environment.affect({
 
 ## 🎮 Running the Sample Project
 
-After setting up VRChat environment and cloning this repository, you can run a complete autonomous learning agent that interacts with VRChat using our sample scripts.
+After setting up VRChat environment and cloning this repository, you can run the sample project. It trains an agent that interacts with VRChat.
 
 - **For Linux Users**
 
