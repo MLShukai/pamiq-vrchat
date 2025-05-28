@@ -150,10 +150,24 @@ class ModelHParams:
     policy: Policy
 
     @classmethod
+    def create_huge(cls) -> Self:
+        """Create large model configuration.
+
+        VRAM usage is ~23GiB (bfloat16)
+        """
+        return cls(
+            image_jepa=cls.ImageJEPA(hidden_dim=1024, depth=8, num_heads=8),
+            audio_jepa=cls.AudioJEPA(hidden_dim=512, depth=8, num_heads=4),
+            temporal_encoder=cls.TemporalEncoder(dim=1536),
+            forward_dynamics=cls.ForwardDynamics(dim=2048, depth=10),
+            policy=cls.Policy(dim=2048, depth=10),
+        )
+
+    @classmethod
     def create_large(cls) -> Self:
         """Create large model configuration.
 
-        VRAM usage is ~22GiB.
+        VRAM usage is ~12GiB (bfloat16)
         """
         return cls(
             image_jepa=cls.ImageJEPA(),
@@ -167,7 +181,7 @@ class ModelHParams:
     def create_medium(cls) -> Self:
         """Create medium model configuration.
 
-        VRAM usage is ~12GiB.
+        VRAM usage is ~6.5GiB. (bfloat16)
         """
         return cls(
             image_jepa=cls.ImageJEPA(
@@ -193,7 +207,7 @@ class ModelHParams:
     def create_small(cls) -> Self:
         """Create small model configuration.
 
-        VRAM usage is ~7GiB.
+        VRAM usage is ~4GiB. (bfloat16)
         """
         return cls(
             image_jepa=cls.ImageJEPA(
@@ -224,7 +238,7 @@ class ModelHParams:
     def create_tiny(cls) -> Self:
         """Create tiny model configuration.
 
-        VRAM usage is ~4GiB.
+        VRAM usage is ~2.5GiB. (bfloat16)
         """
         return cls(
             image_jepa=cls.ImageJEPA(
@@ -296,7 +310,7 @@ class TrainerHParams:
         # Iteration count is max_samples / batch_size
         max_samples: int = 32                       # Iteration count
         batch_size: int = 1                         # Single sequences for memory efficiency
-        min_new_data_count: int = 256               # Ensure sufficient fresh data before training
+        min_new_data_count: int = 128               # Ensure sufficient fresh data before training
 
     class PPOPolicy:
         lr: float = 0.0001                          # Learning rate.
@@ -358,7 +372,7 @@ class CliArgs:
     large (workstation) configurations.
     """
 
-    model_size: Literal["tiny", "small", "medium", "large"] = "tiny"
+    model_size: Literal["tiny", "small", "medium", "large", "huge"] = "tiny"
     """Model size selection."""
 
     device: str = "cuda"
@@ -465,6 +479,8 @@ def main() -> None:
     #                          HYPERPARAMETER RESOLUTION
     # ==================================================================================
     match args.model_size:
+        case "huge":
+            model_hparams = ModelHParams.create_huge()
         case "large":
             model_hparams = ModelHParams.create_large()
         case "medium":
