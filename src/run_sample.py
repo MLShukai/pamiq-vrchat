@@ -364,6 +364,9 @@ class CliArgs:
     device: str = "cuda"
     """Compute device for model."""
 
+    precision: Literal["32", "bf16", "tf32"] = "bf16"
+    """Computing precision."""
+
     output_dir: Path = PROJECT_ROOT / "logs"
     """Root directory to store states and logs."""
 
@@ -418,16 +421,23 @@ def main() -> None:
     6. System Launch: Start the continuous learning process with state persistence
     """
 
-    # Enable optimized matrix operations for improved training performance
-    # This setting uses TensorFloat-32 (TF32) on Ampere GPUs for faster computation
-    torch.set_float32_matmul_precision("high")
-
     # ==================================================================================
     #                              SYSTEM CONFIGURATION
     # ==================================================================================
     args = tyro.cli(CliArgs)
 
     device = torch.device(args.device)
+
+    dtype = torch.float
+    match args.precision:
+        case "32":
+            pass
+        case "bf16":
+            dtype = torch.bfloat16
+        case "tf32":
+            # Enable optimized matrix operations for improved training performance
+            # This setting uses TensorFloat-32 (TF32) on Ampere GPUs for faster computation
+            torch.set_float32_matmul_precision("medium")
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -502,6 +512,7 @@ def main() -> None:
                     model_hparams.temporal_encoder.depth,
                     model_hparams.temporal_encoder.dim,
                     device=device,
+                    dtype=dtype,
                 )
             ),
             curiosity_agent=CuriosityAgent(
@@ -509,10 +520,13 @@ def main() -> None:
                     model_hparams.forward_dynamics.depth,
                     model_hparams.forward_dynamics.dim,
                     device=device,
+                    dtype=dtype,
                 ),
                 initial_policy_hidden=torch.zeros(
                     model_hparams.policy.depth,
                     model_hparams.policy.dim,
+                    device=device,
+                    dtype=dtype,
                 ),
                 max_imagination_steps=InteractionHParams.Agent.imagination_length,
                 reward_average_method=average_exponentially,
@@ -531,6 +545,8 @@ def main() -> None:
                         sensors.ImageSensor(),
                         transforms.image.create_transform(
                             hparams.Obs.Image.size,
+                            device=device,
+                            dtype=dtype,
                         ),
                     ),
                     ObservationType.AUDIO: SensorWrapper(
@@ -543,6 +559,8 @@ def main() -> None:
                             source_sample_rate=44100,
                             target_sample_rate=hparams.Obs.Audio.sample_rate,
                             target_frame_size=hparams.Obs.Audio.frame_size,
+                            device=device,
+                            dtype=dtype,
                         ),
                     ),
                 }
@@ -610,6 +628,7 @@ def main() -> None:
             context_encoder,
             has_inference_model=False,
             device=device,
+            dtype=dtype,
         )
 
         image_jepa_target_encoder = TorchTrainingModel(
@@ -617,11 +636,13 @@ def main() -> None:
             has_inference_model=True,
             inference_procedure=infer,
             device=device,
+            dtype=dtype,
         )
         image_jepa_predictor = TorchTrainingModel(
             predictor,
             has_inference_model=False,
             device=device,
+            dtype=dtype,
         )
 
         temporal_encoder_obs_infos[ObservationType.IMAGE] = TemporalEncoderObsInfo(
@@ -648,6 +669,7 @@ def main() -> None:
             context_encoder,
             has_inference_model=False,
             device=device,
+            dtype=dtype,
         )
 
         audio_jepa_target_encoder = TorchTrainingModel(
@@ -655,11 +677,13 @@ def main() -> None:
             has_inference_model=True,
             inference_procedure=infer,
             device=device,
+            dtype=dtype,
         )
         audio_jepa_predictor = TorchTrainingModel(
             predictor,
             has_inference_model=False,
             device=device,
+            dtype=dtype,
         )
 
         temporal_encoder_obs_infos[ObservationType.AUDIO] = TemporalEncoderObsInfo(
@@ -682,6 +706,7 @@ def main() -> None:
             ),
             has_inference_model=True,
             device=device,
+            dtype=dtype,
             inference_procedure=TemporalEncoder.infer,
         )
 
@@ -701,6 +726,7 @@ def main() -> None:
             ),
             has_inference_model=True,
             device=device,
+            dtype=dtype,
         )
 
         # ======================================================
@@ -717,6 +743,7 @@ def main() -> None:
                 dropout=hparams.dropout,
             ),
             device=device,
+            dtype=dtype,
         )
 
         logger.info("Initialized Models.")

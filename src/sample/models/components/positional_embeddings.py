@@ -24,7 +24,7 @@ def get_2d_positional_embeddings(embed_dim: int, grid_size: size_2d) -> torch.Te
     positional_embeddings = _get_2d_sincos_positional_embeddings_from_grid(
         embed_dim, grid
     )
-    return torch.from_numpy(positional_embeddings).float()
+    return torch.from_numpy(positional_embeddings).type(torch.get_default_dtype())
 
 
 def get_1d_positional_embeddings(embed_dim: int, length: int) -> torch.Tensor:
