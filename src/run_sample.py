@@ -365,6 +365,7 @@ class CliArgs:
     """Compute device for model."""
 
     precision: Literal["32", "bf16", "tf32"] = "bf16"
+    """Computing precision."""
 
     output_dir: Path = PROJECT_ROOT / "logs"
     """Root directory to store states and logs."""
