@@ -385,6 +385,9 @@ class CliArgs:
     output_dir: Path = PROJECT_ROOT / "logs"
     """Root directory to store states and logs."""
 
+    countdown_seconds: int = 5
+    """Countdown duration in seconds before starting the system."""
+
 
 # ======================================================================================
 #                                MAIN TRAINING PIPELINE
@@ -395,6 +398,7 @@ class CliArgs:
 
 import logging
 import logging.handlers
+import time
 from datetime import datetime
 
 import colorlog
@@ -942,8 +946,23 @@ def main() -> None:
         }
 
     # ==================================================================================
-    #                      EXPERIMENT TRACKING AND SYSTEM LAUNCH
+    #                                SYSTEM LAUNCH
     # ==================================================================================
+
+    def countdown(seconds: int) -> None:
+        """Execute countdown before system launch."""
+        if seconds <= 0:
+            return
+
+        logger.info(
+            f"Starting system in {seconds} seconds... Please focus vrchat window."
+        )
+        for i in range(seconds, 0, -1):
+            print(f"{i} ...")
+            time.sleep(1)
+        print("Starting system!")
+
+    countdown(args.countdown_seconds)
 
     mlflow.set_tracking_uri(args.output_dir / "mlflow")
 
