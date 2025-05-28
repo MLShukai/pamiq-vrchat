@@ -187,6 +187,37 @@ environment.affect({
 })
 ```
 
+## 🎮 Running the Sample Project
+
+After setting up VRChat environment and cloning this repository, you can run the sample project. It trains an agent that interacts with VRChat.
+
+- **For Linux Users**
+
+  ```bash
+  # Run the sample
+  ./run-sample-linux.sh
+  ```
+
+- **For Windows Users**
+
+  ```powershell
+  # Run the sample (in PowerShell)
+  .\Run-SampleWindows.ps1
+  ```
+
+These scripts will:
+
+- Check and install dependencies automatically
+- Verify CUDA availability
+- Check if VRChat and OBS are running
+- Start the keyboard control interface (`pamiq-kbctl`)
+- Launch the autonomous learning agent
+
+> \[!IMPORTANT\]
+> **Mouse Control Notice:** When the agent starts, it will take control of your mouse for VRChat interaction. To pause the system, press **`Alt+Shift+P`**. This is essential for regaining mouse control when needed.
+
+For detailed implementation, see [`src/run_sample.py`](src/run_sample.py) which contains the architecture, hyperparameters and training procedure.
+
 ## 🤝 Contributing
 
 See our [Contributing Guide](CONTRIBUTING.md) for details on how to set up the development environment and contribute to the project.
