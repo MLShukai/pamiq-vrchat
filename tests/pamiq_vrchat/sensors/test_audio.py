@@ -55,7 +55,10 @@ class TestAudioSensor:
         mock_soundcard_audio_input.assert_called_once_with(16000, "default", None, 2)
 
     def test_init_without_audio_input_device_index(
-        self, mock_soundcard_audio_input, mock_get_device_name_vrchat_is_outputting_to
+        self,
+        mock_soundcard_audio_input,
+        mock_get_device_name_vrchat_is_outputting_to,
+        caplog: pytest.LogCaptureFixture,
     ):
         """Test initialization without audio device name (should use the device
         being used by VRChat.exe)."""
@@ -71,6 +74,11 @@ class TestAudioSensor:
         # Verify SoundcardAudioInput was called with the index from get_device_name_vrchat_is_outputting_to
         mock_soundcard_audio_input.assert_called_once_with(
             16000, "vrchat_device", None, 2
+        )
+
+        assert (
+            "Detected audio device vrchat outputting to is 'vrchat_device'"
+            in caplog.messages
         )
 
     def test_read(

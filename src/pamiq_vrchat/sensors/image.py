@@ -14,6 +14,7 @@ Examples:
     >>> frame = sensor.read()
 """
 
+import logging
 import sys
 from typing import override
 
@@ -21,6 +22,8 @@ import cv2
 import numpy as np
 from pamiq_core.interaction.modular_env import Sensor
 from pamiq_io.video import OpenCVVideoInput
+
+logger = logging.getLogger(__name__)
 
 type ImageFrame = np.typing.NDArray[np.uint8]
 
@@ -55,6 +58,7 @@ class ImageSensor(Sensor[ImageFrame]):
 
         if camera_index is None:
             camera_index = get_obs_virtual_camera_index()
+            logger.info(f"Detected OBS Virtual Camera device at index {camera_index}")
 
         if sys.platform == "win32":
             if width is None:
