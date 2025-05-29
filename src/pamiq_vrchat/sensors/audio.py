@@ -129,12 +129,16 @@ def get_device_name_vrchat_is_outputting_to_on_windows() -> str | None:
 
     script = dedent("""
     import sys
+    import psutil
     from pycaw.pycaw import AudioUtilities
 
     for session in AudioUtilities.GetAllSessions():
-        if session.Process and session.Process.name() == "VRChat.exe":
-            print(session.Identifier.split("|")[0], end="")
-            sys.exit(0)
+        try:
+            if session.Process and session.Process.name() == "VRChat.exe":
+                print(session.Identifier.split("|")[0], end="")
+                sys.exit(0)
+        except psutil.NoSuchProcess:
+            pass
     """).strip()
 
     out = subprocess.check_output([sys.executable, "-c", script], text=True).strip()
