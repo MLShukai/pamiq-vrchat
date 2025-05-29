@@ -1,5 +1,6 @@
 import logging
 import sys
+import threading
 from typing import override
 
 import numpy as np
@@ -11,10 +12,16 @@ type AudioFrame = np.typing.NDArray[np.float32]
 
 
 class AudioSensor(Sensor[AudioFrame]):
-    """Capturing audio from a input device.
+    """Capturing audio from an input device with background reading.
 
-    The default input device is the one VRChat.exe is using, but can be
+    This sensor captures audio frames from a specified input device in a
+    background thread to ensure consistent frame availability. The
+    default input device is the one VRChat.exe is using, but can be
     configured by the argument.
+
+    The sensor must be set up using setup() before reading and torn down
+    using teardown() when finished to properly manage the background
+    thread.
     """
 
     def __init__(
@@ -38,20 +45,81 @@ class AudioSensor(Sensor[AudioFrame]):
 
         super().__init__()
         self._frame_size = frame_size
+        self._sample_rate = sample_rate
+
         if device_name is None:
             device_name = get_device_name_vrchat_is_outputting_to()
         self._input = SoundcardAudioInput(
             sample_rate, device_name, block_size, channels
         )
 
+        self._data: AudioFrame | None = None
+        self._data_cv = threading.Condition()
+        self._running = True
+        self._reading_thread: threading.Thread | None = None
+
+    def _reading_loop(self) -> None:
+        """Background thread loop for continuous audio reading."""
+
+        while self._running:
+            data = self._input.read(self._frame_size)
+            with self._data_cv:
+                self._data = data
+                self._data_cv.notify_all()
+
     @override
     def read(self) -> AudioFrame:
-        """Reads a frame from the Soundcard.
+        """Read a frame from the background audio buffer.
+
+        This method retrieves audio data that was captured by the background
+        thread. If no data is available, it waits for up to twice the expected
+        frame duration before raising an error.
 
         Returns:
             A numpy array containing the audio with shape (self._frame_size, channels).
+
+        Raises:
+            RuntimeError: If no audio data becomes available within the timeout period.
         """
-        return self._input.read(self._frame_size)
+        with self._data_cv:
+            if self._data is None:
+                self._data_cv.wait(self._frame_size / self._sample_rate * 2)
+            if self._data is None:
+                raise RuntimeError("No audio data is available")
+            out, self._data = self._data, None
+            return out
+
+    @override
+    def setup(self) -> None:
+        """Set up the sensor and start the background reading thread.
+
+        This method must be called before using read() to ensure the
+        background audio capture thread is running.
+        """
+        super().setup()
+        self._running = True
+        self._reading_thread = threading.Thread(target=self._reading_loop)
+        self._reading_thread.start()
+
+        logger.info("Start background reading thread.")
+
+    @override
+    def teardown(self) -> None:
+        """Tear down the sensor and stop the background reading thread.
+
+        This method should be called when finished with the sensor to
+        properly clean up the background thread and resources.
+        """
+        super().teardown()
+        self._running = False
+        if self._reading_thread is not None:
+            self._reading_thread.join()
+            self._reading_thread = None
+            logger.info("End background reading thread.")
+
+    def __del__(self) -> None:
+        """Calls teardown."""
+        self.teardown()
 
 
 def get_device_name_vrchat_is_outputting_to() -> str | None:

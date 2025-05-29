@@ -1220,11 +1220,11 @@ torch = [
 
 [[package]]
 name = "pamiq-io"
-version = "0.6.0"
+version = "0.6.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c9/f6/0ec21afc317273a03a382eef3badfb92f7e196f1958ca7d0e05f60ef1811/pamiq_io-0.6.0.tar.gz", hash = "sha256:41d44b757952cc7bb78d72f4718fbc1e3a2deffe3e74fff77e86ab9b917f6ffa", size = 65830, upload-time = "2025-05-26T00:01:49.509Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2a/32/07d8508304e59e34b9b4f7b5104fa59d92a5f0d635b1dd702eb73a05e050/pamiq_io-0.6.1.tar.gz", hash = "sha256:e2db1ec2cf3332d33880a5f461bca0be1ae20695211b940cf03dc61caddbb879", size = 65822, upload-time = "2025-05-29T05:18:18.497Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4e/6d/12fbcecf531fbcb3699855d3ae639a2954d503b538ef9eeb85599b77bfb0/pamiq_io-0.6.0-py3-none-any.whl", hash = "sha256:d4c0f62ca9e1f8cf1ae5346ea73570095ac3e661d9b7388509a74c7594c9ecb1", size = 27829, upload-time = "2025-05-26T00:01:47.824Z" },
+    { url = "https://files.pythonhosted.org/packages/00/e4/fd127d9f0ea4917bb588afe6bfc0f5d77b2bffd15c24568adf0443541f3f/pamiq_io-0.6.1-py3-none-any.whl", hash = "sha256:98078dfe2306cab7cd36b2a09d05312f01ba78078a5115836a246fbbd835d5d9", size = 27829, upload-time = "2025-05-29T05:18:16.784Z" },
 ]
 
 [package.optional-dependencies]
@@ -1286,7 +1286,7 @@ requires-dist = [
     { name = "mlflow", marker = "extra == 'sample'", specifier = ">=2.22.0" },
     { name = "pamiq-core", specifier = ">=0.3.1" },
     { name = "pamiq-core", extras = ["torch", "kbctl"], marker = "extra == 'sample'", specifier = ">=0.3.1" },
-    { name = "pamiq-io", extras = ["windows", "inputtino", "opencv", "osc", "soundcard"], specifier = ">=0.6.0" },
+    { name = "pamiq-io", extras = ["windows", "inputtino", "opencv", "osc", "soundcard"], specifier = ">=0.6.1" },
     { name = "pycaw", marker = "sys_platform == 'win32'", specifier = ">=20240210" },
     { name = "rootutils", marker = "extra == 'sample'", specifier = ">=1.0.7" },
     { name = "tensordict", marker = "extra == 'sample'", specifier = ">=0.8.2" },
