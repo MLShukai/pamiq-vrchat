@@ -8,15 +8,6 @@ Please install the following tools in advance:
 
 ### Required Tools
 
-- 🐳 **Docker (Docker Compose)**
-
-  - Docker Desktop: <https://www.docker.com/get-started/>
-  - Docker Engine (Linux only): <https://docs.docker.com/engine/install/>
-  - Verification command:
-    ```sh
-    docker version && docker compose version
-    ```
-
 - 🔨 **make**
 
   - Windows: Install via [`scoop`](https://scoop.sh) or [`chocolatey`](https://chocolatey.org)
@@ -35,7 +26,30 @@ Please install the following tools in advance:
     git -v
     ```
 
+#### Developing on Docker container (Recommended)
+
+- 🐳 **Docker (Docker Compose)**
+
+  - Docker Desktop: <https://www.docker.com/get-started/>
+  - Docker Engine (Linux only): <https://docs.docker.com/engine/install/>
+  - Verification command:
+    ```sh
+    docker version && docker compose version
+    ```
+
+#### Developing on Local
+
+- ⚡**uv**
+
+  - Installation guide: <https://docs.astral.sh/uv/getting-started/installation/>
+  - Verification command:
+    ```sh
+    uv --version
+    ```
+
 ## 🚀 Setting Up the Development Environment
+
+### Docker Container Development (Recommended for Linux 🐧 User)
 
 1. Repository Setup
 
@@ -47,7 +61,7 @@ Please install the following tools in advance:
 
    ```sh
    git clone https://github.com/your-name/pamiq-vrchat.git
-   cd pamiq-vrchat
+   cd pamiq-core
    ```
 
 2. Building the Docker Environment
@@ -56,29 +70,11 @@ Please install the following tools in advance:
    # Build the image
    make docker-build
 
-   # Start the container (see options below)
+   # Start the container
    make docker-up
 
    # Connect to the container
    make docker-attach
-   ```
-
-   **Docker Environment Options:**
-
-   The Docker setup supports different configurations based on your machine:
-
-   ```sh
-   # Start with all features (GPU and audio if available)
-   make docker-up
-
-   # Start without GPU support (for machines without NVIDIA GPUs)
-   make docker-up ENABLE_GPU=false
-
-   # Start without audio support
-   make docker-up ENABLE_AUDIO=false
-
-   # Start with minimal features (no GPU, no audio)
-   make docker-up ENABLE_GPU=false ENABLE_AUDIO=false
    ```
 
 3. Git Initial Configuration
@@ -87,6 +83,22 @@ Please install the following tools in advance:
    git config user.name <your GitHub username>
    git config user.email <your GitHub email>
    ```
+
+### Local Development (Recommended for Windows User)
+
+1. Repository Setup
+
+   Same as Docker development - fork and clone the repository.
+
+2. Create Virtual Environment
+
+   ```sh
+   make venv
+   ```
+
+3. Git Initial Configuration
+
+   Same as Docker development - configure your git identity.
 
 ## 💻 Development Environment Configuration
 
@@ -133,6 +145,8 @@ make docker-down
 ```
 
 ### Cleaning Up the Development Environment
+
+⚠️ **USE Git Bash on Windows User**
 
 ```sh
 make clean
