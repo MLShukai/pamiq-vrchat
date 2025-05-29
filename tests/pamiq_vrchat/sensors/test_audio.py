@@ -78,10 +78,12 @@ class TestAudioSensor:
     ):
         """Test the read method returns a expected frame."""
         sensor = AudioSensor(frame_size=FRAME_SIZE)
+        sensor.setup()
         frame = sensor.read()
         # Verify frame has the expected shape and type
         assert frame.shape == (FRAME_SIZE, 2)
         assert frame.dtype == np.float32
+        sensor.teardown()
 
 
 class TestGetDeviceIdVRChatIsOutputtingTo:
