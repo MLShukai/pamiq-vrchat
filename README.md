@@ -195,14 +195,14 @@ After setting up VRChat environment and cloning this repository, you can run the
 
   ```bash
   # Run the sample
-  ./run-sample-linux.sh
+  ./run-sample.linux.sh
   ```
 
 - **For Windows Users**
 
   ```powershell
   # Run the sample (in PowerShell)
-  .\Run-SampleWindows.ps1
+  .\Run-Sample.Windows.ps1
   ```
 
 These scripts will:
