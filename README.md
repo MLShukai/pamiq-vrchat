@@ -8,7 +8,7 @@ Interface for PAMIQ to interact with VRChat.
 - **Mouse Control**: Simulate mouse movements and clicks with natural-feeling transitions using `MouseActuator` and `SmoothMouseActuator`
 - **Avatar Control**: Send OSC commands to VRChat for avatar movement, jumping, and actions via `OscActuator` and `SmoothOscActuator`
 - **Smooth Transitions**: Natural-feeling controls with gradual acceleration and realistic button timings
-- **PAMIQ Integration**: Seamlessly works with PAMIQ-Core for AI agent development
+- **PAMIQ Integration**: Seamlessly works with [PAMIQ-Core](https://mlshukai.github.io/pamiq-core/) for AI agent development
 
 ## 📦 Installation
 
@@ -172,7 +172,7 @@ These scripts will:
 - Check and install dependencies automatically
 - Verify CUDA availability
 - Check if VRChat and OBS are running
-- Start the keyboard control interface (**`pamiq-kbctl`**)
+- Start the keyboard control interface ([**`pamiq-kbctl`**](https://mlshukai.github.io/pamiq-core/user-guide/console/#keyboard-shortcut-controller))
 - Launch the autonomous learning agent
 
 > \[!IMPORTANT\]
