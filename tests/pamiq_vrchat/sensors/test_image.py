@@ -26,7 +26,10 @@ class TestImageSensor:
         )
 
     def test_init_without_camera_index(
-        self, mock_opencv_video_input, mock_get_obs_camera_index
+        self,
+        mock_opencv_video_input,
+        mock_get_obs_camera_index,
+        caplog: pytest.LogCaptureFixture,
     ):
         """Test initialization without camera index (should use OBS virtual
         camera)."""
@@ -37,6 +40,7 @@ class TestImageSensor:
 
         # Verify OpenCVVideoInput was called with the index from get_obs_virtual_camera_index
         assert mock_opencv_video_input.call_args[0][0] == 2
+        assert "Detected OBS Virtual Camera device at index 2" in caplog.messages
 
     def test_init_with_resolution(self, mock_opencv_video_input):
         """Test initialization with explicit width and height."""

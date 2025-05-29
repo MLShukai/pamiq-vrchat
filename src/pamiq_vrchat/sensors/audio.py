@@ -49,6 +49,14 @@ class AudioSensor(Sensor[AudioFrame]):
 
         if device_name is None:
             device_name = get_device_name_vrchat_is_outputting_to()
+            if device_name:
+                logger.info(
+                    f"Detected audio device vrchat outputting to is '{device_name}'"
+                )
+            else:
+                logger.warning(
+                    "Can not detect audio device vrchat outputting to. using default audio output device."
+                )
         self._input = SoundcardAudioInput(
             sample_rate, device_name, block_size, channels
         )
