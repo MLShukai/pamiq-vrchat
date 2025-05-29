@@ -7,6 +7,8 @@ on:
       - ".github/workflows/test-on-gpu.yml"
       - "src/sample/**"
       - "tests/sample/**"
+      - "pyproject.toml"
+      - "uv.lock"
 env:
   PYTHON_VERSION: "3.12"
   UV_VERSION: "0.5.10"
