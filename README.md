@@ -7,14 +7,13 @@ Interface for PAMIQ to interact with VRChat.
 - **Visual Input**: Capture VRChat gameplay through OBS virtual camera with the `ImageSensor`
 - **Mouse Control**: Simulate mouse movements and clicks with natural-feeling transitions using `MouseActuator` and `SmoothMouseActuator`
 - **Avatar Control**: Send OSC commands to VRChat for avatar movement, jumping, and actions via `OscActuator` and `SmoothOscActuator`
-- **Modular Design**: Easily compose sensors and actuators into a complete `VRChatEnvironment`
 - **Smooth Transitions**: Natural-feeling controls with gradual acceleration and realistic button timings
-- **PAMIQ Integration**: Seamlessly works with PAMIQ-Core for AI agent development
+- **PAMIQ Integration**: Seamlessly works with [PAMIQ-Core](https://mlshukai.github.io/pamiq-core/) for AI agent development
 
 ## 📦 Installation
 
 > \[!NOTE\]
-> If **🐧 Linux** user, install [**inputtino**](https://github.com/games-on-whales/inputtino/tree/stable/bindings/python#installation) which is a required dependency.
+> If **Linux 🐧** user, install [**inputtino**](https://github.com/games-on-whales/inputtino/tree/stable/bindings/python#installation) first which is a required dependency.
 
 ```sh
 # Install via pip
@@ -30,14 +29,14 @@ pip install .
 
 ### Prerequisites
 
-- Linux or Windows machine.
+- Linux or Windows machine with Desktop environment.
 - Machine capable of running VRChat
 
 ### Install Steam
 
 Download and install Steam from the [official website](https://store.steampowered.com/about/).
 
-### **(🐧Linux User Only)** Enable Proton
+### **(🐧 Linux User Only)** Enable Proton
 
 Open Steam → Settings → Compatibility and enable `Enable Steam Play for all other titles`.
 
@@ -150,43 +149,6 @@ smooth_osc = SmoothOscActuator(
 smooth_osc.operate({"axes": {OscAxes.Vertical: 0.5}})
 ```
 
-### Complete VRChat Environment
-
-```python
-from pamiq_vrchat import ActionType, ObservationType, VRChatEnvironment
-from pamiq_vrchat.sensors import ImageSensor
-from pamiq_vrchat.actuators import SmoothMouseActuator, SmoothOscActuator
-
-# Create sensors and actuators
-image_sensor = ImageSensor()
-mouse_actuator = SmoothMouseActuator()
-osc_actuator = SmoothOscActuator()
-
-# Create the VRChat environment
-environment = VRChatEnvironment(
-    sensors={
-        ObservationType.IMAGE: image_sensor
-    },
-    actuators={
-        ActionType.MOUSE: mouse_actuator,
-        ActionType.OSC: osc_actuator
-    }
-)
-
-# Get observations
-observations = environment.observe()
-image_frame = observations[ObservationType.IMAGE]
-
-# Send actions
-environment.affect({
-    ActionType.MOUSE: {"move_velocity": (0, 0)},
-    ActionType.OSC: {
-        "axes": {OscAxes.Vertical: 0.5},
-        "buttons": {OscButtons.Jump: True}
-    }
-})
-```
-
 ## 🎮 Running the Sample Project
 
 After setting up VRChat environment and cloning this repository, you can run the sample project. It trains an agent that interacts with VRChat.
@@ -195,14 +157,14 @@ After setting up VRChat environment and cloning this repository, you can run the
 
   ```bash
   # Run the sample
-  ./run-sample-linux.sh
+  ./run-sample.linux.sh
   ```
 
 - **For Windows Users**
 
   ```powershell
   # Run the sample (in PowerShell)
-  .\Run-SampleWindows.ps1
+  .\Run-Sample.Windows.ps1
   ```
 
 These scripts will:
@@ -210,7 +172,7 @@ These scripts will:
 - Check and install dependencies automatically
 - Verify CUDA availability
 - Check if VRChat and OBS are running
-- Start the keyboard control interface (`pamiq-kbctl`)
+- Start the keyboard control interface ([**`pamiq-kbctl`**](https://mlshukai.github.io/pamiq-core/user-guide/console/#keyboard-shortcut-controller))
 - Launch the autonomous learning agent
 
 > \[!IMPORTANT\]
