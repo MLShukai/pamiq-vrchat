@@ -142,9 +142,6 @@ class QLSTMLayer(nn.Module):
         self.fc_output_gate = nn.Linear(dim, dim)
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
-        self.last_hidden = None
-        self.last_hidden_init = nn.Parameter(torch.randn(dim))
-        self.is_refresh = True
 
     @override
     def forward(self, x: Tensor, hidden: Tensor) -> tuple[Tensor, Tensor]:
