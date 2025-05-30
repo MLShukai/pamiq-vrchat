@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from pytest_mock import MockerFixture
 
@@ -8,6 +10,9 @@ from pamiq_vrchat.actuators.mouse import (
     SmoothMouseActuator,
 )
 
+if sys.platform != "win32" and sys.platform != "linux":
+    pytest.skip(f"{sys.platform} is not supported.", allow_module_level=True)
+
 
 class TestMouseActuator:
     """Tests for the MouseActuator class."""
@@ -15,7 +20,10 @@ class TestMouseActuator:
     @pytest.fixture
     def mock_mouse_output(self, mocker: MockerFixture):
         """Create a mock for InputtinoMouseOutput."""
-        return mocker.patch("pamiq_vrchat.actuators.mouse.InputtinoMouseOutput")
+        if sys.platform == "linux":
+            return mocker.patch("pamiq_io.mouse.InputtinoMouseOutput")
+        elif sys.platform == "win32":
+            return mocker.patch("pamiq_io.mouse.WindowsMouseOutput")
 
     def test_init(self, mock_mouse_output):
         """Test the initialization of MouseActuator."""
@@ -94,6 +102,13 @@ class TestMouseActuator:
         # Verify operate was called with the current action
         operate_spy.assert_not_called()
 
+    def test_teardown(self, mock_mouse_output):
+        mock_instance = mock_mouse_output.return_value
+        actuator = MouseActuator()
+        actuator.teardown()
+        mock_instance.move.assert_called_once_with(0, 0)
+        mock_instance.release.assert_called()
+
 
 class TestSmoothMouseActuator:
     """Tests for the SmoothMouseActuator class."""
@@ -104,7 +119,10 @@ class TestSmoothMouseActuator:
     @pytest.fixture
     def mock_mouse_output(self, mocker: MockerFixture):
         """Create a mock for InputtinoMouseOutput."""
-        return mocker.patch("pamiq_vrchat.actuators.mouse.InputtinoMouseOutput")
+        if sys.platform == "linux":
+            return mocker.patch("pamiq_io.mouse.InputtinoMouseOutput")
+        elif sys.platform == "win32":
+            return mocker.patch("pamiq_io.mouse.WindowsMouseOutput")
 
     def test_init(self, mock_mouse_output):
         """Test the initialization of SmoothMouseActuator."""

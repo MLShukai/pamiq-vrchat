@@ -1,19 +1,19 @@
 # PAMIQ VRChat
 
-Interface for PAMIQ to interact with VRChat on Linux.
+Interface for PAMIQ to interact with VRChat.
 
 ## ✨ Features
 
 - **Visual Input**: Capture VRChat gameplay through OBS virtual camera with the `ImageSensor`
 - **Mouse Control**: Simulate mouse movements and clicks with natural-feeling transitions using `MouseActuator` and `SmoothMouseActuator`
 - **Avatar Control**: Send OSC commands to VRChat for avatar movement, jumping, and actions via `OscActuator` and `SmoothOscActuator`
-- **Modular Design**: Easily compose sensors and actuators into a complete `VRChatEnvironment`
 - **Smooth Transitions**: Natural-feeling controls with gradual acceleration and realistic button timings
-- **PAMIQ Integration**: Seamlessly works with PAMIQ-Core for AI agent development
+- **PAMIQ Integration**: Seamlessly works with [PAMIQ-Core](https://mlshukai.github.io/pamiq-core/) for AI agent development
 
 ## 📦 Installation
 
-First, install [**inputtino**](https://github.com/games-on-whales/inputtino/tree/stable/bindings/python#installation) which is a required dependency.
+> \[!NOTE\]
+> If **Linux 🐧** user, install [**inputtino**](https://github.com/games-on-whales/inputtino/tree/stable/bindings/python#installation) first which is a required dependency.
 
 ```sh
 # Install via pip
@@ -29,14 +29,14 @@ pip install .
 
 ### Prerequisites
 
-- Linux with Desktop Environment
+- Linux or Windows machine with Desktop environment.
 - Machine capable of running VRChat
 
 ### Install Steam
 
 Download and install Steam from the [official website](https://store.steampowered.com/about/).
 
-### Enable Proton
+### **(🐧 Linux User Only)** Enable Proton
 
 Open Steam → Settings → Compatibility and enable `Enable Steam Play for all other titles`.
 
@@ -52,12 +52,11 @@ After installation, select `GE-Proton` as the compatibility tool in Steam → Se
 
 Add **VRChat** to your library from the [Steam store](https://store.steampowered.com/app/438100/VRChat/) and install it.
 
+After install, launch VRChat and login.
+
 ### Setup OBS
 
 For OBS installation and virtual camera setup, refer to [pamiq-io documentation](https://github.com/MLShukai/pamiq-io?tab=readme-ov-file#obs-virtual-camera).
-
-> \[!IMPORTANT\]
-> Don't forget to install `v4l-utils`
 
 > \[!NOTE\]
 > The `Output (Scaled) Resolution` and `FPS Value` in OBS Video settings will affect the output of the `ImageSensor` class.
@@ -65,7 +64,17 @@ For OBS installation and virtual camera setup, refer to [pamiq-io documentation]
 
 Capture the VRChat window in OBS and enable the virtual camera.
 
-You can also use our pre-configured [Scene Collection](./obs_settings/VRChatSceneCollection.json). Import it from the OBS `Scene Collection` tab → `Import`, and ensure the checkbox is checked.
+You can also use our pre-configured [Scene Collection](./obs_settings/). Import it from the OBS `Scene Collection` tab → `Import`, and ensure the checkbox is checked.
+
+### Enable OSC
+
+1. Open the "Launch Pad" (press the `Esc` key)
+2. Go to the main menu
+3. Open settings (click the ⚙️ icon)
+4. Click `Search all settings` and type "OSC", then press Enter
+5. Enable the `OSC` button
+
+![enable_osc](./docs/images/osc_enable.png)
 
 ## 🚀 Quick Examples
 
@@ -78,6 +87,8 @@ from pamiq_vrchat.sensors import ImageSensor
 sensor = ImageSensor()
 # Or specify a camera index
 # sensor = ImageSensor(camera_index=0)
+# (Windows only) you can specify width and height
+# sensor = ImageSensor(width=1920, height=1080)
 
 # Capture a frame
 frame = sensor.read()
@@ -85,6 +96,9 @@ frame = sensor.read()
 ```
 
 ### Mouse Control
+
+> \[!NOTE\]
+> When using mouse control, remember to keep the VRChat game window focused (selected) on your desktop.
 
 ```python
 from pamiq_vrchat.actuators import MouseActuator, MouseButton, SmoothMouseActuator
@@ -135,42 +149,36 @@ smooth_osc = SmoothOscActuator(
 smooth_osc.operate({"axes": {OscAxes.Vertical: 0.5}})
 ```
 
-### Complete VRChat Environment
+## 🎮 Running the Sample Project
 
-```python
-from pamiq_vrchat import ActionType, ObservationType, VRChatEnvironment
-from pamiq_vrchat.sensors import ImageSensor
-from pamiq_vrchat.actuators import SmoothMouseActuator, SmoothOscActuator
+After setting up VRChat environment and cloning this repository, you can run the sample project. It trains an agent that interacts with VRChat.
 
-# Create sensors and actuators
-image_sensor = ImageSensor()
-mouse_actuator = SmoothMouseActuator()
-osc_actuator = SmoothOscActuator()
+- **For Linux Users**
 
-# Create the VRChat environment
-environment = VRChatEnvironment(
-    sensors={
-        ObservationType.IMAGE: image_sensor
-    },
-    actuators={
-        ActionType.MOUSE: mouse_actuator,
-        ActionType.OSC: osc_actuator
-    }
-)
+  ```bash
+  # Run the sample
+  ./run-sample.linux.sh
+  ```
 
-# Get observations
-observations = environment.observe()
-image_frame = observations[ObservationType.IMAGE]
+- **For Windows Users**
 
-# Send actions
-environment.affect({
-    ActionType.MOUSE: {"move_velocity": (0, 0)},
-    ActionType.OSC: {
-        "axes": {OscAxes.Vertical: 0.5},
-        "buttons": {OscButtons.Jump: True}
-    }
-})
-```
+  ```powershell
+  # Run the sample (in PowerShell)
+  .\Run-Sample.Windows.ps1
+  ```
+
+These scripts will:
+
+- Check and install dependencies automatically
+- Verify CUDA availability
+- Check if VRChat and OBS are running
+- Start the keyboard control interface ([**`pamiq-kbctl`**](https://mlshukai.github.io/pamiq-core/user-guide/console/#keyboard-shortcut-controller))
+- Launch the autonomous learning agent
+
+> \[!IMPORTANT\]
+> **Mouse Control Notice:** When the agent starts, it will take control of your mouse for VRChat interaction. To pause the system, press **`Alt+Shift+P`**. This is essential for regaining mouse control when needed.
+
+For detailed implementation, see [`src/run_sample.py`](src/run_sample.py) which contains the architecture, hyperparameters and training procedure.
 
 ## 🤝 Contributing
 

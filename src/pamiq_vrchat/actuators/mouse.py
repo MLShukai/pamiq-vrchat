@@ -1,7 +1,8 @@
+import sys
 from typing import TypedDict, override
 
 from pamiq_core.interaction.modular_env import Actuator
-from pamiq_io.mouse import InputtinoMouseOutput, MouseButton
+from pamiq_io.mouse import MouseButton, MouseOutput
 
 from .control_models import SimpleButton, SimpleMotor
 
@@ -25,6 +26,8 @@ class MouseActuator(Actuator[MouseAction]):
     mouse movements and button presses using InputtinoMouseOutput.
     """
 
+    _mouse: MouseOutput
+
     def __init__(self) -> None:
         """Initialize the mouse actuator.
 
@@ -33,7 +36,17 @@ class MouseActuator(Actuator[MouseAction]):
         """
         super().__init__()
 
-        self._mouse = InputtinoMouseOutput()
+        if sys.platform == "linux":
+            from pamiq_io.mouse import InputtinoMouseOutput
+
+            self._mouse = InputtinoMouseOutput()
+        elif sys.platform == "win32":
+            from pamiq_io.mouse import WindowsMouseOutput
+
+            self._mouse = WindowsMouseOutput()
+        else:
+            raise RuntimeError(f"Your platform {sys.platform} is not supported.")
+
         self._current_action: MouseAction | None = None
 
     @override
@@ -71,6 +84,17 @@ class MouseActuator(Actuator[MouseAction]):
             self._mouse.release(button)
 
     @override
+    def teardown(self) -> None:
+        """Handle teardown event.
+
+        stop mouse and release all buttons.
+        """
+        super().teardown()
+        self._mouse.move(0, 0)
+        for button in MouseButton:
+            self._mouse.release(button)
+
+    @override
     def on_resumed(self) -> None:
         """Handle system resume event.
 
@@ -88,9 +112,7 @@ class MouseActuator(Actuator[MouseAction]):
         released.
         """
         if hasattr(self, "_mouse"):
-            self._mouse.move(0, 0)
-            for button in MouseButton:
-                self._mouse.release(button)
+            self.teardown()
 
 
 class SmoothMouseActuator(MouseActuator):

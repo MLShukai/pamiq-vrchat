@@ -1,13 +1,9 @@
 """Tests for the image_sensor module."""
 
-import re
-import subprocess
-from unittest.mock import MagicMock, patch
-
 import numpy as np
 import pytest
 
-from pamiq_vrchat.sensors.image import ImageSensor, get_obs_virtual_camera_index
+from pamiq_vrchat.sensors.image import ImageSensor
 
 
 class TestImageSensor:
@@ -29,16 +25,11 @@ class TestImageSensor:
             "pamiq_vrchat.sensors.image.get_obs_virtual_camera_index", return_value=2
         )
 
-    def test_init_with_camera_index(self, mock_opencv_video_input):
-        """Test initialization with explicit camera index."""
-        camera_index = 1
-        ImageSensor(camera_index=camera_index)
-
-        # Verify OpenCVVideoInput was called with the correct camera index
-        mock_opencv_video_input.assert_called_once_with(camera_index)
-
     def test_init_without_camera_index(
-        self, mock_opencv_video_input, mock_get_obs_camera_index
+        self,
+        mock_opencv_video_input,
+        mock_get_obs_camera_index,
+        caplog: pytest.LogCaptureFixture,
     ):
         """Test initialization without camera index (should use OBS virtual
         camera)."""
@@ -48,7 +39,40 @@ class TestImageSensor:
         mock_get_obs_camera_index.assert_called_once()
 
         # Verify OpenCVVideoInput was called with the index from get_obs_virtual_camera_index
-        mock_opencv_video_input.assert_called_once_with(2)
+        assert mock_opencv_video_input.call_args[0][0] == 2
+        assert "Detected OBS Virtual Camera device at index 2" in caplog.messages
+
+    def test_init_with_resolution(self, mock_opencv_video_input):
+        """Test initialization with explicit width and height."""
+        camera_index = 1
+        width = 1920
+        height = 1080
+        ImageSensor(camera_index=camera_index, width=width, height=height)
+
+        # Verify OpenCVVideoInput was called with the correct parameters
+        mock_opencv_video_input.assert_called_once_with(camera_index, width, height)
+
+    @pytest.mark.parametrize(
+        "platform,expected_width,expected_height",
+        [
+            ("win32", 1280, 720),  # Windows should use default values
+            ("linux", None, None),  # Non-Windows should not use default values
+        ],
+    )
+    def test_init_platform_specific_defaults(
+        self, mock_opencv_video_input, mocker, platform, expected_width, expected_height
+    ):
+        """Test platform-specific default resolution values."""
+        # Mock sys.platform
+        mocker.patch("sys.platform", platform)
+
+        camera_index = 1
+        ImageSensor(camera_index=camera_index)
+
+        # Verify OpenCVVideoInput was called with the correct parameters
+        mock_opencv_video_input.assert_called_once_with(
+            camera_index, expected_width, expected_height
+        )
 
     def test_read(self, mock_opencv_video_input):
         """Test the read method returns a frame."""
@@ -62,63 +86,3 @@ class TestImageSensor:
         assert isinstance(frame, np.ndarray)
         assert frame.shape == (10, 10, 3)
         assert frame.dtype == np.uint8
-
-
-class TestGetObsVirtualCameraIndex:
-    """Tests for the get_obs_virtual_camera_index function."""
-
-    @pytest.fixture
-    def mock_shutil_which(self, mocker):
-        """Mock shutil.which function."""
-        return mocker.patch("pamiq_vrchat.sensors.image.shutil.which")
-
-    @pytest.fixture
-    def mock_subprocess_run(self, mocker):
-        """Mock subprocess.run function."""
-        mock = mocker.patch("pamiq_vrchat.sensors.image.subprocess.run")
-        mock_result = MagicMock()
-        mock.return_value = mock_result
-        return mock, mock_result
-
-    def test_v4l2_ctl_not_found(self, mock_shutil_which):
-        """Test error when v4l2-ctl is not found."""
-        mock_shutil_which.return_value = None
-
-        with pytest.raises(RuntimeError, match="v4l2-ctl not found"):
-            get_obs_virtual_camera_index()
-
-    def test_obs_virtual_camera_not_found(self, mock_shutil_which, mock_subprocess_run):
-        """Test error when OBS virtual camera is not found."""
-        mock_shutil_which.return_value = "/usr/bin/v4l2-ctl"  # v4l2-ctl exists
-        mock_run, mock_result = mock_subprocess_run
-
-        # Set up mock output without OBS Virtual Camera
-        mock_result.stdout = "Some Device\n/dev/video0\n\nAnother Device\n/dev/video1\n"
-
-        with pytest.raises(
-            RuntimeError, match="Can not find OBS virtual camera device"
-        ):
-            get_obs_virtual_camera_index()
-
-    def test_obs_virtual_camera_found(self, mock_shutil_which, mock_subprocess_run):
-        """Test successful finding of OBS virtual camera."""
-        mock_shutil_which.return_value = "/usr/bin/v4l2-ctl"  # v4l2-ctl exists
-        mock_run, mock_result = mock_subprocess_run
-
-        # Set up mock output with OBS Virtual Camera
-        mock_result.stdout = (
-            "Some Device\n/dev/video0\n\nOBS Virtual Camera\n/dev/video2\n"
-        )
-
-        index = get_obs_virtual_camera_index()
-
-        # Verify subprocess.run was called with the correct arguments
-        mock_run.assert_called_once_with(
-            ["v4l2-ctl", "--list-devices"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-
-        # Verify the correct index was extracted
-        assert index == 2

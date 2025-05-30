@@ -1,9 +1,9 @@
 services:
   dev:
-    container_name: pamiq-vrchat-dev
+    image: pamiq-vrchat:${USER}
     build:
-      context: ../
-      dockerfile: ./docker/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     volumes:
       - pamiq-vrchat:/workspace
       - uv_cache:/root/.cache/uv
