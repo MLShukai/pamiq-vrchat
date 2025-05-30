@@ -142,9 +142,6 @@ class QLSTMLayer(nn.Module):
         self.fc_output_gate = nn.Linear(dim, dim)
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
-        self.last_hidden = None
-        self.last_hidden_init = nn.Parameter(torch.randn(dim))
-        self.is_refresh = True
 
     @override
     def forward(self, x: Tensor, hidden: Tensor) -> tuple[Tensor, Tensor]:
@@ -191,7 +188,7 @@ class QLSTMBlock(nn.Module):
         super().__init__()
         self.qlstm = QLSTMLayer(dim)
         self.ffn = FFNSwiGLU(dim, dim_ff_hidden)
-        self.norm_sioconv = RMSNorm(dim)
+        self.norm_qlstm = RMSNorm(dim)
         self.norm_ffn = RMSNorm(dim)
         self.dropout = nn.Dropout(dropout)
 
@@ -206,7 +203,7 @@ class QLSTMBlock(nn.Module):
             The output tensor of shape (batch, len, dim) and the new hidden state tensor of shape (batch, len, dim).
         """
         x_ = x
-        x = self.norm_sioconv(x)
+        x = self.norm_qlstm(x)
         x, hidden = self.qlstm(x, hidden)
         x = self.dropout(x)
         x = x + x_
