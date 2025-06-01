@@ -1,3 +1,5 @@
+![logo](./docs/images/logo.svg)
+
 # PAMIQ VRChat
 
 Interface for PAMIQ to interact with VRChat.
