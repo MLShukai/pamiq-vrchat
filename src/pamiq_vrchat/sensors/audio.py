@@ -31,6 +31,7 @@ class AudioSensor(Sensor[AudioFrame]):
         channels: int = 2,
         device_name: str | None = None,
         block_size: int | None = None,
+        return_zero_frame_if_unavailable: bool = True,
     ):
         """Initializes an AudioSensor instance.
 
@@ -40,12 +41,14 @@ class AudioSensor(Sensor[AudioFrame]):
             channels: Audio channels.
             device_name: Audio device name for model's input. If None, automatically tries to find the device used by VRChat.exe.
             block_size: Number of samples SoundCard reads.
+            return_zero_frame_if_unavailable: If True, returns zero frame when no audio data is available instead of raising RuntimeError.
         """
         from pamiq_io.audio import SoundcardAudioInput
 
         super().__init__()
         self._frame_size = frame_size
         self._sample_rate = sample_rate
+        self._channels = channels
 
         if device_name is None:
             device_name = get_device_name_vrchat_is_outputting_to()
@@ -65,6 +68,7 @@ class AudioSensor(Sensor[AudioFrame]):
         self._data_cv = threading.Condition()
         self._running = True
         self._reading_thread: threading.Thread | None = None
+        self._return_zeros = return_zero_frame_if_unavailable
 
     def _reading_loop(self) -> None:
         """Background thread loop for continuous audio reading."""
@@ -81,18 +85,27 @@ class AudioSensor(Sensor[AudioFrame]):
 
         This method retrieves audio data that was captured by the background
         thread. If no data is available, it waits for up to twice the expected
-        frame duration before raising an error.
+        frame duration. After timeout, behavior depends on return_zero_frame_if_unavailable
+        setting: returns zero frame if True, otherwise raises RuntimeError.
 
         Returns:
             A numpy array containing the audio with shape (self._frame_size, channels).
+            Returns zero-filled array if no data is available and return_zero_frame_if_unavailable is True.
 
         Raises:
-            RuntimeError: If no audio data becomes available within the timeout period.
+            RuntimeError: If no audio data becomes available within the timeout period and return_zero_frame_if_unavailable is False.
         """
         with self._data_cv:
             if self._data is None:
                 self._data_cv.wait(self._frame_size / self._sample_rate * 2)
             if self._data is None:
+                if self._return_zeros:
+                    logger.warning(
+                        "Return zero frame because no audio data is available"
+                    )
+                    return np.zeros(
+                        (self._frame_size, self._channels), dtype=np.float32
+                    )
                 raise RuntimeError("No audio data is available")
             out, self._data = self._data, None
             return out
