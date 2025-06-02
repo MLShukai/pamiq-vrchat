@@ -93,6 +93,56 @@ class TestAudioSensor:
         assert frame.dtype == np.float32
         sensor.teardown()
 
+    def test_read_returns_zero_frame_when_unavailable_and_flag_true(
+        self,
+        mock_soundcard_audio_input,
+        mock_get_device_name_vrchat_is_outputting_to,
+        mocker: MockerFixture,
+    ):
+        """Test that read() returns zero frame when no data is available and
+        return_zero_frame_if_unavailable is True."""
+        # Use small frame_size for quick timeout
+        frame_size = 10
+        sample_rate = 44100
+        mocker.patch("threading.Condition", mocker.MagicMock())
+
+        sensor = AudioSensor(
+            frame_size=frame_size,
+            sample_rate=sample_rate,
+            return_zero_frame_if_unavailable=True,
+        )
+        # Don't call setup() so background thread doesn't start and _data remains None
+
+        frame = sensor.read()
+
+        # Verify zero frame is returned
+        assert frame.shape == (frame_size, 2)
+        assert frame.dtype == np.float32
+        assert np.all(frame == 0.0)
+
+    def test_read_raises_error_when_unavailable_and_flag_false(
+        self,
+        mock_soundcard_audio_input,
+        mock_get_device_name_vrchat_is_outputting_to,
+        mocker: MockerFixture,
+    ):
+        """Test that read() raises RuntimeError when no data is available and
+        return_zero_frame_if_unavailable is False."""
+        # Use small frame_size for quick timeout
+        frame_size = 10
+        sample_rate = 44100
+        mocker.patch("threading.Condition", mocker.MagicMock())
+
+        sensor = AudioSensor(
+            frame_size=frame_size,
+            sample_rate=sample_rate,
+            return_zero_frame_if_unavailable=False,
+        )
+        # Don't call setup() so background thread doesn't start and _data remains None
+
+        with pytest.raises(RuntimeError, match="No audio data is available"):
+            sensor.read()
+
 
 class TestGetDeviceIdVRChatIsOutputtingTo:
     def test_practical(self):
