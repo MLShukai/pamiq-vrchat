@@ -167,6 +167,8 @@ After setting up VRChat environment and cloning this repository, you can run the
   ```powershell
   # Run the sample (in PowerShell)
   .\Run-Sample.Windows.ps1
+  # Or Bypass execution policy.
+  powershell -noexit -ExecutionPolicy Bypass -File .\Run-Sample.Windows.ps1
   ```
 
 These scripts will:
