@@ -976,7 +976,7 @@ def main() -> None:
                 states_dir=args.output_dir / "states",
                 save_state_interval=24 * 60 * 60,  # Daily checkpoints (24 hours)
                 max_keep_states=3,  # Retain 3 most recent checkpoints
-                web_api_address=("0.0.0.0", 8391),  # Web API Address for control.
+                web_api_address=("localhost", 8391),  # Web API Address for control.
             ),
         )
 
