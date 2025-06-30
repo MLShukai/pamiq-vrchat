@@ -282,12 +282,16 @@ wheels = [
 
 [[package]]
 name = "cv2-enumerate-cameras"
-version = "1.1.18.3"
+version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/07/b1/6678a76c7a5e6aec76aa55cb02e6163901835e6c2e11fb247e9e99c6b926/cv2_enumerate_cameras-1.1.18.3.tar.gz", hash = "sha256:73784f13e9d31d406db95c3843f44e3b135e5c3c5c159ebf0aaeb342d84e7978", size = 9679, upload-time = "2025-03-06T11:36:10.588Z" }
+dependencies = [
+    { name = "pyobjc-framework-avfoundation", marker = "sys_platform == 'darwin'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8f/51/01d7136dffbb04e4cc36d15d1611cc789c734c48d02f8842989729f47204/cv2_enumerate_cameras-1.2.0.tar.gz", hash = "sha256:28a20f623e7e09cde377a41bab5e0f92723dcd4f7e9327a4176990b258acf2e2", size = 10195, upload-time = "2025-06-29T03:12:01.226Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/24/53/1d78e7b724669b29a24b5b2c9b6374ee44ae365b2c425a2d27a7d5a27533/cv2_enumerate_cameras-1.1.18.3-cp32-abi3-win_amd64.whl", hash = "sha256:e81611708c55f2b734b01c6c0b9afccd4b1f99613c7f9ffd6bb2421453b07bc6", size = 19833, upload-time = "2025-03-06T11:36:07.002Z" },
-    { url = "https://files.pythonhosted.org/packages/2a/e2/4caf537f04ce21aff0f46712b868c0a36f3950c91cb274367bf5910240cb/cv2_enumerate_cameras-1.1.18.3-py3-none-any.whl", hash = "sha256:e3774d0d7b01058461a453eef8fd0203e5e9f1a035857eed18140a8abe0104df", size = 10194, upload-time = "2025-03-06T11:36:08.764Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/18/c6b7196080c9c012611495455f238c739d942bbbe51b78668d01f716347e/cv2_enumerate_cameras-1.2.0-cp32-abi3-win32.whl", hash = "sha256:202c1849389d247d90597711c5948c542480e57d7d829ffc1cfa8d9714351f45", size = 19757, upload-time = "2025-06-29T03:11:57.743Z" },
+    { url = "https://files.pythonhosted.org/packages/95/9e/adf68476292431594ed20b71a0e5de1831ffda330079fe65d9df42567354/cv2_enumerate_cameras-1.2.0-cp32-abi3-win_amd64.whl", hash = "sha256:62250fe7651ff19825c26864591b48c67e0d1f15135b17852ca9c37a763b0915", size = 20641, upload-time = "2025-06-29T03:11:59.137Z" },
+    { url = "https://files.pythonhosted.org/packages/73/dc/b03dccc0e8283b604773b7684e7aa796fc0215fa0a039eaf081c2e50246d/cv2_enumerate_cameras-1.2.0-py3-none-any.whl", hash = "sha256:70b479284b878ea3baede702799846e2f82112977ac0bf85a33094a7796ac9ee", size = 10912, upload-time = "2025-06-29T03:12:00.166Z" },
 ]
 
 [[package]]
@@ -1619,13 +1623,15 @@ wheels = [
 
 [[package]]
 name = "pyobjc-core"
-version = "11.0"
+version = "11.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/5c/94/a111239b98260869780a5767e5d74bfd3a8c13a40457f479c28dcd91f89d/pyobjc_core-11.0.tar.gz", hash = "sha256:63bced211cb8a8fb5c8ff46473603da30e51112861bd02c438fbbbc8578d9a70", size = 994931, upload-time = "2025-01-14T19:02:13.938Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e8/e9/0b85c81e2b441267bca707b5d89f56c2f02578ef8f3eafddf0e0c0b8848c/pyobjc_core-11.1.tar.gz", hash = "sha256:b63d4d90c5df7e762f34739b39cc55bc63dbcf9fb2fb3f2671e528488c7a87fe", size = 974602, upload-time = "2025-06-14T20:56:34.189Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/ce/bf3ff9a9347721a398c3dfb83e29b43fb166b7ef590f3f7b7ddcd283df39/pyobjc_core-11.0-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:a03061d4955c62ddd7754224a80cdadfdf17b6b5f60df1d9169a3b1b02923f0b", size = 739750, upload-time = "2025-01-14T18:46:53.039Z" },
-    { url = "https://files.pythonhosted.org/packages/72/16/0c468e73dbecb821e3da8819236fe832dfc53eb5f66a11775b055a7589ea/pyobjc_core-11.0-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:c338c1deb7ab2e9436d4175d1127da2eeed4a1b564b3d83b9f3ae4844ba97e86", size = 743900, upload-time = "2025-01-14T18:46:54.654Z" },
-    { url = "https://files.pythonhosted.org/packages/f3/88/cecec88fd51f62a6cd7775cc4fb6bfde16652f97df88d28c84fb77ca0c18/pyobjc_core-11.0-cp313-cp313t-macosx_10_13_universal2.whl", hash = "sha256:b4e9dc4296110f251a4033ff3f40320b35873ea7f876bd29a1c9705bb5e08c59", size = 791905, upload-time = "2025-01-14T18:46:56.473Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/09/e83228e878e73bf756749939f906a872da54488f18d75658afa7f1abbab1/pyobjc_core-11.1-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:765b97dea6b87ec4612b3212258024d8496ea23517c95a1c5f0735f96b7fd529", size = 677985, upload-time = "2025-06-14T20:44:48.375Z" },
+    { url = "https://files.pythonhosted.org/packages/c5/24/12e4e2dae5f85fd0c0b696404ed3374ea6ca398e7db886d4f1322eb30799/pyobjc_core-11.1-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:18986f83998fbd5d3f56d8a8428b2f3e0754fd15cef3ef786ca0d29619024f2c", size = 676431, upload-time = "2025-06-14T20:44:49.908Z" },
+    { url = "https://files.pythonhosted.org/packages/f7/79/031492497624de4c728f1857181b06ce8c56444db4d49418fa459cba217c/pyobjc_core-11.1-cp313-cp313t-macosx_10_13_universal2.whl", hash = "sha256:8849e78cfe6595c4911fbba29683decfb0bf57a350aed8a43316976ba6f659d2", size = 719330, upload-time = "2025-06-14T20:44:51.621Z" },
+    { url = "https://files.pythonhosted.org/packages/ed/7d/6169f16a0c7ec15b9381f8bf33872baf912de2ef68d96c798ca4c6ee641f/pyobjc_core-11.1-cp314-cp314-macosx_11_0_universal2.whl", hash = "sha256:8cb9ed17a8d84a312a6e8b665dd22393d48336ea1d8277e7ad20c19a38edf731", size = 667203, upload-time = "2025-06-14T20:44:53.262Z" },
+    { url = "https://files.pythonhosted.org/packages/49/0f/f5ab2b0e57430a3bec9a62b6153c0e79c05a30d77b564efdb9f9446eeac5/pyobjc_core-11.1-cp314-cp314t-macosx_11_0_universal2.whl", hash = "sha256:f2455683e807f8541f0d83fbba0f5d9a46128ab0d5cc83ea208f0bec759b7f96", size = 708807, upload-time = "2025-06-14T20:44:54.851Z" },
 ]
 
 [[package]]
@@ -1646,17 +1652,73 @@ wheels = [
 ]
 
 [[package]]
+name = "pyobjc-framework-avfoundation"
+version = "11.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-framework-coreaudio", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-framework-coremedia", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3c/1f/90cdbce1d3b4861cbb17c12adf57daeec32477eb1df8d3f9ab8551bdadfb/pyobjc_framework_avfoundation-11.1.tar.gz", hash = "sha256:6663056cc6ca49af8de6d36a7fff498f51e1a9a7f1bde7afba718a8ceaaa7377", size = 832178, upload-time = "2025-06-14T20:56:46.329Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/43/30/d5d03dd4a508bdaa2156ff379e9e109020de23cbb6316c5865d341aa6db1/pyobjc_framework_avfoundation-11.1-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:94f065db4e87b1baebb5cf9f464cf9d82c5f903fff192001ebc974d9e3132c7e", size = 70746, upload-time = "2025-06-14T20:45:53.253Z" },
+    { url = "https://files.pythonhosted.org/packages/3f/8c/b8ced7700b0e931dc37d14b05e2bead28d2598c887832b3d697da55b1845/pyobjc_framework_avfoundation-11.1-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:e204d155a09c186601490e4402dcffb2845a5831079e389b47bd6a341fe5ee63", size = 70773, upload-time = "2025-06-14T20:45:54.059Z" },
+    { url = "https://files.pythonhosted.org/packages/d6/4c/086f4713793aaabdb5134debbf1fdc6c7d4ef5a32a6b35529e2e69580ec8/pyobjc_framework_avfoundation-11.1-cp313-cp313t-macosx_10_13_universal2.whl", hash = "sha256:dd3965aad0b236b8ac12f216d688c1a22b963f63e7e4fdb7107dd6790e80ee12", size = 71352, upload-time = "2025-06-14T20:45:54.871Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/5f/d5c4b9812e22c6fdf234421f131efae7c3137e838bb9df9be8bb45cde97b/pyobjc_framework_avfoundation-11.1-cp314-cp314-macosx_11_0_universal2.whl", hash = "sha256:1ab2108b652496b13b9758c295f0f6de53b6d12125cf574ddae84ce28044bce1", size = 71208, upload-time = "2025-06-14T20:45:56.057Z" },
+    { url = "https://files.pythonhosted.org/packages/29/d0/dec23e1745a81f5576cba577fa7218d665f36250a8507eaaa83a84579abf/pyobjc_framework_avfoundation-11.1-cp314-cp314t-macosx_11_0_universal2.whl", hash = "sha256:5dd6ac6a57f86b7ed5ac0a965ce54328f6ce77816b4a1fbf0d85c06fb251867a", size = 71680, upload-time = "2025-06-14T20:45:57.091Z" },
+]
+
+[[package]]
 name = "pyobjc-framework-cocoa"
-version = "11.0"
+version = "11.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c5/32/53809096ad5fc3e7a2c5ddea642590a5f2cb5b81d0ad6ea67fdb2263d9f9/pyobjc_framework_cocoa-11.0.tar.gz", hash = "sha256:00346a8cb81ad7b017b32ff7bf596000f9faa905807b1bd234644ebd47f692c5", size = 6173848, upload-time = "2025-01-14T19:03:00.125Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4b/c5/7a866d24bc026f79239b74d05e2cf3088b03263da66d53d1b4cf5207f5ae/pyobjc_framework_cocoa-11.1.tar.gz", hash = "sha256:87df76b9b73e7ca699a828ff112564b59251bb9bbe72e610e670a4dc9940d038", size = 5565335, upload-time = "2025-06-14T20:56:59.683Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5b/8d/0e2558447c26b3ba64f7c9776a5a6c9d2ae8abf9d34308b174ae0934402e/pyobjc_framework_Cocoa-11.0-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:280a577b83c68175a28b2b7138d1d2d3111f2b2b66c30e86f81a19c2b02eae71", size = 385811, upload-time = "2025-01-14T18:49:29.259Z" },
-    { url = "https://files.pythonhosted.org/packages/1d/a5/609281a7e89efefbef9db1d8fe66bc0458c3b4e74e2227c644f9c18926fa/pyobjc_framework_Cocoa-11.0-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:15b2bd977ed340074f930f1330f03d42912d5882b697d78bd06f8ebe263ef92e", size = 385889, upload-time = "2025-01-14T18:49:30.605Z" },
-    { url = "https://files.pythonhosted.org/packages/93/f6/2d5a863673ef7b85a3cba875c43e6c495fb1307427a6801001ae94bb5e54/pyobjc_framework_Cocoa-11.0-cp313-cp313t-macosx_10_13_universal2.whl", hash = "sha256:5750001db544e67f2b66f02067d8f0da96bb2ef71732bde104f01b8628f9d7ea", size = 389831, upload-time = "2025-01-14T18:49:31.963Z" },
+    { url = "https://files.pythonhosted.org/packages/68/da/41c0f7edc92ead461cced7e67813e27fa17da3c5da428afdb4086c69d7ba/pyobjc_framework_cocoa-11.1-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:806de56f06dfba8f301a244cce289d54877c36b4b19818e3b53150eb7c2424d0", size = 388983, upload-time = "2025-06-14T20:46:52.591Z" },
+    { url = "https://files.pythonhosted.org/packages/4e/0b/a01477cde2a040f97e226f3e15e5ffd1268fcb6d1d664885a95ba592eca9/pyobjc_framework_cocoa-11.1-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:54e93e1d9b0fc41c032582a6f0834befe1d418d73893968f3f450281b11603da", size = 389049, upload-time = "2025-06-14T20:46:53.757Z" },
+    { url = "https://files.pythonhosted.org/packages/bc/e6/64cf2661f6ab7c124d0486ec6d1d01a9bb2838a0d2a46006457d8c5e6845/pyobjc_framework_cocoa-11.1-cp313-cp313t-macosx_10_13_universal2.whl", hash = "sha256:fd5245ee1997d93e78b72703be1289d75d88ff6490af94462b564892e9266350", size = 393110, upload-time = "2025-06-14T20:46:54.894Z" },
+    { url = "https://files.pythonhosted.org/packages/33/87/01e35c5a3c5bbdc93d5925366421e10835fcd7b23347b6c267df1b16d0b3/pyobjc_framework_cocoa-11.1-cp314-cp314-macosx_11_0_universal2.whl", hash = "sha256:aede53a1afc5433e1e7d66568cc52acceeb171b0a6005407a42e8e82580b4fc0", size = 392644, upload-time = "2025-06-14T20:46:56.503Z" },
+    { url = "https://files.pythonhosted.org/packages/c1/7c/54afe9ffee547c41e1161691e72067a37ed27466ac71c089bfdcd07ca70d/pyobjc_framework_cocoa-11.1-cp314-cp314t-macosx_11_0_universal2.whl", hash = "sha256:1b5de4e1757bb65689d6dc1f8d8717de9ec8587eb0c4831c134f13aba29f9b71", size = 396742, upload-time = "2025-06-14T20:46:57.64Z" },
+]
+
+[[package]]
+name = "pyobjc-framework-coreaudio"
+version = "11.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/39/c0/4ab6005cf97e534725b0c14b110d4864b367c282b1c5b0d8f42aad74a83f/pyobjc_framework_coreaudio-11.1.tar.gz", hash = "sha256:b7b89540ae7efc6c1e3208ac838ef2acfc4d2c506dd629d91f6b3b3120e55c1b", size = 141032, upload-time = "2025-06-14T20:57:04.348Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3d/fe/c43521642db98a4ec29fa535781c1316342bb52d5fc709696cbb1e8ca6cd/pyobjc_framework_coreaudio-11.1-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:2538d1242dab4e27efb346eafbad50594e7e95597fa7220f0bab2099c825da55", size = 36765, upload-time = "2025-06-14T20:47:15.344Z" },
+    { url = "https://files.pythonhosted.org/packages/82/9b/24d03ace273585de2d04385f06b895ce92caf8f5af430b060618ebce9dbe/pyobjc_framework_coreaudio-11.1-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:f73d996df1e721931d9f78050e1708735a173dbe3a76d9c71fb36e04f7208478", size = 36779, upload-time = "2025-06-14T20:47:16.123Z" },
+    { url = "https://files.pythonhosted.org/packages/91/23/aa78365e45d0d04fc37e21cf7d69dc0d11e17b564e83cb5bcd98e89cdf45/pyobjc_framework_coreaudio-11.1-cp313-cp313t-macosx_10_13_universal2.whl", hash = "sha256:67dae111b78d91c26c753dbfbccc3ea5498cfda3dfe83c6f3778628b435e1e7b", size = 38480, upload-time = "2025-06-14T20:47:16.911Z" },
+    { url = "https://files.pythonhosted.org/packages/3e/58/fc6d752a68f28567fa6d6d6a229122c829e2251f79ec7304fe0572e0fdcd/pyobjc_framework_coreaudio-11.1-cp314-cp314-macosx_11_0_universal2.whl", hash = "sha256:9527a16a2b88b37bace578d499f21229f9a33b9afdcdd35d4f44374cb8eb9ab6", size = 36910, upload-time = "2025-06-14T20:47:17.69Z" },
+    { url = "https://files.pythonhosted.org/packages/9e/4c/c1c5624418dea005d9965ba690d3649afc33371ade213841ab51922af751/pyobjc_framework_coreaudio-11.1-cp314-cp314t-macosx_11_0_universal2.whl", hash = "sha256:6ba8b67f185c0e3f26b17ae525cee3f411bc8d6e9c9a8bfd899a28f594623d2f", size = 38567, upload-time = "2025-06-14T20:47:18.45Z" },
+]
+
+[[package]]
+name = "pyobjc-framework-coremedia"
+version = "11.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/95/5d/81513acd219df77a89176f1574d936b81ad6f6002225cabb64d55efb7e8d/pyobjc_framework_coremedia-11.1.tar.gz", hash = "sha256:82cdc087f61e21b761e677ea618a575d4c0dbe00e98230bf9cea540cff931db3", size = 216389, upload-time = "2025-06-14T20:57:09.546Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2c/d1/b3d004d6a2d2188d196779d92fe8cfa2533f5722cd216fbc4f0cffc63b24/pyobjc_framework_coremedia-11.1-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:ea5055298af91e463ffa7977d573530f9bada57b8f2968dcc76a75e339b9a598", size = 29015, upload-time = "2025-06-14T20:47:49.655Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/23/cafd29011d14eac27fc55770157ebb8e02ffed9f75e01f24e97616417c4c/pyobjc_framework_coremedia-11.1-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:7ecdb64c743ffe9fd3949c7cc9109891b9f399a0852717fcb969d33c4e7ba527", size = 29031, upload-time = "2025-06-14T20:47:50.395Z" },
+    { url = "https://files.pythonhosted.org/packages/de/a6/ca85b7d9d000e8e2748bcacde356278cb90f6ca9aed54dce6a42d1716ba8/pyobjc_framework_coremedia-11.1-cp313-cp313t-macosx_10_13_universal2.whl", hash = "sha256:969ce357c616f6835f47e27d1e73964374cdb671476571dfd358894a8ced06f2", size = 29094, upload-time = "2025-06-14T20:47:51.318Z" },
+    { url = "https://files.pythonhosted.org/packages/b8/3d/56d530cf504a6eef84f51c8f6f845af8b947f6108e41db5e0b5189d5a667/pyobjc_framework_coremedia-11.1-cp314-cp314-macosx_11_0_universal2.whl", hash = "sha256:bf1da05c297776c297ab3489ebf18d954efdff530acbdd6e70c32be811e20ec6", size = 29043, upload-time = "2025-06-14T20:47:52.092Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/bc/b237ecd4954a0f07450469236ca45412edb7d8715ff7fc175ac519e7c472/pyobjc_framework_coremedia-11.1-cp314-cp314t-macosx_11_0_universal2.whl", hash = "sha256:aa942d9ad0cf5bc4d3ede8779c3fac2f04cf3857687f2fb8505bae3378d04b95", size = 29111, upload-time = "2025-06-14T20:47:53.083Z" },
 ]
 
 [[package]]
@@ -1677,17 +1739,19 @@ wheels = [
 
 [[package]]
 name = "pyobjc-framework-quartz"
-version = "11.0"
+version = "11.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
     { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a5/ad/f00f3f53387c23bbf4e0bb1410e11978cbf87c82fa6baff0ee86f74c5fb6/pyobjc_framework_quartz-11.0.tar.gz", hash = "sha256:3205bf7795fb9ae34747f701486b3db6dfac71924894d1f372977c4d70c3c619", size = 3952463, upload-time = "2025-01-14T19:05:07.931Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/ac/6308fec6c9ffeda9942fef72724f4094c6df4933560f512e63eac37ebd30/pyobjc_framework_quartz-11.1.tar.gz", hash = "sha256:a57f35ccfc22ad48c87c5932818e583777ff7276605fef6afad0ac0741169f75", size = 3953275, upload-time = "2025-06-14T20:58:17.924Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/60/5d/df827b78dcb5140652ad08af8038c9ddd7e01e6bdf84462bfee644e6e661/pyobjc_framework_Quartz-11.0-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:cb4a9f2d9d580ea15e25e6b270f47681afb5689cafc9e25712445ce715bcd18e", size = 212061, upload-time = "2025-01-14T18:58:10.2Z" },
-    { url = "https://files.pythonhosted.org/packages/a6/9e/54c48fe8faab06ee5eb80796c8c17ec61fc313d84398540ee70abeaf7070/pyobjc_framework_Quartz-11.0-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:973b4f9b8ab844574461a038bd5269f425a7368d6e677e3cc81fcc9b27b65498", size = 212478, upload-time = "2025-01-14T18:58:11.491Z" },
-    { url = "https://files.pythonhosted.org/packages/4a/28/456b54a59bfe11a91b7b4e94f8ffdcf174ffd1efa169f4283e5b3bc10194/pyobjc_framework_Quartz-11.0-cp313-cp313t-macosx_10_13_universal2.whl", hash = "sha256:66ab58d65348863b8707e63b2ec5cdc54569ee8189d1af90d52f29f5fdf6272c", size = 217973, upload-time = "2025-01-14T18:58:12.739Z" },
+    { url = "https://files.pythonhosted.org/packages/9b/37/ee6e0bdd31b3b277fec00e5ee84d30eb1b5b8b0e025095e24ddc561697d0/pyobjc_framework_quartz-11.1-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:9ac806067541917d6119b98d90390a6944e7d9bd737f5c0a79884202327c9204", size = 216410, upload-time = "2025-06-14T20:53:36.346Z" },
+    { url = "https://files.pythonhosted.org/packages/bd/27/4f4fc0e6a0652318c2844608dd7c41e49ba6006ee5fb60c7ae417c338357/pyobjc_framework_quartz-11.1-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:43a1138280571bbf44df27a7eef519184b5c4183a588598ebaaeb887b9e73e76", size = 216816, upload-time = "2025-06-14T20:53:37.358Z" },
+    { url = "https://files.pythonhosted.org/packages/b8/8a/1d15e42496bef31246f7401aad1ebf0f9e11566ce0de41c18431715aafbc/pyobjc_framework_quartz-11.1-cp313-cp313t-macosx_10_13_universal2.whl", hash = "sha256:b23d81c30c564adf6336e00b357f355b35aad10075dd7e837cfd52a9912863e5", size = 221941, upload-time = "2025-06-14T20:53:38.34Z" },
+    { url = "https://files.pythonhosted.org/packages/32/a8/a3f84d06e567efc12c104799c7fd015f9bea272a75f799eda8b79e8163c6/pyobjc_framework_quartz-11.1-cp314-cp314-macosx_11_0_universal2.whl", hash = "sha256:07cbda78b4a8fcf3a2d96e047a2ff01f44e3e1820f46f0f4b3b6d77ff6ece07c", size = 221312, upload-time = "2025-06-14T20:53:39.435Z" },
+    { url = "https://files.pythonhosted.org/packages/76/ef/8c08d4f255bb3efe8806609d1f0b1ddd29684ab0f9ffb5e26d3ad7957b29/pyobjc_framework_quartz-11.1-cp314-cp314t-macosx_11_0_universal2.whl", hash = "sha256:39d02a3df4b5e3eee1e0da0fb150259476910d2a9aa638ab94153c24317a9561", size = 226353, upload-time = "2025-06-14T20:53:40.655Z" },
 ]
 
 [[package]]
