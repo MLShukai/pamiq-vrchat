@@ -73,8 +73,8 @@ class PPOPolicyTrainer(TorchTrainer):
         """Set up data user references when they are attached to the
         trainer."""
         super().on_data_users_attached()
-        self.policy_data_user: DataUser[Tensor] = self.get_data_user(
-            self.data_user_name
+        self.policy_data_user: DataUser[dict[DataKey, list[Tensor]]] = (
+            self.get_data_user(self.data_user_name)
         )
 
     @override
@@ -169,7 +169,7 @@ class PPOPolicyTrainer(TorchTrainer):
 
         dataset = TensorDataset(
             *[
-                torch.stack(list(data[key]))
+                torch.stack(data[key])
                 for key in [
                     DataKey.OBSERVATION,
                     DataKey.HIDDEN,

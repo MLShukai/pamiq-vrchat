@@ -60,5 +60,5 @@ class UnimodalEncodingAgent(Agent[Tensor, Tensor]):
         Returns:
             The encoded representation of the observation
         """
-        self.collector.collect({DataKey.OBSERVATION: observation.cpu()})
+        self.collector.collect(observation.cpu())
         return self.encoder(observation)

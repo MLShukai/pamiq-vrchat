@@ -3,21 +3,16 @@ from pathlib import Path
 
 import pytest
 import torch
-import torch.nn as nn
-from pamiq_core.data.impls import SequentialBuffer
+from pamiq_core.data.impls import DictSequentialBuffer
 from pamiq_core.testing import connect_components
 from pamiq_core.torch import TorchTrainingModel
 from pytest_mock import MockerFixture
 from torch.optim import AdamW
-from torch.utils.data import DataLoader
 
 from sample.data import BufferName, DataKey
 from sample.models import ModelName
-from sample.models.components.deterministic_normal import FCDeterministicNormalHead
-from sample.models.components.qlstm import QLSTM
 from sample.models.forward_dynamics import ForwardDynamics
 from sample.trainers.forward_dynamics import ImaginingForwardDynamicsTrainer
-from sample.trainers.sampler import RandomTimeSeriesSampler
 from tests.sample.helpers import parametrize_device
 
 
@@ -49,7 +44,7 @@ class TestImaginingForwardDynamicsTrainer:
     @pytest.fixture
     def data_buffers(self):
         return {
-            BufferName.FORWARD_DYNAMICS: SequentialBuffer(
+            BufferName.FORWARD_DYNAMICS: DictSequentialBuffer(
                 [DataKey.OBSERVATION, DataKey.ACTION, DataKey.HIDDEN], max_size=self.LEN
             )
         }

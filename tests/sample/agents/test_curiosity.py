@@ -1,7 +1,10 @@
 import pytest
 import torch
-from pamiq_core import DataBuffer, InferenceModel, TrainingModel
-from pamiq_core.testing import connect_components
+from pamiq_core.testing import (
+    connect_components,
+    create_mock_buffer,
+    create_mock_models,
+)
 from pytest_mock import MockerFixture
 from torch.distributions import Normal
 
@@ -21,13 +24,9 @@ class TestCuriosityAgent:
 
     @pytest.fixture
     def models(self, mocker: MockerFixture):
-        forward_dynamics_model = mocker.Mock(TrainingModel)
-        forward_dynamics_model.inference_model = mocker.Mock(InferenceModel)
-        forward_dynamics_model.has_inference_model = True
+        forward_dynamics_model, _ = create_mock_models()
 
-        policy_value_model = mocker.Mock(TrainingModel)
-        policy_value_model.inference_model = mocker.Mock(InferenceModel)
-        policy_value_model.has_inference_model = True
+        policy_value_model, _ = create_mock_models()
 
         # Mock forward dynamics model behavior
         obs_dist = Normal(
@@ -52,14 +51,10 @@ class TestCuriosityAgent:
         }
 
     @pytest.fixture
-    def buffers(self, mocker: MockerFixture):
-        fd_buffer = mocker.MagicMock(DataBuffer)
-        fd_buffer.max_size = 0
-        policy_buffer = mocker.MagicMock(DataBuffer)
-        policy_buffer.max_size = 0
+    def buffers(self):
         return {
-            BufferName.FORWARD_DYNAMICS: fd_buffer,
-            BufferName.POLICY: policy_buffer,
+            BufferName.FORWARD_DYNAMICS: create_mock_buffer(),
+            BufferName.POLICY: create_mock_buffer(),
         }
 
     @pytest.fixture

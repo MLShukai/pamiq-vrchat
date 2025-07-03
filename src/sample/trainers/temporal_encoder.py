@@ -99,8 +99,8 @@ class TemporalEncoderTrainer(TorchTrainer):
         """Set up data user references when they are attached to the
         trainer."""
         super().on_data_users_attached()
-        self.temporal_data_user: DataUser[Tensor | TensorDict] = self.get_data_user(
-            self.data_user_name
+        self.temporal_data_user: DataUser[dict[DataKey, list[Tensor | TensorDict]]] = (
+            self.get_data_user(self.data_user_name)
         )
 
     @override
@@ -132,8 +132,8 @@ class TemporalEncoderTrainer(TorchTrainer):
 
         dataset = TensorDataset(
             # Ignore pyright error because TensorDict api is compatible with torch.Tensor api.
-            torch.stack(list(data[DataKey.OBSERVATION])),  # pyright: ignore[reportArgumentType]
-            torch.stack(cast(list[Tensor], list(data[DataKey.HIDDEN]))),
+            torch.stack(data[DataKey.OBSERVATION]),  # pyright: ignore[reportArgumentType]
+            torch.stack(cast(list[Tensor], data[DataKey.HIDDEN])),
         )
         sampler = self.partial_sampler(dataset)
         dataloader = self.partial_dataloader(

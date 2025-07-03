@@ -891,13 +891,12 @@ def main() -> None:
     # ==================================================================================
     #                              DATA BUFFER CREATION
     # ==================================================================================
-    def create_data_buffers() -> dict[str, DataBuffer[Any]]:
-        from pamiq_core.data.impls import RandomReplacementBuffer, SequentialBuffer
+    def create_data_buffers() -> dict[str, DataBuffer[Any, Any]]:
+        from pamiq_core.data.impls import DictSequentialBuffer, RandomReplacementBuffer
 
         from sample.data import DataKey
 
         image = RandomReplacementBuffer(
-            collecting_data_names=[DataKey.OBSERVATION],
             max_size=DataBufferHParams.Image.max_size,
             expected_survival_length=int(
                 # 12 hours of experience
@@ -906,7 +905,6 @@ def main() -> None:
         )
 
         audio = RandomReplacementBuffer(
-            collecting_data_names=[DataKey.OBSERVATION],
             max_size=DataBufferHParams.Audio.max_size,
             expected_survival_length=int(
                 # 12 hours of experience
@@ -914,18 +912,18 @@ def main() -> None:
             ),
         )
 
-        temporal = SequentialBuffer(
-            collecting_data_names=[DataKey.OBSERVATION, DataKey.HIDDEN],
+        temporal = DictSequentialBuffer(
+            [DataKey.OBSERVATION, DataKey.HIDDEN],
             max_size=DataBufferHParams.Temporal.max_size,
         )
 
-        forward_dynamics = SequentialBuffer(
-            collecting_data_names=[DataKey.OBSERVATION, DataKey.ACTION, DataKey.HIDDEN],
+        forward_dynamics = DictSequentialBuffer(
+            [DataKey.OBSERVATION, DataKey.ACTION, DataKey.HIDDEN],
             max_size=DataBufferHParams.ForwardDynamics.max_size,
         )
 
-        policy = SequentialBuffer(
-            collecting_data_names=[
+        policy = DictSequentialBuffer(
+            [
                 DataKey.OBSERVATION,
                 DataKey.HIDDEN,
                 DataKey.ACTION,
@@ -948,6 +946,7 @@ def main() -> None:
     # ==================================================================================
     #                                SYSTEM LAUNCH
     # ==================================================================================
+    from pamiq_core.state_persistence import LatestStatesKeeper, PeriodicSaveCondition
 
     def countdown(seconds: int) -> None:
         """Execute countdown before system launch."""
@@ -970,12 +969,17 @@ def main() -> None:
         launch(
             interaction=create_interaction(),
             models=create_models(),
-            data=create_data_buffers(),
+            buffers=create_data_buffers(),
             trainers=create_trainers(),
             config=LaunchConfig(
                 states_dir=args.output_dir / "states",
-                save_state_interval=24 * 60 * 60,  # Daily checkpoints (24 hours)
-                max_keep_states=3,  # Retain 3 most recent checkpoints
+                save_state_condition=PeriodicSaveCondition(
+                    24 * 60 * 60,  # Daily checkpoints (24 hours)
+                ),
+                states_keeper=LatestStatesKeeper(
+                    states_dir=args.output_dir / "states",
+                    max_keep=3,  # Retain 3 most recent checkpoints
+                ),
                 web_api_address=("localhost", 8391),  # Web API Address for control.
             ),
         )
