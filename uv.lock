@@ -1196,7 +1196,7 @@ wheels = [
 
 [[package]]
 name = "pamiq-core"
-version = "0.4.0"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -1204,9 +1204,9 @@ dependencies = [
     { name = "starlette" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/90/34/3df07e4a3e4f1693350cf75ae039aaa56606ac06090dca8d3548093966c2/pamiq_core-0.4.0.tar.gz", hash = "sha256:9a6a16248069eb76dc632c672bf50d5f956db2ec88886c17e58c862665493f6f", size = 664161, upload-time = "2025-06-12T02:27:33.441Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cd/39/f8a6b814c493f3332b02e692e541874077ca79a00a950743ad7e12bc3f25/pamiq_core-0.5.0.tar.gz", hash = "sha256:a18cdeb103d7f7234666524542eb74247c81d494a1fc3eb2e93b9760e7b4def6", size = 678349, upload-time = "2025-07-03T04:59:20.213Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/50/64/ffa64a2e21e73525e2aef3b9bc4d41a1447a454dd035586d71ad47cec300/pamiq_core-0.4.0-py3-none-any.whl", hash = "sha256:387e4182ab5fa36bebfff4d1c30db01540d8c4a98a2adffb4ac0f58f1ab70b64", size = 65872, upload-time = "2025-06-12T02:27:31.676Z" },
+    { url = "https://files.pythonhosted.org/packages/0a/1f/e1b38c4f7417f638c081cf24de367e6726f1dc2ca08fd76591f7ddd73a14/pamiq_core-0.5.0-py3-none-any.whl", hash = "sha256:14637186f08b989f27dd7bd1898bd472c09fef98bc823919976a815113ab9525", size = 70196, upload-time = "2025-07-03T04:59:18.411Z" },
 ]
 
 [package.optional-dependencies]
@@ -1284,7 +1284,7 @@ requires-dist = [
     { name = "inputtino-python", marker = "sys_platform == 'linux'", git = "https://github.com/games-on-whales/inputtino.git?subdirectory=bindings%2Fpython" },
     { name = "mlflow", marker = "extra == 'sample'", specifier = ">=2.22.0" },
     { name = "pamiq-core", specifier = ">=0.4.0" },
-    { name = "pamiq-core", extras = ["torch", "kbctl"], marker = "extra == 'sample'", specifier = ">=0.3.1" },
+    { name = "pamiq-core", extras = ["torch", "kbctl"], marker = "extra == 'sample'", specifier = ">=0.5.0" },
     { name = "pamiq-io", extras = ["windows", "inputtino", "opencv", "osc", "soundcard"], specifier = ">=0.6.1" },
     { name = "pycaw", marker = "sys_platform == 'win32'", specifier = ">=20240210" },
     { name = "rootutils", marker = "extra == 'sample'", specifier = ">=1.0.7" },
