@@ -1,7 +1,7 @@
 import sys
 from typing import TypedDict, override
 
-from pamiq_core.interaction.modular_env import Actuator
+from pamiq_core import Actuator
 from pamiq_io.mouse import MouseButton, MouseOutput
 
 from .control_models import SimpleButton, SimpleMotor
