@@ -1,7 +1,10 @@
 import pytest
 import torch
-from pamiq_core import DataBuffer, InferenceModel, TrainingModel
-from pamiq_core.testing import connect_components
+from pamiq_core.testing import (
+    connect_components,
+    create_mock_buffer,
+    create_mock_models,
+)
 from pytest_mock import MockerFixture
 
 from sample.agents.unimodal_encoding import UnimodalEncodingAgent
@@ -12,18 +15,13 @@ class TestUnimodalEncodingAgent:
     """Tests for the UnimodalEncodingAgent class."""
 
     @pytest.fixture
-    def models(self, mocker: MockerFixture):
-        training_model = mocker.Mock(TrainingModel)
-        training_model.inference_model = mocker.Mock(InferenceModel)
-        training_model.has_inference_model = True
-
+    def models(self):
+        training_model, _ = create_mock_models()
         return {"encoder": training_model}
 
     @pytest.fixture
-    def buffers(self, mocker: MockerFixture):
-        buf = mocker.MagicMock(DataBuffer)
-        buf.max_size = 0
-        return {"data": buf}
+    def buffers(self):
+        return {"data": create_mock_buffer()}
 
     def test_initilization(self, models, buffers):
         """Test initialization of the agent."""
@@ -69,5 +67,4 @@ class TestUnimodalEncodingAgent:
 
         spy_collect.assert_called_once()
         call_args = spy_collect.call_args[0][0]
-        assert DataKey.OBSERVATION in call_args
-        assert torch.equal(call_args[DataKey.OBSERVATION], observation)
+        assert torch.equal(call_args, observation)

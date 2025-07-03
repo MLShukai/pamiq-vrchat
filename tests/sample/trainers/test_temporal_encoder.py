@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 import torch
-from pamiq_core.data.impls import SequentialBuffer
+from pamiq_core.data.impls import DictSequentialBuffer
 from pamiq_core.testing import connect_components
 from pamiq_core.torch import TorchTrainingModel
 from pytest_mock import MockerFixture
@@ -88,7 +88,7 @@ class TestTemporalEncoderTrainer:
     @pytest.fixture
     def data_buffers(self):
         return {
-            BufferName.TEMPORAL: SequentialBuffer(
+            BufferName.TEMPORAL: DictSequentialBuffer(
                 [DataKey.OBSERVATION, DataKey.HIDDEN], max_size=16
             )
         }

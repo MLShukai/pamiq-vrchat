@@ -2,7 +2,7 @@ import time
 from enum import StrEnum
 from typing import ClassVar, TypedDict, override
 
-from pamiq_core.interaction.modular_env import Actuator
+from pamiq_core import Actuator
 from pamiq_io.osc import OscOutput
 
 from .control_models import SimpleButton, SimpleMotor

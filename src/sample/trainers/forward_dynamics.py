@@ -91,8 +91,8 @@ class ImaginingForwardDynamicsTrainer(TorchTrainer):
         during training.
         """
         super().on_data_users_attached()
-        self.forward_dynamics_data_user: DataUser[Tensor] = self.get_data_user(
-            self.data_user_name
+        self.forward_dynamics_data_user: DataUser[dict[DataKey, list[Tensor]]] = (
+            self.get_data_user(self.data_user_name)
         )
 
     @override
@@ -145,9 +145,9 @@ class ImaginingForwardDynamicsTrainer(TorchTrainer):
 
         data = self.forward_dynamics_data_user.get_data()
         dataset = TensorDataset(
-            torch.stack(list(data[DataKey.OBSERVATION])),
-            torch.stack(list(data[DataKey.ACTION])),
-            torch.stack(list(data[DataKey.HIDDEN])),
+            torch.stack(data[DataKey.OBSERVATION]),
+            torch.stack(data[DataKey.ACTION]),
+            torch.stack(data[DataKey.HIDDEN]),
         )
         sampler = self.partial_sampler(dataset=dataset)
         dataloader = self.partial_dataloader(dataset=dataset, sampler=sampler)

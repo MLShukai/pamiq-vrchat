@@ -4,7 +4,7 @@ import threading
 from typing import override
 
 import numpy as np
-from pamiq_core.interaction.modular_env import Sensor
+from pamiq_core import Sensor
 
 logger = logging.getLogger(__name__)
 

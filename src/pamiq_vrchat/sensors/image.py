@@ -20,7 +20,7 @@ from typing import override
 
 import cv2
 import numpy as np
-from pamiq_core.interaction.modular_env import Sensor
+from pamiq_core import Sensor
 from pamiq_io.video import OpenCVVideoInput
 
 logger = logging.getLogger(__name__)

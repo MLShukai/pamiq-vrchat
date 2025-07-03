@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 import torch
-from pamiq_core.data.impls import SequentialBuffer
+from pamiq_core.data.impls import DictSequentialBuffer
 from pamiq_core.testing import connect_components
 from pamiq_core.torch import TorchTrainingModel
 from pytest_mock import MockerFixture
@@ -36,7 +36,7 @@ class TestPPOPolicyTrainer:
     @pytest.fixture
     def data_buffers(self):
         return {
-            BufferName.POLICY: SequentialBuffer(
+            BufferName.POLICY: DictSequentialBuffer(
                 [
                     DataKey.OBSERVATION,
                     DataKey.HIDDEN,
