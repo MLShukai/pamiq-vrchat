@@ -152,7 +152,7 @@ class CuriosityAgent(Agent[Tensor, Tensor]):
             self.metrics["reward"] = reward.cpu().item()
 
             self.step_data_policy[DataKey.REWARD] = reward
-            self.collector_policy.collect(self.step_data_policy)
+            self.collector_policy.collect(self.step_data_policy.copy())
 
         # ==============================================================================
         #                               Policy Process
@@ -203,7 +203,7 @@ class CuriosityAgent(Agent[Tensor, Tensor]):
         self.step_data_fd[DataKey.ACTION] = self.step_data_policy[DataKey.ACTION] = (
             action.cpu()
         )
-        self.collector_forward_dynamics.collect(self.step_data_fd)
+        self.collector_forward_dynamics.collect(self.step_data_fd.copy())
 
         # Store for next loop
         self.step_data_policy[DataKey.ACTION_LOG_PROB] = action_log_prob.cpu()
