@@ -282,16 +282,16 @@ wheels = [
 
 [[package]]
 name = "cv2-enumerate-cameras"
-version = "1.2.0"
+version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyobjc-framework-avfoundation", marker = "sys_platform == 'darwin'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8f/51/01d7136dffbb04e4cc36d15d1611cc789c734c48d02f8842989729f47204/cv2_enumerate_cameras-1.2.0.tar.gz", hash = "sha256:28a20f623e7e09cde377a41bab5e0f92723dcd4f7e9327a4176990b258acf2e2", size = 10195, upload-time = "2025-06-29T03:12:01.226Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/67/e9/1ed371073498f6a4be7cf32dd19605e7fa067497328668a1083e85a3ae71/cv2_enumerate_cameras-1.2.2.tar.gz", hash = "sha256:7dce1335605a4d19fc402c2b3b7d45d5bd80143c20b77be3655f96f30ad76510", size = 11942, upload-time = "2025-07-03T06:05:00.027Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8b/18/c6b7196080c9c012611495455f238c739d942bbbe51b78668d01f716347e/cv2_enumerate_cameras-1.2.0-cp32-abi3-win32.whl", hash = "sha256:202c1849389d247d90597711c5948c542480e57d7d829ffc1cfa8d9714351f45", size = 19757, upload-time = "2025-06-29T03:11:57.743Z" },
-    { url = "https://files.pythonhosted.org/packages/95/9e/adf68476292431594ed20b71a0e5de1831ffda330079fe65d9df42567354/cv2_enumerate_cameras-1.2.0-cp32-abi3-win_amd64.whl", hash = "sha256:62250fe7651ff19825c26864591b48c67e0d1f15135b17852ca9c37a763b0915", size = 20641, upload-time = "2025-06-29T03:11:59.137Z" },
-    { url = "https://files.pythonhosted.org/packages/73/dc/b03dccc0e8283b604773b7684e7aa796fc0215fa0a039eaf081c2e50246d/cv2_enumerate_cameras-1.2.0-py3-none-any.whl", hash = "sha256:70b479284b878ea3baede702799846e2f82112977ac0bf85a33094a7796ac9ee", size = 10912, upload-time = "2025-06-29T03:12:00.166Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/37/a198560e077b82092f8d7df438e5c27fc5cc97a721456368f248c6cbf62f/cv2_enumerate_cameras-1.2.2-cp32-abi3-win32.whl", hash = "sha256:5068197f58ec5803da84dd9caa23dd016e09d0c2e6a656d888c5c29abb4ec226", size = 19866, upload-time = "2025-07-03T06:04:56.418Z" },
+    { url = "https://files.pythonhosted.org/packages/35/ad/efd8779737ccb88596f9a06f4c46389f4c72aca3696b4b8260d18687d8d6/cv2_enumerate_cameras-1.2.2-cp32-abi3-win_amd64.whl", hash = "sha256:b5c2a765161a4187c5af3dbf2dd4fdf5acd486afde0bda2375eed877852117e5", size = 20751, upload-time = "2025-07-03T06:04:57.513Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/d5/be643f4c9542fa07752874820daff2a825c9c67432dfab6853662384385f/cv2_enumerate_cameras-1.2.2-py3-none-any.whl", hash = "sha256:0e54301a65a44a69873f4b4300c37119ae0ed1ea0266d96e1504fcbad678a8d5", size = 11024, upload-time = "2025-07-03T06:04:58.862Z" },
 ]
 
 [[package]]
