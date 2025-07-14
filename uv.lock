@@ -2135,7 +2135,7 @@ wheels = [
 
 [[package]]
 name = "tensordict"
-version = "0.8.3"
+version = "0.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cloudpickle" },
@@ -2146,18 +2146,18 @@ dependencies = [
     { name = "torch" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/32/03/46f4a9d9e017f319aa1fe11c5e1cb3642b63257d1423abc4238c14970d33/tensordict-0.8.3-cp312-cp312-macosx_15_0_arm64.whl", hash = "sha256:7657a6ec866c2045f0195c7d1553bce3ae9e2f0bb1294eb0d1fa681f835a5a32", size = 724610, upload-time = "2025-05-16T15:18:00.491Z" },
-    { url = "https://files.pythonhosted.org/packages/5a/9d/6633d912f611646a4c81dfdc65990495a4581067d4d3c70543ac6829bce1/tensordict-0.8.3-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:4cac48c0044ae25d7226156195dba00b93388731fda33de1a78d03f1560022f6", size = 417010, upload-time = "2025-05-16T15:18:01.698Z" },
-    { url = "https://files.pythonhosted.org/packages/89/31/b7726346de82d4e76578928f7b4bf5a265146c5e52d85dec410990fba166/tensordict-0.8.3-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:507372779d7e301f8a204d8f5c7e87263bf1217aaa99b04c09d6a47f852fbd21", size = 420888, upload-time = "2025-05-16T15:18:03.083Z" },
-    { url = "https://files.pythonhosted.org/packages/fd/c9/b450549864fd0c3f1738f5dd1db733914cdbef9354f929c17cdafb27ef87/tensordict-0.8.3-cp312-cp312-win_amd64.whl", hash = "sha256:dfde2a8753e97c012edc51e7541d139ee7eca89aac7c7891c3493f36e6c650ac", size = 407148, upload-time = "2025-05-16T15:18:04.214Z" },
-    { url = "https://files.pythonhosted.org/packages/3d/e9/df62e3b080a870fd00cbd661313f3dec5b1edc230decee186a70726be21a/tensordict-0.8.3-cp313-cp313-macosx_15_0_arm64.whl", hash = "sha256:b2c09652858aff9631be0ad15a861136a1f67920128d4505db04c18a2e18a00e", size = 724662, upload-time = "2025-05-16T15:18:05.366Z" },
-    { url = "https://files.pythonhosted.org/packages/2a/a1/423853cb396685176d5896d2a3315457b054292aed43fef6bbd242774e0a/tensordict-0.8.3-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:3d1eee03e1c9a8918ee2e071c244c2014c26a60312dd5e7e0aaf43f17d0f698c", size = 416990, upload-time = "2025-05-16T15:18:06.473Z" },
-    { url = "https://files.pythonhosted.org/packages/b4/73/79dd5c1a2c37f48bcf5852fa567f8789e049a862366a4f8e753b977fd856/tensordict-0.8.3-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:9df22f5f1cf09c00ca81b2c78a11b6da39fee7432922e092354def1dec501049", size = 420758, upload-time = "2025-05-16T15:18:07.514Z" },
-    { url = "https://files.pythonhosted.org/packages/2a/28/20d2228f0be57e44270e68af1da2dff4ef5998548ecc957cda9fc99b8844/tensordict-0.8.3-cp313-cp313-win_amd64.whl", hash = "sha256:d8c07ea8d7e539eefc284ea2fba4cc8dfc48a6504815bef191f6f1e28a1269d2", size = 407176, upload-time = "2025-05-16T15:18:08.628Z" },
-    { url = "https://files.pythonhosted.org/packages/59/fc/c03298b37bf79415cf6be303dbadb2b6f61d3e61394f87316981e8855a1d/tensordict-0.8.3-cp313-cp313t-macosx_15_0_arm64.whl", hash = "sha256:aefbab2e8259ea41e95befa50e71fa37565be173cec388b794590dc60cee05ec", size = 773169, upload-time = "2025-05-16T15:18:09.76Z" },
-    { url = "https://files.pythonhosted.org/packages/12/cd/5126740373a976568b1cc8b80e61d288b9a290aab9c56d0ca886e5826d36/tensordict-0.8.3-cp313-cp313t-manylinux_2_28_aarch64.whl", hash = "sha256:825b35fb72a6d323f48d68c3c6ea802aa675675cddd38bb4685f937a1c370b2a", size = 417389, upload-time = "2025-05-16T15:18:10.802Z" },
-    { url = "https://files.pythonhosted.org/packages/20/04/47ce59e569196925799e963ecd6ad6d45f85ff21e857b085e2a2c61f47ce/tensordict-0.8.3-cp313-cp313t-manylinux_2_28_x86_64.whl", hash = "sha256:9e89fa70ef6d247bc1db9b4a7e1ea5051f14307578322c303c428c2dd6da61fe", size = 418342, upload-time = "2025-05-16T15:18:12.308Z" },
-    { url = "https://files.pythonhosted.org/packages/79/33/2cb757fa1d1f5ce423178d8b973e37c3a74ea5f88b444fec0960bffab6a2/tensordict-0.8.3-cp313-cp313t-win_amd64.whl", hash = "sha256:22738b16ec44f30402bac400a7d6541eebdf00bfdb934df3e29e9db590cdae99", size = 412339, upload-time = "2025-05-16T15:18:13.763Z" },
+    { url = "https://files.pythonhosted.org/packages/57/98/a2af5b8a6a56b23d14e1c89b5945d1eab9898fe725b3ca406c57c4cd732d/tensordict-0.9.0-cp312-cp312-macosx_15_0_arm64.whl", hash = "sha256:5031b9530c0c2951a864a6a2b0fb9312b3972c85137b9e5f63924603592b366b", size = 732303, upload-time = "2025-07-09T16:18:06.63Z" },
+    { url = "https://files.pythonhosted.org/packages/98/b8/fafe31183deb61a5b52b40da16b2e954a52b3f88161c733fd2ec059b12ea/tensordict-0.9.0-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:585436f1b40d4aa471130335a7c1b9a30713882d9b4828db66b621d5fc7bae9a", size = 420276, upload-time = "2025-07-09T16:18:08.092Z" },
+    { url = "https://files.pythonhosted.org/packages/57/e6/5f299ccedebabe6a934d66f6676cdbc09737766d78dec44feaf7c09cb3f3/tensordict-0.9.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:abd317aa3fecf959938d408826c79cbe2d7615b133fd7eea74c3f7f2a70dc7d6", size = 424152, upload-time = "2025-07-09T16:18:09.596Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/5e/638aa7dfb76690e5934f6c8e4af3f0e417f64ac862e1929dd573ca9f6a0c/tensordict-0.9.0-cp312-cp312-win_amd64.whl", hash = "sha256:471c082cf1cab813b3f1a5fab4eb9d8feddf5a995c1af8edd80819a4fe5542e1", size = 465362, upload-time = "2025-07-09T16:18:10.68Z" },
+    { url = "https://files.pythonhosted.org/packages/64/ec/8d8b549d6f7a251b616297925d216aeac6a5f6528320e91dfacf39be3816/tensordict-0.9.0-cp313-cp313-macosx_15_0_arm64.whl", hash = "sha256:a39c385a87905b4500a5ecdc0691a35710fe88fdfbb3ce67590026f362a14d4b", size = 732356, upload-time = "2025-07-09T16:18:11.892Z" },
+    { url = "https://files.pythonhosted.org/packages/e1/1f/1f47cc455a03029ea71b41e872be201c8aaa8b3856b96bd57a0f2f7be845/tensordict-0.9.0-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:e8ed37aae5b9cf5c11afa02d302b5df7ad5a77063dab8c321fe96896d4dde2de", size = 420257, upload-time = "2025-07-09T16:18:14.084Z" },
+    { url = "https://files.pythonhosted.org/packages/50/8a/c1c775f898b7229da88057018c06ba279a3bdd629bdbb3f9bb996df41b19/tensordict-0.9.0-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:84dfa3d7d1924812f4c7b0fb370744f65b26cafd4d39c44e5a5cf43e94af3db4", size = 424021, upload-time = "2025-07-09T16:18:15.279Z" },
+    { url = "https://files.pythonhosted.org/packages/a0/27/1d0957cc4e7ddc45a8b44650284ab09b4d3d51df417e62e83bd7371b1e1e/tensordict-0.9.0-cp313-cp313-win_amd64.whl", hash = "sha256:1f0944befb6e7d0b6a33dad173a946e2ebde40ae2d55e4294b2289418b7c49ee", size = 465437, upload-time = "2025-07-09T16:18:16.379Z" },
+    { url = "https://files.pythonhosted.org/packages/89/f3/5cb96a85f36c9f0157f76989852e94dd93e6201ce02bc901e8a284bc6dd9/tensordict-0.9.0-cp313-cp313t-macosx_15_0_arm64.whl", hash = "sha256:ffec05a41120ffd8ed274f3537589bf3b749ee0bd77409776111b1276da92a4b", size = 776569, upload-time = "2025-07-09T16:18:17.701Z" },
+    { url = "https://files.pythonhosted.org/packages/cd/8a/6fdaa4b186120dd8a5f0fd61c6086aef6ee0c41311748337bcf626e05cf7/tensordict-0.9.0-cp313-cp313t-manylinux_2_28_aarch64.whl", hash = "sha256:c6c516e0bc841a3ada5d7485b7506a2ccae4551926ae2bb583768394fb914e8d", size = 420655, upload-time = "2025-07-09T16:18:18.83Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/63/d4f39f061572cef6ddee17194a5fef8233686997a2b97a37824110b36732/tensordict-0.9.0-cp313-cp313t-manylinux_2_28_x86_64.whl", hash = "sha256:389d6fd6f4703f18bcaec920b22e68eecb607bdaeebfb692e9847d68abd195e8", size = 421609, upload-time = "2025-07-09T16:18:19.841Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/b3/8bf4401d8f88b5fbf46dfbb525f24faadddc2cba2b02963896b4dfeb7637/tensordict-0.9.0-cp313-cp313t-win_amd64.whl", hash = "sha256:07182de244798c83d058cc8d5d7c27f2eeb5c0cefccff1dcfb11b6afca17c469", size = 475924, upload-time = "2025-07-09T16:18:21.285Z" },
 ]
 
 [[package]]
