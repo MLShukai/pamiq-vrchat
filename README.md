@@ -2,6 +2,8 @@
 
 # PAMIQ VRChat
 
+**English** | [日本語](./README.ja.md)
+
 Interface for PAMIQ to interact with VRChat.
 
 ## ✨ Features
@@ -78,6 +80,39 @@ You can also use our pre-configured [Scene Collection](./obs_settings/). Import 
 
 ![enable_osc](./docs/images/osc_enable.png)
 
+## 🎮 Running the Sample Project
+
+After setting up VRChat environment and cloning this repository, you can run the sample project. It trains an agent that interacts with VRChat.
+
+- **For Linux Users**
+
+  ```bash
+  # Run the sample
+  ./run-sample.linux.sh
+  ```
+
+- **For Windows Users**
+
+  ```powershell
+  # Run the sample (in PowerShell)
+  .\Run-Sample.Windows.ps1
+  # Or Bypass execution policy.
+  powershell -noexit -ExecutionPolicy Bypass -File .\Run-Sample.Windows.ps1
+  ```
+
+These scripts will:
+
+- Check and install dependencies automatically
+- Verify CUDA availability
+- Check if VRChat and OBS are running
+- Start the keyboard control interface ([**`pamiq-kbctl`**](https://mlshukai.github.io/pamiq-core/user-guide/console/#keyboard-shortcut-controller))
+- Launch the autonomous learning agent
+
+> \[!IMPORTANT\]
+> **Mouse Control Notice:** When the agent starts, it will take control of your mouse for VRChat interaction. To pause the system, press **`Alt+Shift+P`**. This is essential for regaining mouse control when needed.
+
+For detailed implementation, see [`src/run_sample.py`](src/run_sample.py) which contains the architecture, hyperparameters and training procedure.
+
 ## 🚀 Quick Examples
 
 ### Image Sensor
@@ -150,39 +185,6 @@ smooth_osc = SmoothOscActuator(
 )
 smooth_osc.operate({"axes": {OscAxes.Vertical: 0.5}})
 ```
-
-## 🎮 Running the Sample Project
-
-After setting up VRChat environment and cloning this repository, you can run the sample project. It trains an agent that interacts with VRChat.
-
-- **For Linux Users**
-
-  ```bash
-  # Run the sample
-  ./run-sample.linux.sh
-  ```
-
-- **For Windows Users**
-
-  ```powershell
-  # Run the sample (in PowerShell)
-  .\Run-Sample.Windows.ps1
-  # Or Bypass execution policy.
-  powershell -noexit -ExecutionPolicy Bypass -File .\Run-Sample.Windows.ps1
-  ```
-
-These scripts will:
-
-- Check and install dependencies automatically
-- Verify CUDA availability
-- Check if VRChat and OBS are running
-- Start the keyboard control interface ([**`pamiq-kbctl`**](https://mlshukai.github.io/pamiq-core/user-guide/console/#keyboard-shortcut-controller))
-- Launch the autonomous learning agent
-
-> \[!IMPORTANT\]
-> **Mouse Control Notice:** When the agent starts, it will take control of your mouse for VRChat interaction. To pause the system, press **`Alt+Shift+P`**. This is essential for regaining mouse control when needed.
-
-For detailed implementation, see [`src/run_sample.py`](src/run_sample.py) which contains the architecture, hyperparameters and training procedure.
 
 ## 🤝 Contributing
 
