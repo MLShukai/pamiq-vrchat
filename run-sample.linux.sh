@@ -45,6 +45,37 @@ process_exists() {
 
 print_info "Checking dependencies..."
 
+# Check and auto-install system dependencies
+if ! command_exists git || ! command_exists cmake || ! command_exists gcc || ! pkg-config --exists libevdev 2>/dev/null; then
+    print_warning "System dependencies are missing. Installing..."
+
+    # Detect distro and install
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        case "$ID" in
+            ubuntu|debian)
+                PKGS="git cmake build-essential pkg-config libevdev-dev"
+                [[ "$ID" == "ubuntu" && "$VERSION_ID" == "24.04" ]] && PKGS="$PKGS clang"
+                sudo apt update && sudo apt install -y $PKGS || exit 1
+                ;;
+            arch|manjaro)
+                sudo pacman -Sy --noconfirm git cmake base-devel pkgconf libevdev || exit 1
+                ;;
+            fedora|rhel|centos)
+                sudo dnf install -y git cmake gcc gcc-c++ make pkgconf-pkg-config libevdev-devel || exit 1
+                ;;
+            *)
+                print_error "Unsupported distro. Please install: git cmake build-essential pkg-config libevdev-dev"
+                exit 1
+                ;;
+        esac
+    else
+        print_error "Cannot detect distro. Please install dependencies manually."
+        exit 1
+    fi
+    print_success "System dependencies installed"
+fi
+
 # 1. Check and install uv
 if ! command_exists uv; then
     print_warning "uv is not installed."
