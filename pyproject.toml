@@ -53,6 +53,7 @@ sample = [
     "pamiq-core[torch,kbctl]>=0.5.0",
     "rootutils>=1.0.7",
     "tensordict>=0.8.2",
+    "torch>=2.8.0",
     "torchaudio>=2.7.0",
     "torchvision>=0.22.0",
     "tyro>=0.9.20",
