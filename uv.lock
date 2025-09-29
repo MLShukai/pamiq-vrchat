@@ -1371,7 +1371,7 @@ wheels = [
 
 [[package]]
 name = "pamiq-core"
-version = "0.5.2"
+version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -1379,9 +1379,9 @@ dependencies = [
     { name = "starlette" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/49/36/f1d608bfe8a0831f2ebac1607c6ee2ccc80ea7855f397477feadd4a2f597/pamiq_core-0.5.2.tar.gz", hash = "sha256:559e7a6dad1d7ba24a305039cd33c8336640eb725589e143adb1ca5e5bd607e3", size = 678532, upload-time = "2025-07-08T23:30:32.911Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a6/d7/076a63ac8c7257018be340f41e938501475dd6df20514ac9e6e5c296fe33/pamiq_core-0.6.0.tar.gz", hash = "sha256:6504ac930fc6ec743586dff015576b5dbe515d32ec0c65467d2f76f255632da4", size = 684385, upload-time = "2025-09-24T02:47:40.297Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/df/3f/d266febd04d727a6c55c5f3617c5b3781867c2ddf0d82d738b682a4d9731/pamiq_core-0.5.2-py3-none-any.whl", hash = "sha256:b35b9c0093ce674aa76a8d0a56095af775c56fed7794fabbf945ad374b747b87", size = 70164, upload-time = "2025-07-08T23:30:31.075Z" },
+    { url = "https://files.pythonhosted.org/packages/29/d0/aeb717c10bf5a92522de16a8e947da2089dffb96622fc0a0b5d710c85277/pamiq_core-0.6.0-py3-none-any.whl", hash = "sha256:ff69b4c53e6a643677b9c6fa7ebc481aed787bd0e08d0d92dd397016027b57a1", size = 72066, upload-time = "2025-09-24T02:47:38.835Z" },
 ]
 
 [package.optional-dependencies]
