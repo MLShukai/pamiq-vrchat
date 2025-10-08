@@ -114,6 +114,17 @@ if ! uv sync --all-extras; then
 fi
 print_success "Dependencies installed"
 
+# Check if AMD GPU is available
+print_info "Checking GPU type..."
+if command_exists rocminfo && rocminfo >/dev/null 2>&1; then
+    print_info "AMD GPU detected. Installing PyTorch for ROCm..."
+    if ! uv pip install -U torch torchaudio torchvision --index-url https://download.pytorch.org/whl/rocm6.4; then
+        print_error "Failed to install PyTorch for ROCm"
+        exit 1
+    fi
+    print_success "PyTorch for ROCm installed"
+fi
+
 # 4. Check CUDA availability
 print_info "Checking CUDA availability..."
 CUDA_CHECK=$(uv run python -c "import torch; print(torch.cuda.is_available())" 2>/dev/null)
