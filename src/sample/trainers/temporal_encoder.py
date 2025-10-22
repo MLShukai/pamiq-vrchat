@@ -153,7 +153,7 @@ class TemporalEncoderTrainer(TorchTrainer):
                 # Prepare sequences
                 observations = batch_observations[:, :-1]  # o_0:T-1
                 hiddens = batch_hiddens[:, 0]  # h_0
-                observations_next = batch_observations[:, 1:]  # o_1:T
+                observations_next = cast(TensorDict, batch_observations[:, 1:])  # o_1:T
 
                 self.optimizers[OPTIMIZER_NAME].zero_grad()
 
